@@ -16,13 +16,20 @@
   html,body { height:100%; margin:0; }
   body { background:var(--paper); color:var(--ink); font-family:var(--body); display:flex; flex-direction:column; padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom); }
   header { display:flex; justify-content:space-between; align-items:center; padding:10px 0; }
-  #brand { font-family:var(--display); font-size:.8rem; letter-spacing:.14em; color:var(--coral); font-weight:700; }
+  #logo { height:64px; width:auto; mix-blend-mode:multiply; flex:none; }
+  .title { display:flex; align-items:center; gap:12px; }
   #row { font-family:var(--display); font-size:1.6rem; font-weight:700; color:var(--ink); }
   #pos { font-size:.9rem; color:var(--ink-soft); }
   button { font:inherit; border:0; cursor:pointer; }
   .small { background:var(--paper-alt); color:var(--ink); font-size:.85rem; font-weight:700; padding:8px 14px; border-radius:999px; }
   #chips { flex:1; display:flex; flex-wrap:wrap; justify-content:center; align-content:center; gap:10px; min-height:0; }
   .chip { flex:0 0 calc(25% - 8px); height:calc(50% - 5px); max-height:220px; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-card); display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--display); font-size:clamp(1.6rem,7vw,3.2rem); font-weight:700; }
+  /* Rahmen aus angedeuteten Maschen (wie der Schal im Logo) */
+  .chip { position:relative; }
+  .chip::before { content:''; position:absolute; inset:0; border-radius:inherit; padding:11px; pointer-events:none;
+    background:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 fill=%27%2322201B%27/%3E%3Cg fill=%27none%27 stroke=%27%23FBF6EC%27 stroke-width=%273%27 stroke-linecap=%27round%27%3E%3Cpath d=%27M4.5 2.8q2 2.4.4 4.8%27/%3E%3Cpath d=%27M12.5 10.8q2 2.4.4 4.8%27/%3E%3C/g%3E%3C/svg%3E") 0 0/16px 16px;
+    -webkit-mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0); -webkit-mask-composite:xor;
+    mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0); mask-composite:exclude; }
   .chip.fade { opacity:.3; }
   .chip { cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; }
   .chip.count span { color:var(--coral); }
@@ -43,7 +50,7 @@
 </head>
 <body>
 <header>
-  <div><div id="brand">ISADODY</div><div id="row">–</div><div id="pos"></div></div>
+  <div class="title"><img id="logo" src="logo.png" alt="Isadody"><div><div id="row">–</div><div id="pos"></div></div></div>
   <button class="small" id="menu">Anleitung laden</button>
 </header>
 <main id="chips"></main>
