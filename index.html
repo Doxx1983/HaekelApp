@@ -17,6 +17,8 @@
   .small { background:none; color:var(--muted); font-size:.9rem; padding:8px; }
   #chips { flex:1; display:flex; flex-wrap:wrap; justify-content:center; align-content:center; gap:10px; min-height:0; }
   .chip { flex:0 0 calc(25% - 8px); height:calc(50% - 5px); max-height:220px; background:var(--chip); border-radius:16px; box-shadow:0 2px 6px #0002; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:clamp(1.6rem,7vw,3.2rem); font-weight:700; }
+  .chip.fade { opacity:.3; }
+  .chip { cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; }
   .chip small { font-size:.45em; font-weight:400; color:var(--muted); margin-top:4px; }
   .chip.count span { color:var(--accent); }
   #nav { display:flex; gap:10px; padding:12px 0; align-items:stretch; }
@@ -129,7 +131,8 @@ function renderColorPickers() {
 
 const $ = id => document.getElementById(id);
 let rows = [], r = 0, p = 0;
-const save = () => { try { localStorage.setItem('pos', JSON.stringify({ r, p })); } catch {} };
+let done = {}; // Reihe -> Anzahl abgeschlossener Kacheln
+const save = () => { try { localStorage.setItem('pos', JSON.stringify({ r, p })); localStorage.setItem('done', JSON.stringify(done)); } catch {} };
 
 function render() {
   if (!rows.length) { document.body.classList.add('setup'); return; }
@@ -138,9 +141,10 @@ function render() {
   const used = [...new Set(page.map(c => c.c).filter(k => colors[k]))];
   $('row').innerHTML = `Reihe ${row.label}` + used.map(k => `<span class="dot" style="background:${colors[k]}" title="Farbe ${k}"></span>`).join('');
   $('pos').textContent = `Seite ${p + 1}/${row.pages.length} · ${r + 1}/${rows.length}`;
-  $('chips').innerHTML = page.map(c => {
-    const col = colors[c.c], st = col ? ` style="background:${col};color:${textOn(col)}"` : '';
-    return c.n > 1 ? `<div class="chip count"${st}><span${col ? ' style="color:inherit"' : ''}>${c.n}×</span>${c.s}</div>` : `<div class="chip"${st}>${c.s}</div>`;
+  const d = done[r] || 0;
+  $('chips').innerHTML = page.map((c, i) => {
+    const col = colors[c.c], fade = p * MAX_CHIPS + i < d ? ' fade' : '', st = col ? ` style="background:${col};color:${textOn(col)}"` : '';
+    return c.n > 1 ? `<div class="chip count${fade}" data-i="${i}"${st}><span${col ? ' style="color:inherit"' : ''}>${c.n}×</span>${c.s}</div>` : `<div class="chip${fade}" data-i="${i}"${st}>${c.s}</div>`;
   }).join('');
   $('back').disabled = r === 0 && p === 0;
   const last = r === rows.length - 1 && p === row.pages.length - 1;
@@ -149,20 +153,30 @@ function render() {
   save();
 }
 
+$('chips').onclick = e => {
+  const el = e.target.closest('.chip'); if (!el) return;
+  const g = p * MAX_CHIPS + +el.dataset.i;
+  if (g < (done[r] || 0)) { if (!confirm('Fortschritt hier zurücksetzen? Dieser und alle folgenden Schritte werden wieder aktiv.')) return; done[r] = g; }
+  else done[r] = g + 1;
+  render();
+};
 $('next').onclick = () => { if (p < rows[r].pages.length - 1) p++; else if (r < rows.length - 1) { r++; p = 0; } render(); };
 $('back').onclick = () => { if (p > 0) p--; else if (r > 0) { r--; p = rows[r].pages.length - 1; } render(); };
 $('menu').onclick = () => { renderColorPickers(); document.body.classList.add('setup'); };
 $('text').oninput = renderColorPickers;
 $('file').onchange = async e => { const f = e.target.files[0]; if (f) { $('text').value = await f.text(); renderColorPickers(); } };
 $('ok').onclick = () => {
-  rows = parse($('text').value); r = p = 0;
+  let old = ''; try { old = localStorage.getItem('pattern') || ''; } catch {}
+  rows = parse($('text').value);
+  if (old !== $('text').value) { r = p = 0; done = {}; }
   try { localStorage.setItem('pattern', $('text').value); } catch {}
   render();
 };
 
 try {
   const t = localStorage.getItem('pattern');
-  if (t) { $('text').value = t; rows = parse(t); const s = JSON.parse(localStorage.getItem('pos') || '{}');
+  if (t) { $('text').value = t; rows = parse(t); done = JSON.parse(localStorage.getItem('done') || '{}');
+    const s = JSON.parse(localStorage.getItem('pos') || '{}');
     if (rows[s.r] && rows[s.r].pages[s.p]) { r = s.r; p = s.p; } }
 } catch {}
 renderColorPickers();
