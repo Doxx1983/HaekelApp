@@ -15,8 +15,8 @@
   #pos { font-size:.9rem; color:var(--muted); }
   button { font:inherit; border:0; cursor:pointer; }
   .small { background:none; color:var(--muted); font-size:.9rem; padding:8px; }
-  #chips { flex:1; display:grid; grid-template-columns:repeat(4,1fr); grid-template-rows:repeat(2,1fr); gap:10px; min-height:0; }
-  .chip { background:var(--chip); border-radius:16px; box-shadow:0 2px 6px #0002; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:clamp(1.6rem,7vw,3.2rem); font-weight:700; }
+  #chips { flex:1; display:flex; flex-wrap:wrap; justify-content:center; align-content:center; gap:10px; min-height:0; }
+  .chip { flex:0 0 calc(25% - 8px); height:calc(50% - 5px); max-height:220px; background:var(--chip); border-radius:16px; box-shadow:0 2px 6px #0002; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:clamp(1.6rem,7vw,3.2rem); font-weight:700; }
   .chip small { font-size:.45em; font-weight:400; color:var(--muted); margin-top:4px; }
   .chip.count span { color:var(--accent); }
   #nav { display:flex; gap:10px; padding:12px 0; align-items:stretch; }
@@ -30,7 +30,7 @@
   #colors label { display:flex; align-items:center; gap:4px; background:var(--chip); padding:4px 8px; border-radius:10px; }
   #colors input { width:36px; height:30px; border:0; padding:0; background:none; }
   #colors button { flex:0; padding:8px 12px; }
-  #dot { display:inline-block; width:.9em; height:.9em; border-radius:50%; vertical-align:middle; margin-left:6px; border:1px solid var(--muted); }
+  #row .dot { display:inline-block; width:.9em; height:.9em; border-radius:50%; vertical-align:middle; margin-left:6px; border:1px solid var(--muted); }
   body.setup #setup { display:flex; } body.setup #chips, body.setup #nav { display:none; }
 </style>
 </head>
@@ -62,42 +62,44 @@ function splitTop(s) {
   out.push(cur); return out.map(x => x.trim()).filter(Boolean);
 }
 
-function expand(s) {
+const COLOR_RE = /^(?:(?:use|wechsel\w*|nimm|change)\s+)?(?:(?:to|zu)\s+)?(?:farbe|colou?r)\s+([\p{L}\d]+)/iu;
+
+// ctx.color = aktuelle Garnfarbe; Farbwechsel mitten in der Reihe wirken ab dieser Stelle
+function expand(s, ctx) {
   const res = [];
-  for (const part of splitTop(s)) {
+  for (let part of splitTop(s)) {
+    let c = part.match(COLOR_RE);
+    if (c) { ctx.color = c[1].toUpperCase(); part = part.slice(c[0].length).replace(/^[\s:;–-]+/, ''); if (!part) continue; }
     let m = part.match(/^\((.*)\)\s*(?:[x×*]\s*(\d+)|(\d+)\s*[x×*])$/i);
-    if (m) { const n = +(m[2] || m[3]); const inner = expand(m[1]); for (let i = 0; i < n; i++) res.push(...inner); continue; }
+    if (m) { const n = +(m[2] || m[3]); for (let i = 0; i < n; i++) res.push(...expand(m[1], ctx)); continue; }
     m = part.match(/^(?:(\d+)\s*)?([A-Za-zÄÖÜäöüß]+)/);
     if (!m) continue;
-    for (let i = 0; i < (+m[1] || 1); i++) res.push(m[2]);
+    for (let i = 0; i < (+m[1] || 1); i++) res.push({ s: m[2], c: ctx.color });
   }
   return res;
 }
 
 function chipsOf(stitches) {
-  const chips = [];
+  const chips = [], same = (a, b) => a.s === b.s && a.c === b.c;
   for (let i = 0; i < stitches.length;) {
-    let j = i; while (j < stitches.length && stitches[j] === stitches[i]) j++;
+    let j = i; while (j < stitches.length && same(stitches[j], stitches[i])) j++;
     const n = j - i;
-    if (n <= SINGLE_MAX) for (let k = 0; k < n; k++) chips.push({ s: stitches[i], n: 1 });
-    else chips.push({ s: stitches[i], n });
+    if (n <= SINGLE_MAX) for (let k = 0; k < n; k++) chips.push({ ...stitches[i], n: 1 });
+    else chips.push({ ...stitches[i], n });
     i = j;
   }
   return chips;
 }
 
 function parse(text) {
-  const rows = []; let color = '';
+  const rows = [], ctx = { color: '' };
   for (const line of text.split(/\r?\n/)) {
     if (!line.trim()) continue;
     const m = line.match(/^\s*(?:R|Row|Reihe|Runde|Round|Rnd|Rd)\.?\s*(\d+)\s*[:.\-–]?\s*(.*)$/i);
     const label = m ? m[1] : String(rows.length + 1);
-    let body = m ? m[2] : line;
-    const cm = body.match(/(?:(?:use|wechsel\w*|nimm|change)\s+)?(?:to\s+|zu\s+)?(?:farbe|colou?r)\s+([\p{L}\d]+)/iu);
-    if (cm) { color = cm[1].toUpperCase(); body = body.replace(cm[0], '').replace(/^[\s:,;–-]+/, ''); }
-    const chips = chipsOf(expand(body)), pages = [];
+    const chips = chipsOf(expand(m ? m[2] : line, ctx)), pages = [];
     for (let i = 0; i < chips.length; i += MAX_CHIPS) pages.push(chips.slice(i, i + MAX_CHIPS));
-    if (pages.length) rows.push({ label, color, pages });
+    if (pages.length) rows.push({ label, pages });
   }
   return rows;
 }
@@ -133,12 +135,13 @@ function render() {
   if (!rows.length) { document.body.classList.add('setup'); return; }
   document.body.classList.remove('setup');
   const row = rows[r], page = row.pages[p];
-  const col = colors[row.color];
-  $('row').innerHTML = `Reihe ${row.label}` + (col ? `<span id="dot" style="background:${col}" title="Farbe ${row.color}"></span>` : '');
+  const used = [...new Set(page.map(c => c.c).filter(k => colors[k]))];
+  $('row').innerHTML = `Reihe ${row.label}` + used.map(k => `<span class="dot" style="background:${colors[k]}" title="Farbe ${k}"></span>`).join('');
   $('pos').textContent = `Seite ${p + 1}/${row.pages.length} · ${r + 1}/${rows.length}`;
-  const style = col ? ` style="background:${col};color:${textOn(col)}"` : '';
-  $('chips').innerHTML = page.map(c => c.n > 1
-    ? `<div class="chip count"${style}><span${col ? ' style="color:inherit"' : ''}>${c.n}×</span>${c.s}</div>` : `<div class="chip"${style}>${c.s}</div>`).join('');
+  $('chips').innerHTML = page.map(c => {
+    const col = colors[c.c], st = col ? ` style="background:${col};color:${textOn(col)}"` : '';
+    return c.n > 1 ? `<div class="chip count"${st}><span${col ? ' style="color:inherit"' : ''}>${c.n}×</span>${c.s}</div>` : `<div class="chip"${st}>${c.s}</div>`;
+  }).join('');
   $('back').disabled = r === 0 && p === 0;
   const last = r === rows.length - 1 && p === row.pages.length - 1;
   $('next').textContent = last ? 'Fertig ✓' : 'Weiter ›';
