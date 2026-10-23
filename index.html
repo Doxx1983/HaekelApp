@@ -3,42 +3,47 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Häkel-Begleiter</title>
+<title>Isadody Häkelhelfer</title>
+<meta name="theme-color" content="#FBF6EC">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#fdf6f0; --fg:#3b2f2f; --chip:#fff; --accent:#c2185b; --muted:#8a7a7a; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#1e1a1a; --fg:#f3e9e9; --chip:#2e2828; --accent:#f06292; --muted:#a09090; } }
+  /* Isadody Corporate Design (Tokens aus dem Design-System) */
+  :root { --paper:#FBF6EC; --paper-alt:#F5EBD8; --ink:#22201B; --ink-soft:#5B5347; --coral:#F2896B; --coral-soft:#FBD9CB; --line:#D8CBB0;
+    --display:'Baloo 2',system-ui,sans-serif; --body:'Nunito',system-ui,sans-serif;
+    --shadow-card:0 2px 8px rgba(34,32,27,.08); --shadow-soft:0 8px 24px rgba(34,32,27,.14); }
   * { box-sizing:border-box; }
   html,body { height:100%; margin:0; }
-  body { background:var(--bg); color:var(--fg); font-family:system-ui,sans-serif; display:flex; flex-direction:column; padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom); }
+  body { background:var(--paper); color:var(--ink); font-family:var(--body); display:flex; flex-direction:column; padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom); }
   header { display:flex; justify-content:space-between; align-items:center; padding:10px 0; }
-  #row { font-size:1.4rem; font-weight:700; color:var(--accent); }
-  #pos { font-size:.9rem; color:var(--muted); }
+  #brand { font-family:var(--display); font-size:.8rem; letter-spacing:.14em; color:var(--coral); font-weight:700; }
+  #row { font-family:var(--display); font-size:1.6rem; font-weight:700; color:var(--ink); }
+  #pos { font-size:.9rem; color:var(--ink-soft); }
   button { font:inherit; border:0; cursor:pointer; }
-  .small { background:none; color:var(--muted); font-size:.9rem; padding:8px; }
+  .small { background:var(--paper-alt); color:var(--ink); font-size:.85rem; font-weight:700; padding:8px 14px; border-radius:999px; }
   #chips { flex:1; display:flex; flex-wrap:wrap; justify-content:center; align-content:center; gap:10px; min-height:0; }
-  .chip { flex:0 0 calc(25% - 8px); height:calc(50% - 5px); max-height:220px; background:var(--chip); border-radius:16px; box-shadow:0 2px 6px #0002; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:clamp(1.6rem,7vw,3.2rem); font-weight:700; }
+  .chip { flex:0 0 calc(25% - 8px); height:calc(50% - 5px); max-height:220px; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-card); display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--display); font-size:clamp(1.6rem,7vw,3.2rem); font-weight:700; }
   .chip.fade { opacity:.3; }
   .chip { cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; }
-  .chip small { font-size:.45em; font-weight:400; color:var(--muted); margin-top:4px; }
-  .chip.count span { color:var(--accent); }
+  .chip.count span { color:var(--coral); }
   #nav { display:flex; gap:10px; padding:12px 0; align-items:stretch; }
-  #back { flex:0 0 22%; background:var(--chip); color:var(--fg); border-radius:14px; font-size:1.1rem; }
-  #next { flex:1; background:var(--accent); color:#fff; border-radius:14px; font-size:1.8rem; font-weight:700; padding:26px 0; }
+  #back { flex:0 0 22%; background:var(--paper-alt); border:1px solid var(--line); color:var(--ink); border-radius:999px; font-size:1.1rem; font-weight:700; }
+  #next { flex:1; background:var(--coral); color:var(--ink); border-radius:999px; box-shadow:var(--shadow-soft); font-family:var(--display); font-size:1.9rem; font-weight:700; padding:22px 0; }
   #setup { display:none; flex:1; flex-direction:column; gap:10px; }
-  #setup textarea { flex:1; font:inherit; padding:10px; border-radius:10px; border:1px solid var(--muted); background:var(--chip); color:var(--fg); }
+  #setup textarea { flex:1; font:inherit; padding:10px; border-radius:10px; border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:16px; }
   #setup .row { display:flex; gap:10px; }
-  #setup button { flex:1; padding:14px; border-radius:12px; background:var(--accent); color:#fff; font-weight:700; }
+  #setup button { flex:1; padding:14px; border-radius:999px; background:var(--coral); color:var(--ink); font-weight:800; }
   #colors { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-  #colors label { display:flex; align-items:center; gap:4px; background:var(--chip); padding:4px 8px; border-radius:10px; }
+  #colors label { display:flex; align-items:center; gap:4px; background:var(--paper-alt); padding:4px 8px; border-radius:10px; }
   #colors input { width:36px; height:30px; border:0; padding:0; background:none; }
-  #colors button { flex:0; padding:8px 12px; }
-  #row .dot { display:inline-block; width:.9em; height:.9em; border-radius:50%; vertical-align:middle; margin-left:6px; border:1px solid var(--muted); }
+  #colors button { flex:0 0 auto; padding:8px 14px; white-space:nowrap; }
+  #row .dot { display:inline-block; width:.9em; height:.9em; border-radius:50%; vertical-align:middle; margin-left:6px; border:1px solid var(--ink-soft); }
   body.setup #setup { display:flex; } body.setup #chips, body.setup #nav { display:none; }
 </style>
 </head>
 <body>
 <header>
-  <div><div id="row">–</div><div id="pos"></div></div>
+  <div><div id="brand">ISADODY</div><div id="row">–</div><div id="pos"></div></div>
   <button class="small" id="menu">Anleitung laden</button>
 </header>
 <main id="chips"></main>
