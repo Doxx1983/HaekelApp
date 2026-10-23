@@ -24,12 +24,10 @@
   .small { background:var(--paper-alt); color:var(--ink); font-size:.85rem; font-weight:700; padding:8px 14px; border-radius:999px; }
   #chips { flex:1; display:flex; flex-wrap:wrap; justify-content:center; align-content:center; gap:10px; min-height:0; }
   .chip { flex:0 0 calc(25% - 8px); height:calc(50% - 5px); max-height:220px; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-card); display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--display); font-size:clamp(1.6rem,7vw,3.2rem); font-weight:700; }
-  /* Rahmen aus angedeuteten Maschen (wie der Schal im Logo) */
+  /* Angedeutete Naht: gestrichelte Maschenreihe innen am Rand */
   .chip { position:relative; }
-  .chip::before { content:''; position:absolute; inset:0; border-radius:inherit; padding:11px; pointer-events:none;
-    background:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 fill=%27%2322201B%27/%3E%3Cg fill=%27none%27 stroke=%27%23FBF6EC%27 stroke-width=%273%27 stroke-linecap=%27round%27%3E%3Cpath d=%27M4.5 2.8q2 2.4.4 4.8%27/%3E%3Cpath d=%27M12.5 10.8q2 2.4.4 4.8%27/%3E%3C/g%3E%3C/svg%3E") 0 0/16px 16px;
-    -webkit-mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0); -webkit-mask-composite:xor;
-    mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0); mask-composite:exclude; }
+  .st { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+  .st rect { x:6px; y:6px; width:calc(100% - 12px); height:calc(100% - 12px); rx:11px; fill:none; stroke:currentColor; stroke-width:3; stroke-linecap:round; stroke-dasharray:8 7; opacity:.8; }
   .chip.fade { opacity:.3; }
   .chip { cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; }
   .chip.count span { color:var(--coral); }
@@ -118,6 +116,7 @@ function parse(text) {
   return rows;
 }
 
+const SEAM = '<svg class="st" aria-hidden="true"><rect/></svg>';
 const DEFAULT_COLORS = { A: '#e53935', B: '#1e88e5' };
 let colors = DEFAULT_COLORS;
 try { colors = { ...DEFAULT_COLORS, ...JSON.parse(localStorage.getItem('colors') || '{}') }; } catch {}
@@ -156,7 +155,7 @@ function render() {
   const d = done[r] || 0;
   $('chips').innerHTML = page.map((c, i) => {
     const col = colors[c.c], fade = p * MAX_CHIPS + i < d ? ' fade' : '', st = col ? ` style="background:${col};color:${textOn(col)}"` : '';
-    return c.n > 1 ? `<div class="chip count${fade}" data-i="${i}"${st}><span${col ? ' style="color:inherit"' : ''}>${c.n}×</span>${c.s}</div>` : `<div class="chip${fade}" data-i="${i}"${st}>${c.s}</div>`;
+    return c.n > 1 ? `<div class="chip count${fade}" data-i="${i}"${st}><span${col ? ' style="color:inherit"' : ''}>${c.n}×</span>${c.s}${SEAM}</div>` : `<div class="chip${fade}" data-i="${i}"${st}>${c.s}${SEAM}</div>`;
   }).join('');
   $('back').disabled = r === 0 && p === 0;
   const last = r === rows.length - 1 && p === row.pages.length - 1;
