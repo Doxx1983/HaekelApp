@@ -26,6 +26,11 @@
   #setup textarea { flex:1; font:inherit; padding:10px; border-radius:10px; border:1px solid var(--muted); background:var(--chip); color:var(--fg); }
   #setup .row { display:flex; gap:10px; }
   #setup button { flex:1; padding:14px; border-radius:12px; background:var(--accent); color:#fff; font-weight:700; }
+  #colors { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  #colors label { display:flex; align-items:center; gap:4px; background:var(--chip); padding:4px 8px; border-radius:10px; }
+  #colors input { width:36px; height:30px; border:0; padding:0; background:none; }
+  #colors button { flex:0; padding:8px 12px; }
+  #dot { display:inline-block; width:.9em; height:.9em; border-radius:50%; vertical-align:middle; margin-left:6px; border:1px solid var(--muted); }
   body.setup #setup { display:flex; } body.setup #chips, body.setup #nav { display:none; }
 </style>
 </head>
@@ -38,7 +43,10 @@
 <div id="nav"><button id="back">‹ Zurück</button><button id="next">Weiter ›</button></div>
 <section id="setup">
   <p>Häkelanleitung als Textdatei laden oder hier einfügen. Beispiel:<br>
-  <code>R1: 6 fM in Fadenring<br>R2: 6 Zun<br>R3: (fM, Zun) x 6</code></p>
+  <code>R1: 6 fM in Fadenring<br>R2: 6 Zun<br>R3: (fM, Zun) x 6</code><br>
+  Englisch: <code>Row 1: Use color A, bs, 254sc, bs</code><br>
+  Farben (A, B, …) unten festlegen – die Maschen erscheinen dann in dieser Farbe.</p>
+  <div id="colors"></div>
   <textarea id="text" placeholder="R1: 6 fM in Fadenring"></textarea>
   <div class="row"><input type="file" id="file" accept=".txt,text/plain"><button id="ok">Starten</button></div>
 </section>
@@ -79,16 +87,42 @@ function chipsOf(stitches) {
 }
 
 function parse(text) {
-  const rows = [];
+  const rows = []; let color = '';
   for (const line of text.split(/\r?\n/)) {
     if (!line.trim()) continue;
-    const m = line.match(/^\s*(?:R|Reihe|Runde|Rd)\.?\s*(\d+)\s*[:.\-–]?\s*(.*)$/i);
-    const label = m ? m[1] : String(rows.length + 1), body = m ? m[2] : line;
+    const m = line.match(/^\s*(?:R|Row|Reihe|Runde|Round|Rnd|Rd)\.?\s*(\d+)\s*[:.\-–]?\s*(.*)$/i);
+    const label = m ? m[1] : String(rows.length + 1);
+    let body = m ? m[2] : line;
+    const cm = body.match(/(?:(?:use|wechsel\w*|nimm|change)\s+)?(?:to\s+|zu\s+)?(?:farbe|colou?r)\s+([\p{L}\d]+)/iu);
+    if (cm) { color = cm[1].toUpperCase(); body = body.replace(cm[0], '').replace(/^[\s:,;–-]+/, ''); }
     const chips = chipsOf(expand(body)), pages = [];
     for (let i = 0; i < chips.length; i += MAX_CHIPS) pages.push(chips.slice(i, i + MAX_CHIPS));
-    if (pages.length) rows.push({ label, pages });
+    if (pages.length) rows.push({ label, color, pages });
   }
   return rows;
+}
+
+const DEFAULT_COLORS = { A: '#e53935', B: '#1e88e5' };
+let colors = DEFAULT_COLORS;
+try { colors = { ...DEFAULT_COLORS, ...JSON.parse(localStorage.getItem('colors') || '{}') }; } catch {}
+const saveColors = () => { try { localStorage.setItem('colors', JSON.stringify(colors)); } catch {} };
+const textOn = hex => { const n = parseInt(hex.slice(1), 16);
+  return (0.299 * (n >> 16) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) > 150 ? '#222' : '#fff'; };
+const colorKeysIn = t => [...t.matchAll(/(?:farbe|colou?r)\s+([\p{L}\d]+)/giu)].map(m => m[1].toUpperCase());
+
+function renderColorPickers() {
+  const keys = [...new Set([...Object.keys(colors), ...colorKeysIn($('text').value)])].sort();
+  const box = $('colors'); box.innerHTML = '';
+  for (const k of keys) {
+    const l = document.createElement('label'), i = document.createElement('input');
+    i.type = 'color'; i.value = colors[k] || '#888888';
+    i.oninput = () => { colors[k] = i.value; saveColors(); };
+    l.append(k, i); box.append(l);
+  }
+  const b = document.createElement('button'); b.textContent = '+ Farbe';
+  b.onclick = () => { const n = (prompt('Name der Farbe (z. B. C)') || '').trim().toUpperCase();
+    if (n) { colors[n] = colors[n] || '#888888'; saveColors(); renderColorPickers(); } };
+  box.append(b);
 }
 
 const $ = id => document.getElementById(id);
@@ -99,10 +133,12 @@ function render() {
   if (!rows.length) { document.body.classList.add('setup'); return; }
   document.body.classList.remove('setup');
   const row = rows[r], page = row.pages[p];
-  $('row').textContent = `Reihe ${row.label}`;
+  const col = colors[row.color];
+  $('row').innerHTML = `Reihe ${row.label}` + (col ? `<span id="dot" style="background:${col}" title="Farbe ${row.color}"></span>` : '');
   $('pos').textContent = `Seite ${p + 1}/${row.pages.length} · ${r + 1}/${rows.length}`;
+  const style = col ? ` style="background:${col};color:${textOn(col)}"` : '';
   $('chips').innerHTML = page.map(c => c.n > 1
-    ? `<div class="chip count"><span>${c.n}×</span>${c.s}</div>` : `<div class="chip">${c.s}</div>`).join('');
+    ? `<div class="chip count"${style}><span${col ? ' style="color:inherit"' : ''}>${c.n}×</span>${c.s}</div>` : `<div class="chip"${style}>${c.s}</div>`).join('');
   $('back').disabled = r === 0 && p === 0;
   const last = r === rows.length - 1 && p === row.pages.length - 1;
   $('next').textContent = last ? 'Fertig ✓' : 'Weiter ›';
@@ -112,8 +148,9 @@ function render() {
 
 $('next').onclick = () => { if (p < rows[r].pages.length - 1) p++; else if (r < rows.length - 1) { r++; p = 0; } render(); };
 $('back').onclick = () => { if (p > 0) p--; else if (r > 0) { r--; p = rows[r].pages.length - 1; } render(); };
-$('menu').onclick = () => document.body.classList.add('setup');
-$('file').onchange = async e => { const f = e.target.files[0]; if (f) $('text').value = await f.text(); };
+$('menu').onclick = () => { renderColorPickers(); document.body.classList.add('setup'); };
+$('text').oninput = renderColorPickers;
+$('file').onchange = async e => { const f = e.target.files[0]; if (f) { $('text').value = await f.text(); renderColorPickers(); } };
 $('ok').onclick = () => {
   rows = parse($('text').value); r = p = 0;
   try { localStorage.setItem('pattern', $('text').value); } catch {}
@@ -125,6 +162,7 @@ try {
   if (t) { $('text').value = t; rows = parse(t); const s = JSON.parse(localStorage.getItem('pos') || '{}');
     if (rows[s.r] && rows[s.r].pages[s.p]) { r = s.r; p = s.p; } }
 } catch {}
+renderColorPickers();
 render();
 </script>
 </body>
