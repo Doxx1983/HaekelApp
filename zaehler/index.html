@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Isadody Reihenzähler</title>
+<meta name="theme-color" content="#FBF6EC">
+<link rel="stylesheet" href="../shared/isadody.css">
+<script src="../shared/store.js"></script>
+<style>
+  html,body { height:100%; }
+  body { display:flex; flex-direction:column; padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom); }
+  header { display:flex; justify-content:space-between; align-items:center; padding:10px 0; gap:10px; }
+  .title { display:flex; align-items:center; gap:12px; min-width:0; }
+  #count { font-family:var(--display); font-size:1.6rem; font-weight:700; line-height:1.1; }
+  #sub { font-size:.9rem; color:var(--ink-soft); }
+  button { -webkit-tap-highlight-color:transparent; }
+  .actions { display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex:none; }
+  #bar { height:8px; border-radius:999px; background:var(--paper-alt); border:1px solid var(--line); overflow:hidden; margin-bottom:10px; display:none; }
+  #bar i { display:block; height:100%; width:0; background:var(--coral); transition:width .3s; }
+  body.target #bar { display:block; }
+
+  /* Pop-it-Platte */
+  #wrap { flex:1; min-height:0; display:flex; align-items:center; justify-content:center; perspective:900px; }
+  #board { background:var(--paper-alt); border:1px solid var(--line); border-radius:28px; box-shadow:var(--shadow-soft); padding:var(--gap); display:grid; gap:var(--gap); }
+  .b { width:var(--size); height:var(--size); border-radius:50%; position:relative; touch-action:manipulation; user-select:none;
+    background:radial-gradient(circle at 35% 30%, #FFF4EE 0 8%, var(--tone) 38%, color-mix(in srgb, var(--tone), var(--ink) 18%) 100%);
+    box-shadow:0 4px 0 color-mix(in srgb, var(--tone), var(--ink) 30%), 0 6px 10px rgba(34,32,27,.18);
+    transform:translateY(-2px); transition:transform .09s, box-shadow .09s, background .09s; }
+  .b:active { transform:translateY(1px) scale(.96); }
+  /* Gedrückt: Blase nach innen gewölbt */
+  .b.on { transform:translateY(2px) scale(.94);
+    background:radial-gradient(circle at 60% 68%, color-mix(in srgb, var(--tone), #fff 35%) 0 10%, color-mix(in srgb, var(--tone), var(--ink) 12%) 70%);
+    box-shadow:inset 0 5px 10px rgba(34,32,27,.35), inset 0 -2px 3px rgba(255,255,255,.5), 0 1px 0 rgba(255,255,255,.6); }
+  .b.pop { animation:pop .18s ease-out; }
+  @keyframes pop { 0% { transform:translateY(-2px) scale(1); } 50% { transform:translateY(3px) scale(.86); } 100% { transform:translateY(2px) scale(.94); } }
+
+  #nav { display:flex; gap:10px; padding:12px 0; align-items:stretch; }
+  #minus { flex:0 0 22%; background:var(--paper-alt); border:1px solid var(--line); border-radius:999px; font-size:1.1rem; font-weight:700; }
+  #plus { flex:1; background:var(--coral); border-radius:999px; box-shadow:var(--shadow-soft); font-family:var(--display); font-size:1.9rem; font-weight:700; padding:18px 0; }
+
+  /* Einstellungen */
+  #setup { display:none; flex:1; flex-direction:column; gap:14px; overflow:auto; padding-bottom:12px; }
+  body.setup #setup { display:flex; } body.setup #wrap, body.setup #nav, body.setup #bar { display:none; }
+  .card { background:var(--paper-alt); border-radius:16px; padding:14px; display:flex; flex-direction:column; gap:10px; }
+  .card h2 { font-family:var(--display); font-size:1.15rem; margin:0; }
+  .card p { margin:0; font-size:.9rem; color:var(--ink-soft); }
+  .opts { display:flex; flex-wrap:wrap; gap:8px; }
+  .opts button { background:var(--paper); border:1px solid var(--line); border-radius:999px; padding:8px 14px; font-weight:700; min-width:48px; }
+  .opts button.on { border-color:var(--ink); background:var(--coral-soft); }
+  .card input { font:inherit; padding:10px 12px; border-radius:12px; border:1px solid var(--line); background:#fff; color:var(--ink); width:100%; }
+  .card label { display:flex; align-items:center; gap:10px; font-weight:700; }
+  .card label input { width:auto; }
+  .ghost { padding:12px; border-radius:999px; background:var(--paper); border:1px solid var(--line); font-weight:700; }
+</style>
+</head>
+<body>
+<header>
+  <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><div id="count">Reihe 0</div><div id="sub"></div></div></div>
+  <div class="actions"><a class="home" href="../">‹ Alle Apps</a><button class="small" id="menu">Einstellungen</button></div>
+</header>
+<div id="bar"><i></i></div>
+<main id="wrap"><div id="board"></div></main>
+<div id="nav"><button id="minus">− 1</button><button id="plus">Reihe fertig</button></div>
+<section id="setup">
+  <div class="card">
+    <h2>Blasen pro Platte</h2>
+    <p>Jede Blase ist eine Reihe. Ist die Platte voll, dreht sie sich um und es geht von vorn los.</p>
+    <div class="opts" id="sizes"></div>
+  </div>
+  <div class="card">
+    <h2>Ziel</h2>
+    <p>Wie viele Reihen hat das Teil? Leer lassen, wenn es kein Ziel gibt.</p>
+    <input id="target" type="number" min="1" inputmode="numeric" placeholder="z. B. 40">
+  </div>
+  <div class="card">
+    <h2>Stand</h2>
+    <input id="set" type="number" min="0" inputmode="numeric" aria-label="Aktuelle Reihe">
+    <label><input type="checkbox" id="sound"> Plopp-Geräusch</label>
+    <label><input type="checkbox" id="buzz"> Vibration</label>
+  </div>
+  <button class="ghost" id="reset">Auf 0 zurücksetzen</button>
+  <button class="btn" id="ok">Fertig</button>
+</section>
+<script>
+const SIZES = [6, 8, 10, 12, 16, 20, 24, 30];
+const TONES = ['#F2896B', '#F6A488', '#F8BBA3', '#FBD9CB', '#EFC9A6', '#E3B98F']; // Coral-Verlauf statt Regenbogen (CD)
+const store = Store('zaehler');
+const $ = id => document.getElementById(id);
+
+// Zustand: n Blasen pro Platte, flips = volle Platten, popped = gedrückte Blasen in Reihenfolge
+let s = { n:10, flips:0, popped:[], target:0, sound:true, buzz:true };
+s = { ...s, ...store.get('state', {}) };
+const save = () => store.set('state', s);
+const total = () => s.flips * s.n + s.popped.length;
+
+let ac;
+function feedback(down) {
+  if (s.buzz && navigator.vibrate) navigator.vibrate(down ? 12 : [6, 30, 6]);
+  if (!s.sound) return;
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
+    o.frequency.setValueAtTime(down ? 520 : 220, t);
+    o.frequency.exponentialRampToValueAtTime(down ? 140 : 440, t + .07);
+    g.gain.setValueAtTime(.25, t); g.gain.exponentialRampToValueAtTime(.001, t + .09);
+    o.connect(g).connect(ac.destination); o.start(t); o.stop(t + .1);
+  } catch {}
+}
+
+// Raster so wählen, dass die Blasen möglichst groß werden
+function layout() {
+  const w = $('wrap').clientWidth, h = $('wrap').clientHeight;
+  if (!w || !h) return;
+  let best = {};
+  for (let cols = 1; cols <= s.n; cols++) {
+    const rows = Math.ceil(s.n / cols);
+    const size = Math.min(w / (cols + (cols + 1) * .25), h / (rows + (rows + 1) * .25));
+    const score = size * (s.n % cols ? .9 : 1); // volle Reihen bevorzugen
+    if (score > best.score || !best.cols) best = { size, cols, score };
+  }
+  const size = Math.min(best.size, 110);
+  const b = $('board');
+  b.style.setProperty('--size', size + 'px');
+  b.style.setProperty('--gap', size * .25 + 'px');
+  b.style.gridTemplateColumns = `repeat(${best.cols}, var(--size))`;
+  b.dataset.cols = best.cols;
+}
+
+function build() {
+  const b = $('board'); b.innerHTML = '';
+  for (let i = 0; i < s.n; i++) {
+    const d = document.createElement('button');
+    d.className = 'b'; d.dataset.i = i; d.setAttribute('aria-label', 'Blase ' + (i + 1));
+    b.appendChild(d);
+  }
+  layout(); render();
+}
+
+function render() {
+  const cols = +$('board').dataset.cols || 1;
+  [...$('board').children].forEach((d, i) => {
+    d.style.setProperty('--tone', TONES[Math.floor(i / cols) % TONES.length]);
+    d.classList.toggle('on', s.popped.includes(i));
+  });
+  const t = total();
+  $('count').textContent = 'Reihe ' + t;
+  const parts = [`Platte ${s.flips + 1} · ${s.popped.length}/${s.n}`];
+  if (s.target) parts.push(t >= s.target ? 'Ziel erreicht' : `noch ${s.target - t}`);
+  $('sub').textContent = parts.join(' · ');
+  document.body.classList.toggle('target', !!s.target);
+  $('bar').firstChild.style.width = s.target ? Math.min(100, t / s.target * 100) + '%' : 0;
+}
+
+let flipping = false;
+function pop(i) {
+  if (flipping) return;
+  if (i == null) i = [...Array(s.n).keys()].find(k => !s.popped.includes(k));
+  const d = $('board').children[i];
+  s.popped.push(i); save(); feedback(true);
+  d.classList.remove('pop'); void d.offsetWidth; d.classList.add('pop');
+  render();
+  if (s.popped.length >= s.n) flip();
+}
+function unpop(i) {
+  if (flipping) return;
+  if (i == null) {
+    if (!s.popped.length) {
+      if (!s.flips) return;
+      s.flips--; s.popped = [...Array(s.n - 1).keys()]; // zurück auf die vorige Platte, letzte Blase wieder oben
+      save(); feedback(false); render(); return;
+    }
+    i = s.popped[s.popped.length - 1];
+  }
+  s.popped = s.popped.filter(k => k !== i); save(); feedback(false); render();
+}
+// Volle Platte umdrehen wie beim echten Pop-it
+function flip() {
+  flipping = true;
+  const b = $('board'), half = { duration:250, easing:'ease-in-out' };
+  setTimeout(async () => {
+    try { await b.animate([{ transform:'rotateY(0)' }, { transform:'rotateY(90deg)' }], half).finished; } catch {}
+    s.flips++; s.popped = []; save(); render();
+    try { await b.animate([{ transform:'rotateY(-90deg)' }, { transform:'rotateY(0)' }], half).finished; } catch {}
+    flipping = false;
+  }, 350);
+}
+
+$('board').addEventListener('click', e => {
+  const d = e.target.closest('.b'); if (!d) return;
+  const i = +d.dataset.i;
+  s.popped.includes(i) ? unpop(i) : pop(i);
+});
+$('plus').onclick = () => pop();
+$('minus').onclick = () => unpop();
+
+// Einstellungen
+function setTotal(t) { t = Math.max(0, Math.floor(t) || 0); s.flips = Math.floor(t / s.n); s.popped = [...Array(t % s.n).keys()]; }
+function openSetup() {
+  $('sizes').innerHTML = SIZES.map(n => `<button data-n="${n}" class="${n === s.n ? 'on' : ''}">${n}</button>`).join('');
+  $('target').value = s.target || ''; $('set').value = total();
+  $('sound').checked = s.sound; $('buzz').checked = s.buzz;
+  document.body.classList.add('setup');
+}
+$('sizes').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  [...$('sizes').children].forEach(x => x.classList.toggle('on', x === b));
+};
+$('menu').onclick = () => document.body.classList.contains('setup') ? $('ok').click() : openSetup();
+$('reset').onclick = () => { if (confirm('Zähler auf 0 zurücksetzen?')) $('set').value = 0; };
+$('ok').onclick = () => {
+  const on = $('sizes').querySelector('.on');
+  s.n = on ? +on.dataset.n : s.n;
+  s.target = Math.max(0, parseInt($('target').value) || 0);
+  s.sound = $('sound').checked; s.buzz = $('buzz').checked;
+  setTotal(+$('set').value);
+  save(); document.body.classList.remove('setup'); build();
+};
+
+addEventListener('resize', () => { layout(); render(); });
+build();
+</script>
+</body>
+</html>
