@@ -1,22 +1,28 @@
 /* Isadody Corporate Design – gemeinsam für alle Apps der Sammlung (Tokens aus dem Design-System) */
 @import url('fonts/fonts.css');
-:root { --paper:#FBF6EC; --paper-alt:#F5EBD8; --ink:#22201B; --ink-soft:#5B5347; --coral:#F2896B; --coral-soft:#FBD9CB; --line:#D8CBB0;
+:root { --paper:#FBF6EC; --paper-alt:#F5EBD8; --ink:#22201B; --ink-soft:#5B5347; --coral:#F2896B; --coral-soft:#FBD9CB; --line:#D8CBB0; --field:#9C8B6E;
   --display:'Baloo 2',system-ui,sans-serif; --body:'Nunito',system-ui,sans-serif;
   --shadow-card:0 2px 8px rgba(34,32,27,.08); --shadow-soft:0 8px 24px rgba(34,32,27,.14); }
 * { box-sizing:border-box; }
 html,body { margin:0; }
 body { background:var(--paper); color:var(--ink); font-family:var(--body); }
 button { font:inherit; border:0; cursor:pointer; color:var(--ink); }
+/* Häkchen und Regler in CD-Farbe statt Browser-Blau */
+input { accent-color:var(--coral); }
+/* Rand für Eingabefelder: mind. 3:1 Kontrast auf Weiß */
+:root { --field-border:1px solid var(--field); }
 /* Logo: nie einfärben oder verzerren, Höhe mind. 64 px */
 .logo { height:64px; width:auto; mix-blend-mode:multiply; flex:none; }
 /* kleiner runder Knopf, z. B. im Kopf */
-.small { background:var(--paper-alt); color:var(--ink); font-size:.85rem; font-weight:700; padding:8px 14px; border-radius:999px; }
+.small { display:inline-flex; align-items:center; justify-content:center; text-decoration:none; background:var(--paper-alt); color:var(--ink); font-size:.85rem; font-weight:700; padding:8px 14px; border-radius:999px; min-height:44px; }
 /* Hauptknopf: Coral mit Schwarzbraun als Text */
 .btn { background:var(--coral); color:var(--ink); font-weight:800; padding:14px 22px; border-radius:999px; box-shadow:var(--shadow-soft); }
 /* Link zurück zur Startseite der Sammlung */
-.home { color:var(--ink-soft); font-size:.85rem; font-weight:700; text-decoration:none; white-space:nowrap; }
+.home { display:inline-flex; align-items:center; min-height:44px; padding:0 6px; color:var(--ink-soft); font-size:.85rem; font-weight:700; text-decoration:none; white-space:nowrap; }
 .home:hover { color:var(--ink); }
 /* Hilfeknopf im Kopf jeder App, führt zu hilfe/ im App-Ordner */
-.help { display:inline-grid; place-items:center; width:32px; height:32px; padding:0; border-radius:50%; background:var(--paper-alt); color:var(--ink); font-family:var(--display); font-size:1.05rem; font-weight:700; line-height:1; text-decoration:none; flex:none; }
+.help { position:relative; display:inline-grid; place-items:center; width:32px; height:32px; padding:0; border-radius:50%; background:var(--paper-alt); color:var(--ink); font-family:var(--display); font-size:1.05rem; font-weight:700; line-height:1; text-decoration:none; flex:none; }
 .help:hover { background:var(--coral-soft); }
-.tools { display:flex; align-items:center; gap:8px; }
+/* Tippfläche 44 px, sichtbar bleibt der kleine Kreis */
+.help::after { content:''; position:absolute; inset:-6px; }
+.tools { display:flex; align-items:center; gap:4px; }
