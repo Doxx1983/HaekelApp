@@ -74,6 +74,6 @@ Bild laden, Breite (Maschen), Höhe (Reihen) und Farbanzahl wählen → Raster f
 
 - **Farbreduktion** im Lab-Farbraum: k-means mit vielen Gruppen, dann ähnlichste Gruppen (Ward) zusammenlegen; kleine, deutlich andere Flächen bleiben so erhalten. Optional werden Einzelmaschen geglättet.
 - **Richtung:** Reihe 1 unten, Rechtshänder beginnen rechts; in Reihen abwechselnd, in Runden immer gleich. „Linkshändig“ spiegelt das.
-- **Bearbeiten:** Farben der Legende ändern (Palette, Hex), einzelne Maschen malen, Rückgängig.
+- **Bearbeiten:** Farben der Legende ändern (Palette, Hex), einzelne Maschen malen, Rückgängig und Wiederholen (Malen und Farbänderungen).
 - **Ausgabe:** Raster als PNG, Anleitung als Text/.txt, „Im Häkelhelfer öffnen“ schreibt die Anleitung (`Reihe n: Farbe A, 5 fM, …`) samt Farben in den Speicher von `anleitung/`.
 - Gespeichert unter `grid.state` und `grid.src` (verkleinertes Bild). Kernfunktionen (`quantize`, `despeckle`, `instructions`, `toHelper`) laufen auch mit `node`.

@@ -16,6 +16,7 @@
   .sub { font-size:.9rem; color:var(--ink-soft); }
   .btn { cursor:pointer; text-decoration:none; display:inline-block; text-align:center; }
   .small { border:1px solid var(--line); white-space:nowrap; }
+  button:disabled { opacity:.4; cursor:default; }
   .small.on { border-color:var(--ink); background:var(--coral-soft); }
   section { background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-card); padding:14px; margin:12px 0; }
   .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-top:12px; }
@@ -85,6 +86,7 @@
       <button class="small" id="zoomFit">Ganzes Bild</button>
       <button class="small" id="paint">✎ Malen</button>
       <button class="small" id="undo" disabled>↶ Rückgängig</button>
+      <button class="small" id="redo" disabled>↷ Wiederholen</button>
       <button class="small" id="png">Bild speichern</button>
     </div>
     <div id="wrap"><canvas id="chart"></canvas></div>
@@ -237,7 +239,7 @@ const textOn = hex => { const n = parseInt(hex.slice(1), 16); return (0.299 * (n
 
 let img = null, src = '', aspect = 1; // Quelle, verkleinert als JPEG (wird mitgespeichert)
 let G = null; // { w, h, palette, cells }
-let sel = 0, zoom = 1, painting = false, undo = [];
+let sel = 0, zoom = 1, painting = false, undo = [], redo = [];
 const opts = () => ({ w: +$('cols').value, h: +$('rowsN').value, k: +$('ncol').value, mode: $('mode').value, left: $('left').checked, smooth: $('smooth').checked });
 const clamp = (v, a, b) => Math.max(a, Math.min(b, Math.round(v) || a));
 const store = Store('grid');
@@ -262,7 +264,7 @@ function build() {
   const o = opts();
   const q = quantize(sample(o.w, o.h), o.k);
   G = { w: o.w, h: o.h, ...compact(q.palette, o.smooth ? despeckle(q.cells, o.w, o.h) : q.cells) };
-  sel = Math.min(sel, G.palette.length - 1); undo = []; draw(); save();
+  sel = Math.min(sel, G.palette.length - 1); undo = []; redo = []; draw(); save();
 }
 
 // ---- Zeichnen ----
@@ -302,7 +304,7 @@ function draw() {
   $('cast').textContent = `${G.w} × ${G.h} Maschen. ` + castOn(G.w, o.mode);
   $('rows').innerHTML = ins.slice().reverse().map(r => `<li><b>${rowLabel(o.mode)} ${r.n}</b><span class="d">${r.right ? '← von rechts' : 'von links →'}</span>` +
     r.runs.map(([c, k]) => `<span class="s"><i style="background:${G.palette[c]}"></i>${k} ${LETTERS[c]}</span>`).join('') + '</li>').join('');
-  $('undo').disabled = !undo.length;
+  $('undo').disabled = !undo.length; $('redo').disabled = !redo.length;
   if ($('editor').classList.contains('open')) openEditor();
 }
 
@@ -312,7 +314,10 @@ function openEditor() {
   $('pal').innerHTML = PRESETS.map(p => `<button data-c="${p}" style="background:${p}" aria-label="${p}"></button>`).join('');
   $('hex').value = G.palette[sel]; $('prev').style.background = G.palette[sel];
 }
-const setColor = hex => { G.palette[sel] = hex.toUpperCase(); draw(); save(); };
+// Verlauf für Rückgängig: Maschen und Farben (Malen und Farbänderungen)
+const state = () => ({ cells: G.cells.slice(), palette: G.palette.slice() });
+const snap = () => { undo.push(state()); if (undo.length > 30) undo.shift(); redo = []; $('undo').disabled = false; $('redo').disabled = true; };
+const setColor = hex => { hex = hex.toUpperCase(); if (hex === G.palette[sel]) return; snap(); G.palette[sel] = hex; draw(); save(); };
 $('legend').onclick = e => {
   const b = e.target.closest('button'); if (!b) return;
   const i = +b.dataset.i, again = i === sel && $('editor').classList.contains('open');
@@ -320,8 +325,10 @@ $('legend').onclick = e => {
   draw();
 };
 $('pal').onclick = e => { const b = e.target.closest('button'); if (b) setColor(b.dataset.c); };
-$('hex').oninput = () => { let v = $('hex').value.trim(); if (v && v[0] !== '#') v = '#' + v; if (/^#[0-9a-f]{6}$/i.test(v)) { G.palette[sel] = v.toUpperCase(); $('prev').style.background = v; drawChart($('chart'), cellSize()); $('legend').querySelector('.on i').style.background = v; save(); } };
-$('hex').onchange = draw;
+let hexSnap = false; // eine Hex-Eingabe = ein Schritt im Verlauf
+$('hex').onfocus = () => { hexSnap = false; };
+$('hex').oninput = () => { let v = $('hex').value.trim(); if (v && v[0] !== '#') v = '#' + v; if (/^#[0-9a-f]{6}$/i.test(v) && v.toUpperCase() !== G.palette[sel]) { if (!hexSnap) { snap(); hexSnap = true; } G.palette[sel] = v.toUpperCase(); $('prev').style.background = v; drawChart($('chart'), cellSize()); $('legend').querySelector('.on i').style.background = v; save(); } };
+$('hex').onchange = () => { hexSnap = false; draw(); };
 
 // ---- Malen ----
 $('paint').onclick = () => { painting = !painting; $('paint').classList.toggle('on', painting); $('chart').classList.toggle('paint', painting); };
@@ -332,10 +339,12 @@ function paintAt(e) {
   if (x < 0 || y < 0 || x >= G.w || y >= G.h || G.cells[y * G.w + x] === sel) return;
   G.cells[y * G.w + x] = sel; drawChart($('chart'), cs);
 }
-$('chart').onpointerdown = e => { if (!painting) return; down = true; undo.push(G.cells.slice()); if (undo.length > 30) undo.shift(); $('chart').setPointerCapture(e.pointerId); paintAt(e); };
+$('chart').onpointerdown = e => { if (!painting) return; down = true; snap(); $('chart').setPointerCapture(e.pointerId); paintAt(e); };
 $('chart').onpointermove = e => { if (down) paintAt(e); };
 $('chart').onpointerup = $('chart').onpointercancel = () => { if (!down) return; down = false; draw(); save(); };
-$('undo').onclick = () => { if (undo.length) { G.cells = undo.pop(); draw(); save(); } };
+const step = (from, to) => { if (!from.length) return; to.push(state()); ({ cells: G.cells, palette: G.palette } = from.pop()); hexSnap = false; draw(); save(); };
+$('undo').onclick = () => step(undo, redo);
+$('redo').onclick = () => step(redo, undo);
 
 // ---- Einstellungen ----
 $('file').onchange = e => {
