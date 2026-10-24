@@ -31,8 +31,9 @@
     <li><span class="k">+ Neues Projekt</span> öffnet ein leeres Projekt. Anleitung laden oder einfügen, Namen geben, <span class="k">Starten</span>.</li>
     <li><span class="k">×</span> löscht ein Projekt nach einer Rückfrage.</li>
     <li>Sind 10 Projekte gespeichert, lösche erst eins, bevor du ein neues anlegst.</li>
+    <li><span class="k">Zähler</span> oben rechts öffnet den <a href="../../zaehler/">Reihenzähler</a> dieses Projekts. Jedes Projekt hat einen eigenen Zähler; auf dem Knopf steht sein Stand. Löschst du das Projekt, ist auch sein Zähler weg.</li>
   </ul>
-  <p>Darunter bearbeitest du das aktive Projekt: Namen, Farben und Anleitung. <span class="k">Weiterhäkeln</span> übernimmt die Änderungen. Änderst du dabei die Anleitung, beginnt der Fortschritt wieder bei Reihe 1. Nochmal <span class="k">Projekte</span> antippen führt ohne Änderung zurück.</p>
+  <p>Darunter bearbeitest du das aktive Projekt: Namen, Farben und Anleitung. <span class="k">Weiterhäkeln</span> übernimmt die Änderungen. Änderst du dabei die Anleitung, z. B. um einen Tippfehler zu korrigieren, bleiben Position und Häkchen der unveränderten Reihen erhalten; nur geänderte Reihen beginnen von vorn. Nochmal <span class="k">Projekte</span> antippen führt ohne Änderung zurück.</p>
 </section>
 
 <section id="laden">
@@ -49,6 +50,7 @@
   <h2>Häkeln</h2>
   <ul>
     <li>Oben links steht die aktuelle <b>Reihe</b>, darunter Seite und Position, z. B. „Seite 1/3 · 4/20“ (Seite 1 von 3 dieser Reihe, Reihe 4 von 20). Farbpunkte neben der Reihe zeigen die Garnfarben auf dieser Seite.</li>
+    <li>Dahinter steht die <b>Maschenzahl am Reihenende</b>, z. B. <b>18 M</b>. Steht sie in der Anleitung (z. B. „(18)“), nimmt die App diese Zahl. Sonst zählt sie selbst: Zunahme = 2 Maschen, Abnahme = 1, Luftmaschen, Kettmaschen und Wenden zählen nicht. Passen die Maschen der Reihe nicht zur Zahl in der Anleitung, erscheint <b>⚠ gezählt 17</b>. Dann lohnt ein Blick in die Anleitung.</li>
     <li>Pro Seite siehst du höchstens <b>8 Kacheln</b>. Lange Reihen sind auf mehrere Seiten verteilt.</li>
     <li>Bis zu 3 gleiche Maschen hintereinander bekommen je eine eigene Kachel. Ab 4 gleichen Maschen gibt es eine Kachel mit Anzahl, z. B. <b>10× fM</b>.</li>
     <li><span class="k">Weiter ›</span> zeigt die nächste Seite oder Reihe, <span class="k">‹ Zurück</span> die vorige. Auf der letzten Seite steht <b>Fertig ✓</b>.</li>
@@ -65,17 +67,24 @@
   <h2>So schreibst du Anleitungen</h2>
   <h3>Reihen</h3>
   <p>Jede Zeile beginnt mit einer Reihennummer. Erlaubt sind <code>R</code>, <code>Reihe</code>, <code>Runde</code> und auf Englisch <code>Row</code>, <code>Round</code>, <code>Rnd</code>, <code>Rd</code>, danach die Nummer und gern ein Doppelpunkt. Die Maschen trennst du mit Kommas.</p>
+  <p>Mehrere gleiche Reihen auf einmal: <code>R12-14: 30 fM</code>, auch <code>Runde 5 bis 8</code> oder <code>Rows 20 to 25</code>. Die App zeigt dann jede Reihe einzeln.</p>
+  <p>Die Maschenzahl am Ende in Klammern darf stehen, z. B. <code>(18)</code>, <code>[18]</code>, <code>(18 M)</code> oder <code>= 18 M</code>. Sie erscheint beim Häkeln oben.</p>
   <pre>R1: 6 fM in Fadenring
 R2: 6 Zun
-R3: (fM, Zun) x 6</pre>
-  <p>Die Kürzel (<code>fM</code>, <code>Stb</code>, <code>Zun</code>, <code>sc</code>, <code>dc</code>, <code>bs</code> …) zeigt die App so, wie sie dastehen. Zusätze nach dem Kürzel wie „in Fadenring“ werden weggelassen.</p>
+R3: (fM, Zun) x 6 (18)</pre>
+  <p>Die Kürzel (<code>fM</code>, <code>Stb</code>, <code>Zun</code>, <code>sc</code>, <code>dc</code>, <code>bs</code> …) zeigt die App so, wie sie dastehen. Zusätze nach dem Kürzel wie „in Fadenring“ werden weggelassen. Auch Kürzel mit Zahl oder aus zwei Wörtern bleiben ganz: <code>sc2tog</code>, <code>dc2tog</code>, <code>sl st</code>, <code>inv dec</code>, <code>magic ring</code>, <code>2 fM zus.</code></p>
+  <h3>Maschenglied</h3>
+  <p><code>BLO</code>, <code>FLO</code>, <code>hMg</code>, <code>vMg</code> oder „im hinteren Maschenglied“ vor oder hinter dem Kürzel erscheint mit auf der Kachel, z. B. <b>sc BLO</b>. Steht es allein am Anfang der Reihe (<code>Rd 8 (BLO): 30 sc</code> oder <code>BLO: 30 sc</code>), gilt es für die ganze Reihe.</p>
   <h3>Überschriften und Notizen</h3>
   <p>Hat die Anleitung nummerierte Reihen, sind alle anderen Zeilen (Titel, Material, Hinweise) nur Text und erscheinen nicht als Maschen. Ein Farbwechsel darin (z. B. „Farbe A“) gilt trotzdem. Gibt es gar keine Reihennummern, ist jede Zeile eine Reihe.</p>
   <h3>Anzahl und Wiederholungen</h3>
   <ul>
-    <li>Anzahl vor dem Kürzel, mit oder ohne Leerzeichen: <code>6 fM</code>, <code>254sc</code></li>
+    <li>Anzahl vor dem Kürzel, mit oder ohne Leerzeichen: <code>6 fM</code>, <code>254sc</code>, oder dahinter: <code>sc 5</code>, <code>inc x 6</code>, <code>sc in next 5 sts</code></li>
     <li>Klammer mit Anzahl dahinter: <code>(fM, Zun) x 6</code>, auch <code>× 6</code> oder <code>* 6</code></li>
-    <li>oder Anzahl mit x: <code>(3 fM, Abn) 5x</code></li>
+    <li>oder Anzahl mit x: <code>(3 fM, Abn) 5x</code>, <code>6x (2 fM, Zun)</code>, mit Wörtern: <code>6x wiederholen</code>, <code>repeat 6 times</code></li>
+    <li>Statt runder Klammern gehen auch <code>[…]</code> und Sternchen: <code>*2 fM, Zun* 6x</code></li>
+    <li>Wiederholung ab Sternchen: <code>*3 fM, Zun, ab * noch 5x wiederholen</code> oder <code>*sc 3, inc; rep from * 5 more times</code> (zusammen 6×)</li>
+    <li>Ohne Anzahl, aber mit Maschenzahl am Ende füllt die App auf: <code>fM in jede M (24)</code>, <code>sc around (30)</code>, <code>(sc, inc) around (18)</code>. Ohne Maschenzahl bleibt es eine Kachel.</li>
     <li>Klammern dürfen verschachtelt sein: <code>(2 fM, (fM, Zun) x 2) x 3</code></li>
   </ul>
   <h3>Englische Anleitungen</h3>
@@ -100,7 +109,9 @@ Reihe 3: Wechsel zu Farbe C: 8 fM</pre>
 
 <section id="speicher">
   <h2>Speichern</h2>
-  <p>Alle Projekte mit Anleitung, Position, Fortschritt und Farben bleiben in diesem Browser auf diesem Gerät gespeichert, auch nach dem Schließen. Auf einem anderen Gerät oder in einem privaten Fenster sind sie nicht da.</p>
+  <p>Alle Projekte mit Anleitung, Position, Fortschritt und Farben bleiben in diesem Browser auf diesem Gerät gespeichert, auch nach dem Schließen. Auf einem anderen Gerät oder in einem privaten Fenster sind sie nicht da. Hast du den Häkelhelfer in zwei Tabs offen, übernimmt jeder den Stand des anderen.</p>
+  <p>Sichern kannst du alles auf der <a href="../../">Startseite</a> unter <b>Deine Daten sichern</b>: eine Datei mit Projekten, Zählern, Grid und Sammlung. Dort steht auch, wann du zuletzt gesichert hast. Auf dem iPhone die Seite über „Teilen“ → „Zum Home-Bildschirm“ hinzufügen, sonst löscht Safari die Daten nach 7 Tagen ohne Nutzung.</p>
+  <p>Ist der Speicher im Browser voll, meldet die App das. Dann sichern und Altes löschen.</p>
   <p>Aus dem <a href="../../grid/">Grid-Ersteller</a> und der <a href="../../muster/">Mustersammlung</a> kannst du Anleitungen direkt hierher schicken. Sie werden ein neues Projekt. Ist die Anleitung schon ein Projekt, geht es dort weiter.</p>
 </section>
 

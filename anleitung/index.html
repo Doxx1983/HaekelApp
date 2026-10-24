@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Isadody Häkelhelfer</title>
 <meta name="theme-color" content="#FBF6EC">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../shared/icon-180.png">
 <link rel="stylesheet" href="../shared/isadody.css">
 <script src="../shared/store.js"></script>
 <script src="../shared/muster-db.js"></script>
@@ -17,6 +19,8 @@
   .title { display:flex; align-items:center; gap:12px; }
   #row { font-family:var(--display); font-size:1.6rem; font-weight:700; color:var(--ink); }
   #pos { font-size:.9rem; color:var(--ink-soft); }
+  #pos b { color:var(--ink); } #pos .warn { white-space:nowrap; color:var(--ink); background:var(--coral-soft); border-radius:999px; padding:0 8px; font-weight:700; }
+  #zlink { text-decoration:none; }
   .actions { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
   #chips { flex:1; display:flex; flex-wrap:wrap; justify-content:center; align-content:center; gap:10px; min-height:0; }
   .chip { flex:0 0 calc(25% - 8px); height:calc(50% - 5px); max-height:220px; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-card); display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--display); font-size:clamp(1.6rem,7vw,3.2rem); font-weight:700; }
@@ -83,7 +87,7 @@
 <body>
 <header>
   <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><div id="row">Häkelhelfer</div><div id="pos"></div></div></div>
-  <div class="actions"><div class="tools"><a class="home" href="../">‹ Alle Apps</a><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div><button class="small" id="menu">Projekte</button></div>
+  <div class="actions"><div class="tools"><a class="home" href="../">‹ Alle Apps</a><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div><div class="tools"><a class="small" id="zlink" href="../zaehler/">Zähler</a><button class="small" id="menu">Projekte</button></div></div>
 </header>
 <main id="chips"></main>
 <div id="nav"><button id="back">‹ Zurück</button><button id="next">Weiter ›</button></div>
@@ -120,21 +124,82 @@ function splitTop(s) {
 }
 
 const COLOR_RE = /^(?:(?:use|wechsel\w*|nimm|change)\s+)?(?:(?:to|zu)\s+)?(?:farbe|colou?r)\s+([\p{L}\d]+)/iu;
+// Maschenglied: BLO/FLO bzw. hMg/vMg, vor oder hinter dem Kürzel
+const MOD = String.raw`(?:BLO|FLO|BL|FL|hMg|vMg|hinter\w*\s+Maschenglied\w*|vorder\w*\s+Maschenglied\w*)`;
+const MOD_RE = new RegExp(String.raw`^(?:(?:in|im|ins|into|nur|only|the)\s+)*(${MOD})(?:\s+(?:only|nur))?(?![\p{L}\d])[\s:]*`, 'iu');
+const MOD_AFTER = new RegExp(String.raw`^\s*(?:(?:in|ins|into|nur|only|the)\s+)*(${MOD})(?![\p{L}\d])`, 'iu');
+const modName = m => /^(BLO?|hint|hMg)/i.test(m) ? (/^[hH]/.test(m) ? 'hMg' : 'BLO') : (/^[vV]/.test(m) ? 'vMg' : 'FLO');
+// Kürzel aus zwei Wörtern, sonst ein Wort wie fM, sc2tog, Stb-Büschel
+const PHRASE = /^(?:sl\.?\s*st|inv(?:isible)?\.?\s*dec|inv\.?\s*abn\w*|unsichtbare?\s+abn\w*|magic\s+(?:ring|circle)|magischer\s+ring)\b/i;
+const WORD = /^[A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß\d]*(?:-[A-Za-zÄÖÜäöüß]+)*/;
+const FILL = /\b(?:each|every|all|around|across|jede\w*|alle\w*|rundherum|ringsum)\b/i;
 
-// ctx.color = aktuelle Garnfarbe; Farbwechsel mitten in der Reihe wirken ab dieser Stelle
+// Eine Masche (ohne Klammern): {s, n, fill}
+function stitchOf(part) {
+  let p = part, n = 1, m;
+  const num = () => { if ((m = p.match(/^(\d+)\s*(?:[x×*]\s*)?/))) { n = +m[1]; p = p.slice(m[0].length); } };
+  num();
+  let mod = ''; if ((m = p.match(MOD_RE))) { mod = modName(m[1]); p = p.slice(m[0].length); num(); }
+  if (!p && mod) return { mod };
+  let s;
+  if ((m = p.match(/^(fM|Stb|hStb|DStb|M)\s+zus\w*\.?(?:\s+abm\w*\.?)?/i)) && n > 1) { s = `${n} ${m[1]} zus.`; n = 1; }
+  else if ((m = p.match(PHRASE) || p.match(WORD))) s = m[0].replace(/\s+/g, ' ');
+  else return null;
+  let rest = p.slice(m[0].length), k;
+  if ((k = rest.match(MOD_AFTER))) { mod = mod || modName(k[1]); rest = rest.slice(k[0].length); }
+  let explicit = n > 1;
+  if ((k = rest.match(/^\s*(?:[x×*]\s*(\d+)|(\d+)\s*(?:[x×]|mal\b|times?\b)?)(?![\d.,]*\d)/i))) { n *= +(k[1] || k[2]); explicit = true; }
+  else if ((k = rest.match(/\b(?:next|nächsten|folgenden)\s+(\d+)\b/i))) { n *= +k[1]; explicit = true; }
+  return { s: mod ? `${s} ${mod}` : s, n, fill: !explicit && FILL.test(rest) };
+}
+
+// Text einer Reihe vereinheitlichen: [..], {..}, *..* → (..); „6x wiederholen“, „repeat 6 times“ → x 6; „rep from * 5 more times“
+function normalize(s) {
+  s = s.replace(/\*([^*]*?)[,;]?\s*(?:rep(?:eat)?\.?\s+(?:from\s+)?\*\s*(?:(\d+)\s*(more\s+)?times?|around|across|to\s+(?:the\s+)?end)|(?:(?:wdh\.?|wiederhole\w*)\s+)?(?:ab|von)\s+\*\s*(?:(noch\s+|weitere\s+)?(\d+)\s*(?:[x×]|-?mal)\s*(?:wiederhol\w*|wdh\.?)?|(?:wiederhol\w*\s+)?(?:rundherum|ringsum|bis\s+(?:zum\s+)?\w*ende)\s*(?:wiederhol\w*)?))/gi,
+    (a, body, n1, more, noch, n2) => `(${body}) x ${n1 ? +n1 + (more ? 1 : 0) : n2 ? +n2 + (noch ? 1 : 0) : 0}`);
+  s = s.replace(/\*([^*]+)\*/g, '($1)').replace(/[\[{]/g, '(').replace(/[\]}]/g, ')');
+  s = s.replace(/\)\s*(?:(?:wiederhol\w*|wdh\.?|repeat|rep)\s+)?(?:[x×*]\s*(\d+)|(\d+)\s*(?:[x×*]|-?mal\b|times?\b))(?:\s*(?:times?|mal)\b)?(?:\s*(?:wiederhol\w*|wdh\.?|repeat|insgesamt|total)\b)*/gi,
+    (a, n1, n2) => `) x ${n1 || n2}`);
+  s = s.replace(/\)\s*(?:(?:rep(?:eat)?|wiederhol\w*)\s+)?(?:around|across|to\s+(?:the\s+)?end|rundherum|ringsum|bis\s+(?:zum\s+)?\w*ende)(?:\s*wiederhol\w*)?/gi, ') x 0');
+  return s;
+}
+
+// ctx.color = aktuelle Garnfarbe; Farbwechsel mitten in der Reihe wirken ab dieser Stelle.
+// Ergebnis: Maschen {s, c} und höchstens eine Füllgruppe {fill: [...]} („rundherum“, „in jede M“), die parse() auf die Maschenzahl auffüllt
 function expand(s, ctx) {
   const res = [];
   for (let part of splitTop(s)) {
     let c = part.match(COLOR_RE);
     if (c) { ctx.color = c[1].toUpperCase(); part = part.slice(c[0].length).replace(/^[\s:;–-]+/, ''); if (!part) continue; }
-    let m = part.match(/^\((.*)\)\s*(?:[x×*]\s*(\d+)|(\d+)\s*[x×*])$/i);
-    if (m) { const n = +(m[2] || m[3]); for (let i = 0; i < n; i++) res.push(...expand(m[1], ctx)); continue; }
-    m = part.match(/^(?:(\d+)\s*)?([A-Za-zÄÖÜäöüß]+)/);
-    if (!m) continue;
-    for (let i = 0; i < (+m[1] || 1); i++) res.push({ s: m[2], c: ctx.color });
+    let m = part.match(/^\((.*)\)\s*x\s*(\d+)/i) || part.match(/^(\d+)\s*[x×]\s*\((.*)\)/i);
+    if (m) {
+      const [body, n] = /^\(/.test(part) ? [m[1], +m[2]] : [m[2], +m[1]];
+      const inner = expand(body, { ...ctx, mod: '' }); ctx.color = inner.color;
+      if (!n) { res.push({ fill: inner.list }); continue; }
+      for (let i = 0; i < n; i++) res.push(...inner.list);
+      continue;
+    }
+    if ((m = part.match(/^\((.*)\)$/))) { const inner = expand(m[1], ctx); ctx.color = inner.color; res.push(...inner.list); continue; }
+    const st = stitchOf(part);
+    if (!st) continue;
+    if (!st.s) { ctx.mod = st.mod; continue; } // „BLO:“ gilt für den Rest der Reihe
+    const name = ctx.mod && !/ (BLO|FLO|hMg|vMg)$/.test(st.s) && weight(st.s) ? `${st.s} ${ctx.mod}` : st.s;
+    const one = () => ({ s: name, c: ctx.color });
+    if (st.fill) res.push({ fill: [one()] });
+    else for (let i = 0; i < st.n; i++) res.push(one());
   }
-  return res;
+  return Object.assign(res, { list: res, color: ctx.color });
 }
+
+// Maschen, die eine Masche ergibt: Zunahme 2, Lm/Km/Wenden 0, sonst 1. known = sicher gezählt (für die Kontrolle)
+function weight(s) {
+  const t = s.toLowerCase().replace(/ (blo|flo|hmg|vmg)$/, '');
+  if (/^(inc|zun\w*|zu)$/.test(t)) return 2;
+  if (/^(ch|lm|luftm\w*|sl st|ss|km|kettm\w*|turn|wenden?|mr|magic \w+|magischer ring|fadenring|fr)$/.test(t)) return 0;
+  return 1;
+}
+const known = s => /^(sc|fm|hdc|hstb|dc|stb|tr|dstb|dtr|inc|zun\w*|zu|dec|abn\w*|\w+tog|\d \w+ zus\.|inv dec|inv abn\w*|unsichtbare? abn\w*|turn|wenden?|mr|magic \w+|magischer ring|fadenring)$/
+  .test(s.toLowerCase().replace(/ (blo|flo|hmg|vmg)$/, ''));
 
 function chipsOf(stitches) {
   const chips = [], same = (a, b) => a.s === b.s && a.c === b.c;
@@ -148,18 +213,36 @@ function chipsOf(stitches) {
   return chips;
 }
 
+// Reihe: {label, pages, count (Maschen am Ende), target (Zahl aus der Anleitung, z. B. „(18)“), check (gezählt ≠ Anleitung)}
+const ROW = /^\s*(?:Reihen|Reihe|Runden|Runde|Rounds|Round|Rows|Row|Rnds|Rnd|Rds|Rd|R)\.?\s*(\d+)(?:\s*(?:-|–|—|bis|to)\s*(?:Reihe|Runde|Round|Row|Rnd|Rd|R)?\.?\s*(\d+)(?=\s*(?:[:.)(]|$)))?\s*[:.\-–)]?\s*(.*)$/i;
+const TARGET = /\s*(?:[(\[{]\s*(\d+)\s*(?:M|Maschen|Masche|st|sts|stitches|fM|sc)?\.?\s*[)\]}]|(?:=|–|—|\s-)\s*(\d+)\s*(?:M|Maschen|st|sts|stitches)?\.?)\s*\.?\s*$/i;
 function parse(text) {
-  const rows = [], ctx = { color: '' }, ROW = /^\s*(?:R|Row|Reihe|Runde|Round|Rnd|Rd)\.?\s*(\d+)\s*[:.\-–]?\s*(.*)$/i;
+  const rows = [], ctx = { color: '' };
   const lines = text.split(/\r?\n/), numbered = lines.some(l => ROW.test(l));
   for (const line of lines) {
     if (!line.trim()) continue;
     const m = line.match(ROW);
     // Gibt es nummerierte Reihen, sind andere Zeilen Überschriften oder Notizen: keine Maschen, nur Farbwechsel zählen
     if (!m && numbered) { expand(line, ctx); continue; }
-    const label = m ? m[1] : String(rows.length + 1);
-    const chips = chipsOf(expand(m ? m[2] : line, ctx)), pages = [];
+    let body = m ? m[3] : line, target = null, t;
+    if ((t = body.match(TARGET))) { target = +(t[1] || t[2]); body = body.slice(0, t.index); }
+    body = normalize(body.replace(new RegExp(String.raw`^\(\s*(${MOD})[^)]*\)\s*:?\s*`, 'i'), '$1, '));
+    ctx.mod = '';
+    let list = expand(body, ctx).list;
+    const fills = list.filter(x => x.fill);
+    if (fills.length) { // auffüllen bis zur Maschenzahl, ohne Angabe einmal
+      const rest = list.filter(x => !x.fill).reduce((a, x) => a + weight(x.s), 0), g = fills[0].fill, gw = g.reduce((a, x) => a + weight(x.s), 0);
+      const k = target && gw && (target - rest) % gw === 0 && target > rest ? (target - rest) / gw : 1;
+      list = list.flatMap(x => x === fills[0] ? Array.from({ length: k }, () => g).flat() : x.fill ? x.fill : [x]);
+    }
+    const allCh = list.length && list.every(x => /^(ch|lm)$/i.test(x.s));
+    const count = allCh ? list.length : list.reduce((a, x) => a + weight(x.s), 0);
+    const check = target != null && !fills.length && list.every(x => known(x.s)) && count !== target;
+    const chips = chipsOf(list), pages = [];
     for (let i = 0; i < chips.length; i += MAX_CHIPS) pages.push(chips.slice(i, i + MAX_CHIPS));
-    if (pages.length) rows.push({ label, pages });
+    if (!pages.length) continue;
+    const a = m ? +m[1] : rows.length + 1, b = m && m[2] && +m[2] > a && +m[2] - a <= 200 ? +m[2] : a;
+    for (let n = a; n <= b; n++) rows.push({ label: m ? String(n) : String(rows.length + 1), pages, count, target, check });
   }
   return rows;
 }
@@ -213,7 +296,7 @@ function renderColorPickers() {
   for (const k of keys) {
     const b = document.createElement('button');
     b.className = 'sw' + (k === editing ? ' on' : '');
-    b.innerHTML = `<i style="background:${colors[k] || 'transparent'}"></i>${k}`;
+    b.innerHTML = `<i style="background:${hexOk(colors[k] || '') ? colors[k] : 'transparent'}"></i>${esc(k)}`;
     b.onclick = () => { editing = editing === k ? null : k; renderColorPickers(); };
     box.append(b);
   }
@@ -227,10 +310,10 @@ function renderColorPickers() {
   if (editing === '+') {
     const n = document.createElement('input'); n.placeholder = 'Name, z. B. C'; n.maxLength = 12;
     const ok = document.createElement('button'); ok.textContent = 'Anlegen';
-    ok.onclick = () => { const v = n.value.trim().toUpperCase(); if (v) { colors[v] = colors[v] || '#888888'; saveColors(); editing = v; renderColorPickers(); } };
+    ok.onclick = () => { const v = n.value.trim().toUpperCase(); if (/^[\p{L}\d]{1,12}$/u.test(v)) { colors[v] = colors[v] || '#888888'; saveColors(); editing = v; renderColorPickers(); } };
     ed.append(n, ok); box.append(ed); return;
   }
-  const cur = colors[key] || '#888888';
+  const cur = hexOk(colors[key] || '') ? colors[key] : '#888888';
   const pal = document.createElement('div'); pal.className = 'pal';
   for (const p of PRESETS) {
     const c = document.createElement('button'); c.style.background = p; c.setAttribute('aria-label', p);
@@ -304,24 +387,29 @@ $('newp').onclick = () => {
   openSetup(null); $('text').focus();
 };
 
-function render() {
+function render(noSave) {
   if (!rows.length) { openSetup(P); return; }
   document.body.classList.remove('setup'); colors = P.colors;
+  const col = k => hexOk(colors[k] || '') ? colors[k] : ''; // nur #RRGGBB kommt in style
   const row = rows[r], page = row.pages[p];
-  const used = [...new Set(page.map(c => c.c).filter(k => colors[k]))];
-  $('row').innerHTML = `Reihe ${row.label}` + used.map(k => `<span class="dot" style="background:${colors[k]}" title="Farbe ${k}"></span>`).join('');
-  $('pos').textContent = `Seite ${p + 1}/${row.pages.length} · ${r + 1}/${rows.length}`;
+  const used = [...new Set(page.map(c => c.c).filter(col))];
+  $('row').innerHTML = `Reihe ${esc(row.label)}` + used.map(k => `<span class="dot" style="background:${col(k)}" title="Farbe ${esc(k)}"></span>`).join('');
+  // Maschenzahl am Reihenende: aus der Anleitung („(18)“), sonst gezählt; Warnung, wenn beides nicht passt
+  const end = row.target != null ? row.target : row.count;
+  $('pos').innerHTML = `Seite ${p + 1}/${row.pages.length} · ${r + 1}/${rows.length}` + (end ? ` · <b>${end} M</b>` : '') +
+    (row.check ? ` <span class="warn" title="Die Maschen dieser Reihe ergeben ${row.count}, die Anleitung nennt ${row.target}.">⚠ gezählt ${row.count}</span>` : '');
   const d = done[r] || 0;
   $('chips').innerHTML = page.map((c, i) => {
-    const col = colors[c.c], fade = p * MAX_CHIPS + i < d ? ' fade' : '', st = col ? ` style="background:${col};color:${textOn(col)}"` : '';
-    return c.n > 1 ? `<div class="chip count${fade}" data-i="${i}"${st}><span${col ? ' style="color:inherit"' : ''}>${c.n}×</span>${c.s}${SEAM}</div>` : `<div class="chip${fade}" data-i="${i}"${st}>${c.s}${SEAM}</div>`;
+    const cl = col(c.c), fade = p * MAX_CHIPS + i < d ? ' fade' : '', st = cl ? ` style="background:${cl};color:${textOn(cl)}"` : '';
+    return c.n > 1 ? `<div class="chip count${fade}" data-i="${i}"${st}><span${cl ? ' style="color:inherit"' : ''}>${c.n}×</span>${esc(c.s)}${SEAM}</div>` : `<div class="chip${fade}" data-i="${i}"${st}>${esc(c.s)}${SEAM}</div>`;
   }).join('');
   fitSeams();
   $('back').disabled = r === 0 && p === 0;
   const last = r === rows.length - 1 && p === row.pages.length - 1;
   $('next').textContent = last ? 'Fertig ✓' : 'Weiter ›';
   $('next').disabled = last;
-  save();
+  zLink();
+  if (!noSave) save();
 }
 
 $('chips').onclick = e => {
@@ -384,6 +472,13 @@ $('liblist').onclick = e => {
   if (!Projekte.open(it.text, it.title, it.colors)) return alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`);
   load(Projekte.current()); render();
 };
+// Geänderte Anleitung (z. B. Tippfehler korrigiert): Häkchen gleich gebliebener Reihen und die Position bleiben
+function keepProgress(x, t) {
+  const before = parse(x.pattern), after = parse(t), sig = row => row && JSON.stringify([row.label, row.pages]), done = {};
+  for (const [i, n] of Object.entries(x.done || {})) if (after[i] && sig(before[i]) === sig(after[i])) done[i] = n;
+  const s = x.pos || {}, r = Math.max(0, Math.min(s.r || 0, after.length - 1));
+  x.done = done; x.pos = { r, p: after[r] ? Math.min(s.p || 0, after[r].pages.length - 1) : 0 };
+}
 $('ok').onclick = () => {
   const t = $('text').value, name = $('pname').value.trim();
   if (!parse(t).length) return alert('In diesem Text sind keine Maschen zu finden.');
@@ -392,12 +487,31 @@ $('ok').onclick = () => {
     if (!x) return alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`);
     load(x);
   } else {
-    if (E.pattern !== t) { E.pos = { r: 0, p: 0 }; E.done = {}; } // andere Anleitung: Fortschritt von vorn
+    if (E.pattern !== t) keepProgress(E, t);
     E.pattern = t; E.name = name || Projekte.nameOf(t); E.used = Date.now(); Projekte.put(E); load(E);
   }
   render();
 };
 
+// Reihenzähler dieses Projekts (zaehler/?p=id), mit aktuellem Stand im Knopf
+function zLink() {
+  const c = P && (Store('zaehler').get('counters', {}) || {})[P.id], n = c ? (c.flips || 0) * (c.n || 10) + (c.popped || []).length : 0;
+  $('zlink').href = P ? `../zaehler/?p=${encodeURIComponent(P.id)}` : '../zaehler/';
+  $('zlink').textContent = c ? `Zähler ${n}` : 'Zähler';
+}
+// Andere Tabs oder Apps haben Projekte geändert: frisch laden, damit hier kein alter Stand zurückgeschrieben wird
+addEventListener('storage', e => {
+  if (e.key === 'zaehler.counters') return zLink();
+  if (e.key !== 'anleitung.projects') return;
+  const list = Projekte.all(), fresh = id => list.find(q => q.id === id);
+  if (document.body.classList.contains('setup')) {
+    if (E && E.id && fresh(E.id)) { const y = fresh(E.id); E.pos = y.pos; E.done = y.done; E.used = y.used; }
+    if (P && fresh(P.id)) { const y = fresh(P.id); P.pos = y.pos; P.done = y.done; P.used = y.used; }
+    return renderProjects();
+  }
+  load((P && fresh(P.id)) || Projekte.current() || list.sort((a, b) => b.used - a.used)[0] || null);
+  if (P) render(true); else openSetup(null);
+});
 load(Projekte.current() || Projekte.all().sort((a, b) => b.used - a.used)[0] || null);
 if (P) render(); else openSetup(null);
 </script>

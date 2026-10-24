@@ -14,7 +14,7 @@ input { accent-color:var(--coral); }
 /* Logo: nie einfärben oder verzerren, Höhe mind. 64 px */
 .logo { height:64px; width:auto; mix-blend-mode:multiply; flex:none; }
 /* kleiner runder Knopf, z. B. im Kopf */
-.small { background:var(--paper-alt); color:var(--ink); font-size:.85rem; font-weight:700; padding:8px 14px; border-radius:999px; min-height:44px; }
+.small { display:inline-flex; align-items:center; justify-content:center; text-decoration:none; background:var(--paper-alt); color:var(--ink); font-size:.85rem; font-weight:700; padding:8px 14px; border-radius:999px; min-height:44px; }
 /* Hauptknopf: Coral mit Schwarzbraun als Text */
 .btn { background:var(--coral); color:var(--ink); font-weight:800; padding:14px 22px; border-radius:999px; box-shadow:var(--shadow-soft); }
 /* Link zurück zur Startseite der Sammlung */
