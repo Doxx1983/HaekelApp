@@ -8,7 +8,9 @@ Sammlung kleiner Web-Apps fürs Häkeln. Die Startseite (`/index.html`) verlinkt
 | `zaehler/` | Reihenzähler im Pop-it-Stil |
 | `grid/` | Grid-Ersteller: Bild → Tapestry-Muster |
 | `muster/` | Mustersammlung: Bilder, PDFs, Word, Texte ablegen, taggen, suchen |
-| `shared/` | gemeinsam: `isadody.css` (CD-Tokens, Schriften, Grundstil, `.logo`, `.small`, `.btn`, `.home`), `store.js` (`Store('<app>')` speichert unter `<app>.<key>`), `muster-db.js` (Zugriff auf die Sammlung), `doctext.js` (Dateiformate, Text aus .docx/.odt), `hilfe.css` (Hilfeseiten), `projekte.js` (Projekte des Häkelhelfers, auch von `grid/` und `muster/` genutzt), `logo.png` |
+| `shared/` | gemeinsam: `isadody.css` (CD-Tokens, Schriften, Grundstil, `.logo`, `.small`, `.btn`, `.home`), `store.js` (`Store('<app>')` speichert unter `<app>.<key>`), `muster-db.js` (Zugriff auf die Sammlung), `doctext.js` (Dateiformate, Text aus .docx/.odt), `hilfe.css` (Hilfeseiten), `projekte.js` (Projekte des Häkelhelfers, auch von `grid/`, `muster/` und `zaehler/` genutzt), `sicherung.js` (Gesamtsicherung, prüft eingespielte Dateien), `logo.png`, `icon-*.png` (App-Symbol, Logo auf Papierton) |
+
+Daten: alles liegt im Browser. `Store.set` meldet einen vollen Speicher einmal per Hinweis (statt still nichts zu speichern) und gibt `false` zurück. **Sicherung** (Startseite, Sammlung → „Sichern“): eine JSON-Datei `isadody-sicherung-Datum.json` mit allen Schlüsseln `anleitung.*`, `zaehler.*`, `grid.*`, `muster.*` und der Sammlung (Dateien als Base64). Beim Einspielen wird jedes Feld geprüft (ids, Farben nur `#RRGGBB`, Grid-Raster, Tags), Vorhandenes bleibt, bei Projekten und Zählern gewinnt der zuletzt benutzte Stand. Die Startseite zeigt, wann zuletzt gesichert wurde (hervorgehoben nach 14 Tagen oder nie), und auf iPhone/iPad den Hinweis „Zum Home-Bildschirm“ (Safari löscht Daten sonst nach 7 Tagen ohne Nutzung). `manifest.webmanifest` macht die Sammlung als App installierbar.
 
 Hilfe: jede App hat `hilfe/index.html` (bindet `../../shared/isadody.css` und `../../shared/hilfe.css` ein, Link „‹ Zur App“) und im Kopf einen runden Knopf `<a class="help" href="hilfe/">?</a>` (in `.tools` neben dem Kopfknopf). Neue Funktion = Hilfeseite mitpflegen.
 
@@ -39,7 +41,7 @@ Live: https://doxx1983.github.io/haekelapp/anleitung/ (Startseite: https://doxx1
 - **Wiederholungen:** `(fM, Zun) x 6`, `(3 fM, Abn) 5x`, Anzahl vor dem Kürzel (`254sc`, `6 fM`).
 - **Anzeige:** Folgen von bis zu 3 gleichen Maschen als einzelne Kacheln, ab 4 gleichen als eine Kachel „10× fM“ (`SINGLE_MAX` in `index.html`). Max. 8 Kacheln pro Seite (`MAX_CHIPS`).
 - **Garnfarben:** `Use color A`, `Farbe B`, `Wechsel zu Farbe C:` setzen die Farbe ab dieser Stelle, auch mitten in der Reihe, und gelten bis zum nächsten Wechsel (auch über Reihen hinweg). Farben werden vorher in der App festgelegt (Palette, Regler, Hex). Gleiche Maschen in verschiedenen Farben werden nicht zusammengefasst.
-- **Fortschritt:** Tipp auf eine Kachel = diese und alle vorigen in der Reihe werden blass. Tipp auf eine blasse Kachel = Rücksetzen dieser und aller folgenden, mit Bestätigung.
+- **Fortschritt:** Tipp auf eine Kachel = diese und alle vorigen in der Reihe werden blass. Tipp auf eine blasse Kachel = Rücksetzen dieser und aller folgenden, mit Bestätigung. Wird die Anleitung geändert, bleiben Position und Häkchen unveränderter Reihen (`keepProgress`). Ein zweiter Tab übernimmt Änderungen per `storage`-Ereignis, ohne zurückzuschreiben.
 - **Corporate Design:** Isadody-CD (Papierton, Coral, Baloo 2 + Nunito, runde Buttons, gestrichelte „Naht“ in den Kacheln, Logo oben links).
 
 ## Aufbau
@@ -64,9 +66,13 @@ Wichtige Stellen in `anleitung/index.html`: `parse` / `expand` / `chipsOf` (Anle
 
 ## Offene Ideen
 
-- Offline-Betrieb (Service Worker) und Web-App-Manifest mit Symbol für „Zum Startbildschirm“.
+- Offline-Betrieb (Service Worker).
 - Anleitungen als PDF oder Foto einlesen.
 - Einzelne Maschen einer Gruppe („13× dc“) abhaken.
+
+## Reihenzähler (`zaehler/`)
+
+Pop-it-Zähler: jede Blase eine Reihe, volle Platte dreht sich um. Ein **freier Zähler** plus je einer **pro Projekt** des Häkelhelfers (`zaehler.counters` = `{ frei, <Projekt-id>: { n, flips, popped, target, used } }`, gewählt in `zaehler.current`, Ton/Vibration in `zaehler.prefs`). `zaehler/?p=<id>` öffnet den Zähler eines Projekts (Knopf „Zähler“ im Häkelhelfer, zeigt den Stand). Zähler gelöschter Projekte werden entfernt. Der alte Einzelzähler `zaehler.state` wird einmalig der freie Zähler.
 
 ## Grid-Ersteller (`grid/`)
 

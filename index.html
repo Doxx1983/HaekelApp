@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Isadody Häkel-Apps</title>
 <meta name="theme-color" content="#FBF6EC">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="shared/icon-180.png">
 <link rel="stylesheet" href="shared/isadody.css">
 <style>
   body { padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom); max-width:720px; margin:0 auto; }
@@ -20,6 +22,15 @@
   .app p { margin:2px 0 0; color:var(--ink-soft); font-size:.95rem; }
   .app.soon { opacity:.55; pointer-events:none; }
   .app.soon .ic { background:var(--coral-soft); }
+  /* Daten sichern */
+  #daten { display:flex; flex-direction:column; gap:10px; padding:16px 18px; margin-bottom:24px; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; }
+  #daten.warn { background:var(--coral-soft); border-color:var(--coral); }
+  #daten h2 { font-family:var(--display); font-size:1.15rem; margin:0; }
+  #daten p { margin:0; color:var(--ink-soft); font-size:.9rem; }
+  #daten #stand { color:var(--ink); font-weight:700; }
+  #daten .row { display:flex; flex-wrap:wrap; gap:8px; }
+  #daten .small { background:var(--paper); border:1px solid var(--line); }
+  #daten .ios[hidden] { display:none; }
   .tag { display:inline-block; margin-left:6px; padding:1px 8px; border-radius:999px; background:var(--paper); border:1px solid var(--line); font-family:var(--body); font-size:.75rem; font-weight:700; color:var(--ink-soft); vertical-align:middle; }
 </style>
 </head>
@@ -47,5 +58,28 @@
     <div><h2>Mustersammlung</h2><p>Muster als Bild, PDF oder Text ablegen, taggen und finden.</p></div>
   </a>
 </main>
+<section id="daten">
+  <h2>Deine Daten sichern</h2>
+  <p>Projekte, Zähler, Grid und Sammlung liegen nur in diesem Browser. Eine Sicherungsdatei schützt vor Verlust und bringt alles auf ein neues Gerät.</p>
+  <p id="stand"></p>
+  <div class="row"><button class="btn" id="save">Sicherung herunterladen</button><button class="small" id="load">Sicherung einspielen</button></div>
+  <p class="ios" id="ios" hidden>iPhone/iPad: Safari löscht die Daten nach 7 Tagen ohne Nutzung. Füge die Seite über „Teilen“ → „Zum Home-Bildschirm“ hinzu und öffne sie nur noch dort. Die Home-Bildschirm-App startet leer: vorher hier sichern und dort einspielen.</p>
+  <input type="file" id="file" accept=".json,application/json" hidden>
+</section>
+<script src="shared/store.js"></script>
+<script src="shared/projekte.js"></script>
+<script src="shared/muster-db.js"></script>
+<script src="shared/sicherung.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+async function stand() { const s = await Sicherung.status(); $('stand').textContent = s.text; $('daten').classList.toggle('warn', s.warn); }
+$('save').onclick = async () => { $('save').disabled = true; try { await Sicherung.save(); } catch { alert('Sicherung nicht möglich.'); } $('save').disabled = false; stand(); };
+$('load').onclick = () => $('file').click();
+$('file').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; const r = await Sicherung.restore(f); alert(r.text); stand(); };
+// Hinweis nur in Safari auf iPhone/iPad, nicht in der Home-Bildschirm-App
+const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+$('ios').hidden = !ios || navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+stand();
+</script>
 </body>
 </html>
