@@ -1,12 +1,36 @@
-# Isadody Häkelhelfer
+# Isadody Häkel-Apps
+
+Sammlung kleiner Web-Apps fürs Häkeln. Die Startseite (`/index.html`) verlinkt alle Apps; jede App läuft auch für sich unter ihrer eigenen Adresse.
+
+| Ordner | App |
+|---|---|
+| `anleitung/` | Häkelhelfer (unten beschrieben) |
+| `zaehler/` | Reihenzähler im Pop-it-Stil |
+| `grid/` | Grid-Ersteller: Bild → Tapestry-Muster |
+| `muster/` | Mustersammlung: Bilder, PDFs, Word, Texte ablegen, taggen, suchen |
+| `shared/` | gemeinsam: `isadody.css` (CD-Tokens, Schriften, Grundstil, `.logo`, `.small`, `.btn`, `.home`), `store.js` (`Store('<app>')` speichert unter `<app>.<key>`), `logo.png` |
+
+Neue App: eigener Ordner mit `index.html`, bindet `../shared/isadody.css` und `../shared/store.js` ein, Logo `../shared/logo.png`, Link `<a class="home" href="../">‹ Alle Apps</a>`, Karte auf der Startseite eintragen. Kein Build.
+
+## Mustersammlung (`muster/`)
+
+- **Ablegen:** Bilder, PDFs, Word (`.docx`, `.doc`), LibreOffice (`.odt`) und `.txt`-Dateien über „+ Muster“ (mehrere auf einmal, am Computer auch per Ziehen) oder Text einfügen.
+- **Ordnen:** Name, Tags (Enter oder Komma, Vorschläge aus vorhandenen Tags), Notizen, Favorit. Übersicht mit Suche (Name, Tags, Notizen, Textinhalt), Tag-Filtern (mehrere = alle müssen passen), „★ Favoriten“, Sortierung Neueste/A–Z.
+- **Speicher:** IndexedDB `isadody-muster` (Dateien als Blob, Bilder mit kleinem Vorschaubild), Filter im Store `muster.*`. Die App bittet den Browser per `navigator.storage.persist()`, die Daten nicht automatisch zu löschen.
+- **Sicherung:** „Sicherung herunterladen“ erzeugt eine JSON-Datei mit allen Mustern (Dateien als Base64), „Sicherung einspielen“ fügt fehlende Muster hinzu (gleiche ID wird übersprungen).
+- **Häkelhelfer:** Textmuster lassen sich mit „Im Häkelhelfer öffnen“ direkt dort starten (schreibt `anleitung.pattern`; Fortschritt wird nur bei anderem Text zurückgesetzt).
+- Aus `.docx` und `.odt` liest die App den Text (eigener ZIP-Leser mit `DecompressionStream`, keine Bibliothek): Vorschau, Suche im Inhalt und „Im Häkelhelfer öffnen“. Alte `.doc` werden nur gespeichert und heruntergeladen.
+- PDFs werden am Computer eingebettet angezeigt, auf dem Handy per „PDF öffnen“.
+
+## Häkelhelfer (`anleitung/`)
 
 Web-App für unterwegs: Häkelanleitung laden, dann zeigt die App immer nur die nächsten Maschen (max. 8 Kacheln), mit großem „Weiter“-Button und kleinem „Zurück“. Die aktuelle Reihe steht oben links.
 
-Live: https://doxx1983.github.io/haekelapp/ (GitHub Pages, Branch `main`, Ordner `/`)
+Live: https://doxx1983.github.io/haekelapp/anleitung/ (Startseite: https://doxx1983.github.io/haekelapp/, GitHub Pages, Branch `main`, Ordner `/`)
 
 ## Funktionen
 
-- **Anleitung laden** als `.txt`-Datei oder eingefügter Text. Anleitung, Position und Fortschritt bleiben im Browser (`localStorage`) gespeichert.
+- **Anleitung laden** als `.txt`-Datei oder eingefügter Text. Anleitung, Position und Fortschritt bleiben im Browser (`localStorage`, Schlüssel `anleitung.*`; ältere Daten ohne Präfix werden einmalig übernommen).
 - **Deutsch und Englisch:** Reihen beginnen mit `R`, `Row`, `Reihe`, `Runde`, `Round`, `Rnd` + Nummer. Kürzel (`fM`, `Stb`, `sc`, `dc`, `bs` …) werden unverändert angezeigt.
 - **Wiederholungen:** `(fM, Zun) x 6`, `(3 fM, Abn) 5x`, Anzahl vor dem Kürzel (`254sc`, `6 fM`).
 - **Anzeige:** Folgen von bis zu 3 gleichen Maschen als einzelne Kacheln, ab 4 gleichen als eine Kachel „10× fM“ (`SINGLE_MAX` in `index.html`). Max. 8 Kacheln pro Seite (`MAX_CHIPS`).
@@ -18,15 +42,15 @@ Live: https://doxx1983.github.io/haekelapp/ (GitHub Pages, Branch `main`, Ordner
 
 | Datei | Inhalt |
 |---|---|
-| `index.html` | die ganze App (HTML, CSS, JavaScript), keine Build-Schritte, keine Abhängigkeiten |
-| `logo.png` | Isadody-Logo (aus dem Design-System-Artefakt „Isadody“), nicht einfärben, Höhe mind. 64 px |
+| `anleitung/index.html` | die ganze App (HTML, CSS, JavaScript), keine Build-Schritte, nur `shared/` als Abhängigkeit |
+| `shared/logo.png` | Isadody-Logo (aus dem Design-System-Artefakt „Isadody“), nicht einfärben, Höhe mind. 64 px |
 | `beispiele/` | Beispielanleitungen zum Testen |
 
-Wichtige Stellen in `index.html`: `parse` / `expand` / `chipsOf` (Anleitung → Kacheln), `render` (Anzeige), `renderColorPickers` (Farbauswahl), `fitSeams` (gleichmäßige Nahtstriche).
+Wichtige Stellen in `anleitung/index.html`: `parse` / `expand` / `chipsOf` (Anleitung → Kacheln), `render` (Anzeige), `renderColorPickers` (Farbauswahl), `fitSeams` (gleichmäßige Nahtstriche).
 
 ## Entwickeln und testen
 
-Einfach `index.html` im Browser öffnen. Der Parser läuft auch ohne Browser (Funktionen am Dateianfang des Skripts). Veröffentlichen: auf `main` pushen, Pages aktualisiert sich selbst.
+Über einen lokalen Webserver im Hauptordner öffnen (z. B. `python3 -m http.server`), damit `../shared/` gefunden wird. Der Parser läuft auch ohne Browser (Funktionen am Dateianfang des Skripts). Veröffentlichen: auf `main` pushen, Pages aktualisiert sich selbst.
 
 ## Entscheidungen
 
@@ -40,3 +64,13 @@ Einfach `index.html` im Browser öffnen. Der Parser läuft auch ohne Browser (Fu
 - Anleitungen als PDF oder Foto einlesen.
 - Mehrere Anleitungen speichern und umschalten.
 - Einzelne Maschen einer Gruppe („13× dc“) abhaken.
+
+## Grid-Ersteller (`grid/`)
+
+Bild laden, Breite (Maschen), Höhe (Reihen) und Farbanzahl wählen → Raster für Tapestry-Häkeln mit Farblegende und Anweisungen je Reihe.
+
+- **Farbreduktion** im Lab-Farbraum: k-means mit vielen Gruppen, dann ähnlichste Gruppen (Ward) zusammenlegen; kleine, deutlich andere Flächen bleiben so erhalten. Optional werden Einzelmaschen geglättet.
+- **Richtung:** Reihe 1 unten, Rechtshänder beginnen rechts; in Reihen abwechselnd, in Runden immer gleich. „Linkshändig“ spiegelt das.
+- **Bearbeiten:** Farben der Legende ändern (Palette, Hex), einzelne Maschen malen, Rückgängig.
+- **Ausgabe:** Raster als PNG, Anleitung als Text/.txt, „Im Häkelhelfer öffnen“ schreibt die Anleitung (`Reihe n: Farbe A, 5 fM, …`) samt Farben in den Speicher von `anleitung/`.
+- Gespeichert unter `grid.state` und `grid.src` (verkleinertes Bild). Kernfunktionen (`quantize`, `despeckle`, `instructions`, `toHelper`) laufen auch mit `node`.

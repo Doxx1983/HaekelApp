@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Isadody Mustersammlung</title>
+<meta name="theme-color" content="#FBF6EC">
+<link rel="stylesheet" href="../shared/isadody.css">
+<script src="../shared/store.js"></script>
+<style>
+  body { padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom); max-width:960px; margin:0 auto; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 0 4px; }
+  .title { display:flex; align-items:center; gap:12px; min-width:0; }
+  h1 { font-family:var(--display); font-size:1.8rem; font-weight:700; margin:0; line-height:1.1; }
+  #count { color:var(--ink-soft); font-size:.9rem; }
+  .actions { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+  input, textarea { font:inherit; padding:10px 14px; border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--ink); min-width:0; }
+  textarea { border-radius:16px; resize:vertical; }
+  #bar { display:flex; gap:10px; padding:12px 0 8px; }
+  #q { flex:1; }
+  #add { padding:10px 18px; box-shadow:var(--shadow-card); white-space:nowrap; }
+  #filters { display:flex; flex-wrap:wrap; gap:6px; padding-bottom:6px; }
+  .pill { background:var(--paper-alt); border:1px solid var(--line); border-radius:999px; padding:5px 12px; font-size:.85rem; font-weight:700; color:var(--ink); }
+  .pill.on { background:var(--coral-soft); border-color:var(--ink); }
+  .pill.sort { margin-left:auto; color:var(--ink-soft); }
+  #grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; padding:8px 0 24px; }
+  /* Karte mit angedeuteter Naht wie die Kacheln im Häkelhelfer */
+  .card { position:relative; display:flex; flex-direction:column; text-align:left; padding:8px; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-card); }
+  .card::after { content:''; position:absolute; inset:4px; border:2px dashed var(--ink); border-radius:13px; opacity:.15; pointer-events:none; }
+  .thumb { aspect-ratio:1; border-radius:10px; background:var(--paper); overflow:hidden; display:grid; place-items:center; font-size:2.6rem; }
+  .thumb img { width:100%; height:100%; object-fit:cover; }
+  .thumb pre { margin:0; padding:8px; width:100%; height:100%; font:600 .7rem/1.35 var(--body); color:var(--ink-soft); white-space:pre-wrap; overflow:hidden; align-self:start; }
+  .card h3 { font-family:var(--display); font-size:1.05rem; font-weight:700; margin:6px 2px 0; line-height:1.2; overflow-wrap:anywhere; }
+  .card .tags { display:flex; flex-wrap:wrap; gap:4px; margin:4px 2px 2px; }
+  .tg { font-size:.72rem; font-weight:700; color:var(--ink-soft); background:var(--paper); border:1px solid var(--line); border-radius:999px; padding:1px 8px; }
+  .star { position:absolute; top:12px; right:12px; width:30px; height:30px; border-radius:50%; background:var(--paper); display:grid; place-items:center; font-size:1rem; box-shadow:var(--shadow-card); }
+  #empty { text-align:center; color:var(--ink-soft); padding:40px 10px; }
+  #empty .btn { margin-top:12px; } #empty .note { font-size:.85rem; }
+  /* Detailansicht */
+  #detail { position:fixed; inset:0; background:var(--paper); overflow:auto; padding:env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 24px); display:none; }
+  body.open #detail { display:block; } body.open { overflow:hidden; }
+  #detail .in { max-width:760px; margin:0 auto; display:flex; flex-direction:column; gap:12px; }
+  #detail .top { display:flex; align-items:center; gap:10px; padding:12px 0 0; }
+  #detail .top #close { margin-right:auto; }
+  #prev { background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; overflow:hidden; }
+  #prev img { display:block; width:100%; height:auto; }
+  #prev iframe { display:block; width:100%; height:70vh; border:0; background:#fff; }
+  #prev pre { margin:0; padding:14px; max-height:60vh; overflow:auto; white-space:pre-wrap; font:inherit; }
+  #prev .pdf { padding:30px; text-align:center; font-size:3rem; }
+  #prev .note { font-size:.9rem; color:var(--ink-soft); margin:8px 0 0; }
+  #title { font-family:var(--display); font-size:1.4rem; font-weight:700; border-radius:16px; }
+  label.f { display:flex; flex-direction:column; gap:4px; font-size:.85rem; font-weight:700; color:var(--ink-soft); }
+  #dtags { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  #dtags .tg { font-size:.85rem; padding:4px 6px 4px 12px; display:flex; align-items:center; gap:4px; color:var(--ink); }
+  #dtags .tg button { background:none; padding:0 4px; font-size:1rem; line-height:1; color:var(--ink-soft); }
+  #tagin { flex:1; min-width:140px; }
+  #dbtns { display:flex; flex-wrap:wrap; gap:10px; }
+  #dbtns .btn { flex:1 1 220px; }
+  #dbtns .small { padding:12px 18px; }
+  #meta { color:var(--ink-soft); font-size:.8rem; }
+  /* Text einfügen */
+  #paste { display:none; flex-direction:column; gap:10px; padding:10px 0 20px; }
+  body.paste #paste { display:flex; } body.paste #grid, body.paste #empty, body.paste #filters { display:none !important; }
+  #paste textarea { min-height:40vh; }
+  #paste .row { display:flex; gap:10px; } #paste .row .btn { flex:1; }
+  #menu { position:absolute; right:16px; top:100%; margin-top:6px; background:var(--paper); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-soft); padding:6px; display:none; flex-direction:column; z-index:5; min-width:220px; }
+  #menu.on { display:flex; }
+  #menu button { background:none; text-align:left; padding:10px 12px; border-radius:10px; font-weight:700; }
+  #menu button:hover { background:var(--paper-alt); }
+  #menu hr { border:0; border-top:1px solid var(--line); margin:4px 6px; width:auto; }
+  .wrap { position:relative; }
+  #drop { position:fixed; inset:0; background:rgba(251,217,203,.85); display:none; place-items:center; font-family:var(--display); font-size:1.6rem; font-weight:700; pointer-events:none; z-index:9; }
+  body.drag #drop { display:grid; }
+  #toast { position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom) + 20px); transform:translateX(-50%); background:var(--ink); color:var(--paper); padding:10px 18px; border-radius:999px; font-weight:700; font-size:.9rem; opacity:0; transition:opacity .2s; pointer-events:none; z-index:10; }
+  #toast.on { opacity:1; }
+</style>
+</head>
+<body>
+<header>
+  <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><h1>Muster</h1><div id="count"></div></div></div>
+  <div class="actions"><a class="home" href="../">‹ Alle Apps</a><button class="small" id="more">Sichern</button></div>
+</header>
+<div class="wrap">
+  <div id="bar"><input id="q" type="search" placeholder="Suchen: Name, Tag, Notiz, Text"><button class="btn" id="add">+ Muster</button></div>
+  <div id="menu">
+    <button data-a="file">Datei hinzufügen (Bild, PDF, Text)</button>
+    <button data-a="paste">Text einfügen</button>
+    <hr>
+    <button data-a="export">Sicherung herunterladen</button>
+    <button data-a="import">Sicherung einspielen</button>
+  </div>
+</div>
+<div id="filters"></div>
+<main id="grid"></main>
+<div id="empty"></div>
+<section id="paste">
+  <input id="ptitle" placeholder="Name, z. B. Amigurumi Hase">
+  <textarea id="ptext" placeholder="Anleitung hier einfügen, z. B.&#10;R1: 6 fM in Fadenring&#10;R2: 6 Zun"></textarea>
+  <div class="row"><button class="small" id="pcancel">Abbrechen</button><button class="btn" id="psave">Speichern</button></div>
+</section>
+<section id="detail"><div class="in">
+  <div class="top"><button class="small" id="close">‹ Zurück</button><button class="small" id="dfav">☆ Favorit</button></div>
+  <div id="prev"></div>
+  <input id="title" aria-label="Name">
+  <label class="f">Tags<div id="dtags"><input id="tagin" list="alltags" placeholder="Tag hinzufügen, z. B. Amigurumi"></div></label>
+  <datalist id="alltags"></datalist>
+  <label class="f">Notizen<textarea id="notes" rows="3" placeholder="Garn, Nadelstärke, Quelle …"></textarea></label>
+  <div id="dbtns"></div>
+  <div id="meta"></div>
+</div></section>
+<input type="file" id="file" multiple accept="image/*,application/pdf,.pdf,.txt,text/plain,.docx,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,.odt,application/vnd.oasis.opendocument.text" hidden>
+<input type="file" id="imp" accept=".json,application/json" hidden>
+<div id="drop">Loslassen zum Hinzufügen</div>
+<div id="toast"></div>
+<script>
+// Muster liegen in IndexedDB (Bilder und PDFs sind zu groß für localStorage), Einstellungen im Store.
+const store = Store('muster');
+const $ = id => document.getElementById(id);
+const DB = 'isadody-muster', ST = 'items';
+let db, items = [], sel = new Set(store.get('tags', [])), favOnly = store.get('fav', false), sort = store.get('sort', 'neu'), cur = null;
+const urls = new Map(); // id → Objekt-URL fürs Vorschaubild
+
+function openDb() {
+  return new Promise((ok, err) => {
+    const r = indexedDB.open(DB, 1);
+    r.onupgradeneeded = () => r.result.createObjectStore(ST, { keyPath: 'id' });
+    r.onsuccess = () => ok(r.result); r.onerror = () => err(r.error);
+  });
+}
+const tx = (mode, fn) => new Promise((ok, err) => {
+  const t = db.transaction(ST, mode), s = t.objectStore(ST), res = fn(s);
+  t.oncomplete = () => ok(res && res.result); t.onerror = () => err(t.error); t.onabort = () => err(t.error);
+});
+const put = it => tx('readwrite', s => s.put(it));
+const del = id => tx('readwrite', s => s.delete(id));
+const all = () => tx('readonly', s => s.getAll());
+
+function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.h); toast.h = setTimeout(() => el.classList.remove('on'), 2200); }
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const kindOf = f => /^image\//.test(f.type) ? 'image' : (f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) ? 'pdf' : /\.(docx?|odt)$/i.test(f.name) || /msword|wordprocessingml|opendocument\.text/.test(f.type) ? 'word' : (/^text\//.test(f.type) || /\.txt$/i.test(f.name)) ? 'text' : null;
+const baseName = n => n.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
+const normTag = t => t.replace(/^#/, '').trim();
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const kb = n => n > 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+
+// Text aus .docx (word/document.xml) oder .odt (content.xml) lesen; beides sind ZIP-Dateien. Ohne Bibliothek; alte .doc liefern ''
+async function docText(blob) {
+  try {
+    const b = new Uint8Array(await blob.arrayBuffer()), v = new DataView(b.buffer);
+    let e = b.length - 22; while (e >= 0 && v.getUint32(e, true) !== 0x06054b50) e--;
+    if (e < 0) return '';
+    for (let o = v.getUint32(e + 16, true), n = v.getUint16(e + 10, true); n--; ) {
+      const m = v.getUint16(o + 10, true), cs = v.getUint32(o + 20, true), nl = v.getUint16(o + 28, true), lo = v.getUint32(o + 42, true);
+      const name = new TextDecoder().decode(b.subarray(o + 46, o + 46 + nl));
+      o += 46 + nl + v.getUint16(o + 30, true) + v.getUint16(o + 32, true);
+      if (name !== 'word/document.xml' && name !== 'content.xml') continue;
+      const start = lo + 30 + v.getUint16(lo + 26, true) + v.getUint16(lo + 28, true), data = b.subarray(start, start + cs);
+      const raw = m === 0 ? data : new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
+      const xml = new DOMParser().parseFromString(new TextDecoder().decode(raw), 'application/xml');
+      return (name === 'content.xml' ? odtText(xml) : docxText(xml)).replace(/\n{3,}/g, '\n\n').trim();
+    }
+  } catch {}
+  return '';
+}
+
+function docxText(xml) {
+  const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  return [...xml.getElementsByTagNameNS(W, 'p')].map(p => [...p.getElementsByTagNameNS(W, '*')]
+    .map(x => x.localName === 't' ? x.textContent : x.localName === 'tab' ? '\t' : x.localName === 'br' ? '\n' : '').join('')).join('\n');
+}
+function odtText(xml) {
+  const T = 'urn:oasis:names:tc:opendocument:xmlns:text:1.0', body = xml.getElementsByTagNameNS('urn:oasis:names:tc:opendocument:xmlns:office:1.0', 'text')[0];
+  const walk = n => [...n.childNodes].map(c => {
+    if (c.nodeType === 3) return c.nodeValue;
+    if (c.nodeType !== 1) return '';
+    if (c.namespaceURI === T) {
+      if (c.localName === 's') return ' '.repeat(+c.getAttributeNS(T, 'c') || 1);
+      if (c.localName === 'tab') return '\t';
+      if (c.localName === 'line-break') return '\n';
+      if (c.localName === 'p' || c.localName === 'h') return walk(c) + '\n';
+    }
+    return walk(c);
+  }).join('');
+  return body ? walk(body) : '';
+}
+
+// kleines Vorschaubild, damit die Übersicht auch bei vielen Fotos flott bleibt
+async function thumbOf(blob) {
+  try {
+    const img = await createImageBitmap(blob), k = Math.min(1, 360 / Math.max(img.width, img.height));
+    const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    return await new Promise(ok => c.toBlob(ok, 'image/jpeg', .8));
+  } catch { return null; }
+}
+
+async function addFiles(files) {
+  let n = 0, skip = 0;
+  for (const f of files) {
+    const kind = kindOf(f); if (!kind) { skip++; continue; }
+    const it = { id: uid(), kind, title: baseName(f.name) || 'Muster', name: f.name, mime: f.type || (kind === 'pdf' ? 'application/pdf' : 'text/plain'), size: f.size, tags: [], fav: false, notes: '', added: Date.now() };
+    if (kind === 'text') it.text = await f.text(); else { it.blob = f; if (kind === 'image') it.thumb = await thumbOf(f); if (kind === 'word') it.text = await docText(f); }
+    await put(it); items.push(it); n++;
+  }
+  persist(); render();
+  toast(n ? `${n} Muster hinzugefügt` + (skip ? `, ${skip} übersprungen` : '') : 'Nur Bilder, PDFs, Word-, ODT- und Textdateien möglich');
+  if (n === 1) show(items[items.length - 1].id);
+}
+// Browser bitten, die Sammlung nicht automatisch zu löschen, wenn der Speicher knapp wird
+function persist() { try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch {} }
+
+function allTags() {
+  const m = new Map();
+  for (const it of items) for (const t of it.tags) { const k = t.toLowerCase(); m.set(k, { t: m.has(k) ? m.get(k).t : t, n: (m.get(k)?.n || 0) + 1 }); }
+  return [...m.values()].sort((a, b) => b.n - a.n || a.t.localeCompare(b.t, 'de'));
+}
+function visible() {
+  const q = $('q').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const want = [...sel].map(t => t.toLowerCase());
+  return items.filter(it => {
+    if (favOnly && !it.fav) return false;
+    const tags = it.tags.map(t => t.toLowerCase());
+    if (!want.every(t => tags.includes(t))) return false;
+    const hay = [it.title, it.notes, it.name, ...it.tags, it.text || ''].join(' ').toLowerCase();
+    return q.every(w => hay.includes(w));
+  }).sort(sort === 'name' ? (a, b) => a.title.localeCompare(b.title, 'de') : (a, b) => b.added - a.added);
+}
+
+function thumbHtml(it) {
+  if (it.kind === 'image' && (it.thumb || it.blob)) {
+    if (!urls.has(it.id)) urls.set(it.id, URL.createObjectURL(it.thumb || it.blob));
+    return `<img src="${urls.get(it.id)}" alt="">`;
+  }
+  if (it.text) return `<pre>${esc(it.text.slice(0, 400))}</pre>`;
+  return it.kind === 'word' ? '📝' : '📄';
+}
+function render() {
+  const tags = allTags();
+  for (const t of [...sel]) if (!tags.some(x => x.t.toLowerCase() === t.toLowerCase())) sel.delete(t);
+  store.set('tags', [...sel]); store.set('fav', favOnly); store.set('sort', sort);
+  $('filters').innerHTML = items.length ? `<button class="pill${favOnly ? ' on' : ''}" data-fav>★ Favoriten</button>` +
+    tags.map(x => `<button class="pill${[...sel].some(s => s.toLowerCase() === x.t.toLowerCase()) ? ' on' : ''}" data-tag="${esc(x.t)}">${esc(x.t)} <small>${x.n}</small></button>`).join('') +
+    `<button class="pill sort" data-sort>${sort === 'name' ? 'A–Z' : 'Neueste'} ⇅</button>` : '';
+  $('alltags').innerHTML = tags.map(x => `<option value="${esc(x.t)}">`).join('');
+  const vis = visible();
+  $('count').textContent = items.length ? (vis.length === items.length ? `${items.length} Muster` : `${vis.length} von ${items.length} Mustern`) : '';
+  $('grid').innerHTML = vis.map(it => `<button class="card" data-id="${it.id}">
+    <div class="thumb">${thumbHtml(it)}</div>${it.fav ? '<span class="star">★</span>' : ''}
+    <h3>${esc(it.title)}</h3>${it.tags.length ? `<div class="tags">${it.tags.map(t => `<span class="tg">${esc(t)}</span>`).join('')}</div>` : ''}</button>`).join('');
+  $('empty').innerHTML = !items.length ? `<p>Noch keine Muster. Lege Bilder, PDFs, Word-, ODT- oder Textdateien ab und ordne sie mit Tags.</p><p class="note">Die Muster bleiben nur auf diesem Gerät. Gekaufte Anleitungen bitte nicht weitergeben.</p><button class="btn" data-a="file">+ Erstes Muster</button>`
+    : !vis.length ? '<p>Nichts gefunden. Filter oder Suche ändern.</p>' : '';
+}
+
+function show(id) {
+  cur = items.find(it => it.id === id); if (!cur) return;
+  const p = $('prev'); p.innerHTML = '';
+  if (cur.kind === 'image') { const u = URL.createObjectURL(cur.blob); p.innerHTML = `<img src="${u}" alt="">`; p.dataset.url = u; }
+  else if (cur.kind === 'pdf') {
+    const u = URL.createObjectURL(new Blob([cur.blob], { type: 'application/pdf' })); p.dataset.url = u;
+    // eingebettete PDF-Anzeige gibt es nicht auf allen Handys, darum zusätzlich „Öffnen“
+    p.innerHTML = matchMedia('(pointer:fine)').matches ? `<iframe src="${u}" title="PDF"></iframe>` : '<div class="pdf">📄</div>';
+  } else if (cur.kind === 'word' && !cur.text) p.innerHTML = '<div class="pdf">📝<p class="note">Keine Vorschau für ältere .doc-Dateien. Zum Ansehen herunterladen.</p></div>';
+  else p.innerHTML = `<pre>${esc(cur.text || '')}</pre>`;
+  $('title').value = cur.title; $('notes').value = cur.notes || '';
+  renderDetail();
+  $('meta').textContent = `${cur.name || 'Eingefügter Text'} · ${cur.kind === 'text' ? (cur.text || '').length + ' Zeichen' : kb(cur.size || 0)} · hinzugefügt am ${new Date(cur.added).toLocaleDateString('de-DE')}`;
+  document.body.classList.add('open'); $('detail').scrollTop = 0;
+  history.pushState({ d: 1 }, '');
+}
+function renderDetail() {
+  $('dfav').textContent = cur.fav ? '★ Favorit' : '☆ Favorit';
+  $('dtags').querySelectorAll('.tg').forEach(e => e.remove());
+  $('tagin').insertAdjacentHTML('beforebegin', cur.tags.map((t, i) => `<span class="tg">${esc(t)}<button data-rm="${i}" aria-label="Tag ${esc(t)} entfernen">×</button></span>`).join(''));
+  $('dbtns').innerHTML = (cur.kind === 'text' || cur.text ? '<button class="btn" data-a="helper">Im Häkelhelfer öffnen</button>' : '') +
+    (cur.kind === 'pdf' || cur.kind === 'image' ? `<button class="btn" data-a="openfile">${cur.kind === 'pdf' ? 'PDF öffnen' : 'Bild öffnen'}</button>` : '') +
+    '<button class="small" data-a="download">Herunterladen</button><button class="small" id="del" data-a="delete">Löschen</button>';
+}
+function close() {
+  if (!document.body.classList.contains('open')) return;
+  const p = $('prev'); if (p.dataset.url) { URL.revokeObjectURL(p.dataset.url); delete p.dataset.url; } p.innerHTML = '';
+  document.body.classList.remove('open'); cur = null; render();
+}
+const saveCur = () => cur && put(cur);
+
+function addTag(raw) {
+  let changed = false;
+  for (const t of raw.split(',').map(normTag).filter(Boolean)) if (!cur.tags.some(x => x.toLowerCase() === t.toLowerCase())) { cur.tags.push(t); changed = true; }
+  if (changed) { saveCur(); renderDetail(); }
+}
+
+function download(blob, name) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+const fileName = it => it.name || (it.title.replace(/[^\wäöüÄÖÜß -]+/g, '').trim() || 'muster') + '.txt';
+const blobOf = it => it.kind === 'text' ? new Blob([it.text || ''], { type: 'text/plain;charset=utf-8' }) : new Blob([it.blob], { type: it.mime });
+
+// Sicherung: eine JSON-Datei mit allen Mustern, Dateien als Base64
+const b64 = blob => new Promise(ok => { const r = new FileReader(); r.onload = () => ok(r.result.split(',')[1]); r.readAsDataURL(blob); });
+const unb64 = (s, type) => { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return new Blob([u], { type }); };
+async function exportAll() {
+  if (!items.length) return toast('Noch nichts zu sichern');
+  toast('Sicherung wird erstellt …');
+  const out = [];
+  for (const it of items) { const o = { ...it }; delete o.thumb; if (it.blob) o.blob = await b64(it.blob); out.push(o); }
+  const d = new Date().toISOString().slice(0, 10);
+  download(new Blob([JSON.stringify({ app: 'isadody-muster', v: 1, items: out })], { type: 'application/json' }), `muster-sicherung-${d}.json`);
+}
+async function importAll(f) {
+  let data; try { data = JSON.parse(await f.text()); } catch { return toast('Datei ist keine Sicherung'); }
+  if (!data || data.app !== 'isadody-muster' || !Array.isArray(data.items)) return toast('Datei ist keine Muster-Sicherung');
+  let n = 0, same = 0;
+  for (const o of data.items) {
+    if (!o || !o.id || !o.kind) continue;
+    if (items.some(it => it.id === o.id)) { same++; continue; }
+    const it = { tags: [], fav: false, notes: '', title: 'Muster', added: Date.now(), ...o };
+    if (typeof o.blob === 'string') { it.blob = unb64(o.blob, o.mime); if (it.kind === 'image') it.thumb = await thumbOf(it.blob); }
+    await put(it); items.push(it); n++;
+  }
+  persist(); render(); toast(`${n} Muster eingespielt` + (same ? `, ${same} schon vorhanden` : ''));
+}
+
+// Text an den Häkelhelfer übergeben: er liest beim Start anleitung.pattern
+function openInHelper(it) {
+  const a = Store('anleitung');
+  if (a.get('pattern', '') !== it.text) { a.set('pattern', it.text); a.set('pos', { r: 0, p: 0 }); a.set('done', {}); }
+  location.href = '../anleitung/';
+}
+
+function act(a) {
+  $('menu').classList.remove('on');
+  if (a === 'file') $('file').click();
+  else if (a === 'paste') { $('ptitle').value = ''; $('ptext').value = ''; document.body.classList.add('paste'); $('ptext').focus(); }
+  else if (a === 'export') exportAll();
+  else if (a === 'import') $('imp').click();
+  else if (!cur) return;
+  else if (a === 'helper') openInHelper(cur);
+  else if (a === 'openfile') window.open($('prev').dataset.url, '_blank');
+  else if (a === 'download') download(blobOf(cur), fileName(cur));
+  else if (a === 'delete' && confirm(`„${cur.title}“ wirklich löschen?`)) {
+    const id = cur.id; del(id); items = items.filter(it => it.id !== id);
+    if (urls.has(id)) { URL.revokeObjectURL(urls.get(id)); urls.delete(id); }
+    history.back(); toast('Gelöscht');
+  }
+}
+
+$('add').onclick = e => { e.stopPropagation(); if (!items.length) return act('file'); $('menu').classList.toggle('on'); };
+$('more').onclick = e => { e.stopPropagation(); $('menu').classList.toggle('on'); };
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-a]'); if (b) return act(b.dataset.a);
+  if (!e.target.closest('#menu')) $('menu').classList.remove('on');
+});
+$('file').onchange = e => { const f = [...e.target.files]; e.target.value = ''; if (f.length) addFiles(f); };
+$('imp').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) importAll(f); };
+$('q').oninput = render;
+$('filters').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if ('fav' in b.dataset) favOnly = !favOnly;
+  else if ('sort' in b.dataset) sort = sort === 'name' ? 'neu' : 'name';
+  else { const t = b.dataset.tag, hit = [...sel].find(s => s.toLowerCase() === t.toLowerCase()); hit ? sel.delete(hit) : sel.add(t); }
+  render();
+};
+$('grid').onclick = e => { const c = e.target.closest('.card'); if (c) show(c.dataset.id); };
+$('close').onclick = () => history.back();
+window.onpopstate = close;
+$('dfav').onclick = () => { cur.fav = !cur.fav; saveCur(); renderDetail(); };
+$('title').onchange = () => { cur.title = $('title').value.trim() || 'Muster'; $('title').value = cur.title; saveCur(); };
+$('notes').onchange = () => { cur.notes = $('notes').value; saveCur(); };
+$('tagin').onkeydown = e => { if ((e.key === 'Enter' || e.key === ',') && $('tagin').value.trim()) { e.preventDefault(); addTag($('tagin').value); $('tagin').value = ''; } };
+$('tagin').onchange = () => { if ($('tagin').value.trim()) { addTag($('tagin').value); $('tagin').value = ''; } };
+$('dtags').onclick = e => { const b = e.target.closest('[data-rm]'); if (b) { e.preventDefault(); cur.tags.splice(+b.dataset.rm, 1); saveCur(); renderDetail(); } };
+$('pcancel').onclick = () => document.body.classList.remove('paste');
+$('psave').onclick = async () => {
+  const text = $('ptext').value; if (!text.trim()) return toast('Bitte Text einfügen');
+  const title = $('ptitle').value.trim() || text.trim().split('\n')[0].slice(0, 40);
+  const it = { id: uid(), kind: 'text', title, name: '', mime: 'text/plain', size: text.length, text, tags: [], fav: false, notes: '', added: Date.now() };
+  await put(it); items.push(it); persist(); document.body.classList.remove('paste'); render(); show(it.id);
+};
+// Dateien auf die Seite ziehen (Computer)
+let dragN = 0;
+addEventListener('dragenter', e => { if (e.dataTransfer.types.includes('Files')) { dragN++; document.body.classList.add('drag'); } });
+addEventListener('dragleave', () => { if (--dragN <= 0) { dragN = 0; document.body.classList.remove('drag'); } });
+addEventListener('dragover', e => e.preventDefault());
+addEventListener('drop', e => { e.preventDefault(); dragN = 0; document.body.classList.remove('drag'); const f = [...e.dataTransfer.files]; if (f.length) addFiles(f); });
+
+openDb().then(async d => { db = d; items = await all(); render(); })
+  .catch(() => { $('empty').innerHTML = '<p>Dieser Browser erlaubt keinen Speicher für die Sammlung (z. B. privates Fenster).</p>'; });
+</script>
+</body>
+</html>
