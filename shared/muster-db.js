@@ -1,5 +1,5 @@
 // Zugriff auf die Mustersammlung (IndexedDB „isadody-muster“), gemeinsam für muster/ und anleitung/.
-// MusterDB.open() → Promise<IDBDatabase>; MusterDB.all() → Promise<Muster[]>
+// MusterDB.open() → Promise<IDBDatabase>; MusterDB.all() → Promise<Muster[]>; get(id) → Promise<Muster|undefined>; put(muster)
 const MusterDB = (() => {
   const DB = 'isadody-muster', ST = 'items';
   let p;
@@ -12,5 +12,11 @@ const MusterDB = (() => {
     const q = db.transaction(ST, 'readonly').objectStore(ST).getAll();
     q.onsuccess = () => ok(q.result); q.onerror = () => err(q.error);
   }));
-  return { open, all, ST };
+  const req = (mode, fn) => open().then(db => new Promise((ok, err) => {
+    const t = db.transaction(ST, mode), q = fn(t.objectStore(ST));
+    t.oncomplete = () => ok(q.result); t.onerror = () => err(t.error); t.onabort = () => err(t.error);
+  }));
+  const get = id => req('readonly', s => s.get(id));
+  const put = it => req('readwrite', s => s.put(it));
+  return { open, all, get, put, ST };
 })();

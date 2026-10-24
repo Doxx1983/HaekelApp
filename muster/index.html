@@ -226,6 +226,7 @@ function renderDetail() {
   $('dtags').querySelectorAll('.tg').forEach(e => e.remove());
   $('tagin').insertAdjacentHTML('beforebegin', cur.tags.map((t, i) => `<span class="tg">${esc(t)}<button data-rm="${i}" aria-label="Tag ${esc(t)} entfernen">×</button></span>`).join(''));
   $('dbtns').innerHTML = (cur.kind === 'text' || cur.text ? '<button class="btn" data-a="helper">Im Häkelhelfer öffnen</button>' : '') +
+    (cur.grid ? '<button class="btn" data-a="grid">Im Grid-Ersteller öffnen</button>' : '') +
     (cur.kind === 'pdf' || cur.kind === 'image' ? `<button class="btn" data-a="openfile">${cur.kind === 'pdf' ? 'PDF öffnen' : 'Bild öffnen'}</button>` : '') +
     '<button class="small" data-a="download">Herunterladen</button><button class="small" id="del" data-a="delete">Löschen</button>';
 }
@@ -278,7 +279,15 @@ async function importAll(f) {
 function openInHelper(it) {
   const a = Store('anleitung');
   if (a.get('pattern', '') !== it.text) { a.set('pattern', it.text); a.set('pos', { r: 0, p: 0 }); a.set('done', {}); }
+  if (it.colors) a.set('colors', { ...a.get('colors', {}), ...it.colors }); // Garnfarben aus dem Grid-Ersteller
   location.href = '../anleitung/';
+}
+// Muster aus dem Grid-Ersteller dort weiterbearbeiten; erneutes Speichern aktualisiert dieses Muster
+function openInGrid(it) {
+  const g = Store('grid');
+  if (g.get('state', null) && g.get('mid', null) !== it.id && !confirm('Der aktuelle Stand im Grid-Ersteller wird ersetzt. Weiter?')) return;
+  g.set('state', { G: it.grid.G, o: it.grid.o, keep: it.grid.keep !== false }); g.set('src', it.grid.src || ''); g.set('mid', it.id);
+  location.href = '../grid/';
 }
 
 function act(a) {
@@ -289,6 +298,7 @@ function act(a) {
   else if (a === 'import') $('imp').click();
   else if (!cur) return;
   else if (a === 'helper') openInHelper(cur);
+  else if (a === 'grid') openInGrid(cur);
   else if (a === 'openfile') window.open($('prev').dataset.url, '_blank');
   else if (a === 'download') download(blobOf(cur), fileName(cur));
   else if (a === 'delete' && confirm(`„${cur.title}“ wirklich löschen?`)) {
