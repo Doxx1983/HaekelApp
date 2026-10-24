@@ -51,7 +51,7 @@
   .opts { display:flex; flex-wrap:wrap; gap:8px; }
   .opts button { background:var(--paper); border:1px solid var(--line); border-radius:999px; padding:8px 14px; font-weight:700; min-width:48px; }
   .opts button.on { border-color:var(--ink); background:var(--coral-soft); }
-  .card input { font:inherit; padding:10px 12px; border-radius:12px; border:1px solid var(--line); background:#fff; color:var(--ink); width:100%; }
+  .card input { font:inherit; padding:10px 12px; border-radius:12px; border:var(--field-border); background:#fff; color:var(--ink); width:100%; }
   .card label { display:flex; align-items:center; gap:10px; font-weight:700; }
   .card label input { width:auto; }
   .ghost { padding:12px; border-radius:999px; background:var(--paper); border:1px solid var(--line); font-weight:700; }
@@ -87,7 +87,7 @@
 </section>
 <script>
 const SIZES = [6, 8, 10, 12, 16, 20, 24, 30];
-const TONES = ['#F2896B', '#F6A488', '#F8BBA3', '#FBD9CB', '#EFC9A6', '#E3B98F']; // Coral-Verlauf statt Regenbogen (CD)
+const TONES = ['#F2896B', '#F6A488', '#F8BBA3', '#F3B48F', '#EFC9A6', '#E3B98F']; // Coral-Verlauf statt Regenbogen (CD)
 const store = Store('zaehler');
 const $ = id => document.getElementById(id);
 

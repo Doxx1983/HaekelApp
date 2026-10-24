@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Isadody Tapestry-Raster</title>
+<title>Isadody Grid-Ersteller</title>
 <meta name="theme-color" content="#FBF6EC">
 <link rel="stylesheet" href="../shared/isadody.css">
 <script src="../shared/store.js"></script>
@@ -23,8 +23,9 @@
   section { background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-card); padding:14px; margin:12px 0; }
   .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-top:12px; }
   label.f { display:flex; flex-direction:column; gap:4px; font-size:.85rem; font-weight:700; }
-  label.c { display:flex; align-items:center; gap:8px; font-size:.9rem; }
-  input[type=number], select, input.hex { font:inherit; padding:8px 10px; border-radius:12px; border:1px solid var(--line); background:#fff; color:var(--ink); min-width:0; }
+  label.c { display:flex; align-items:center; gap:10px; min-height:44px; font-size:.9rem; }
+  label.c input { width:22px; height:22px; margin:0; flex:none; }
+  input[type=number], select, input.hex { font:inherit; min-height:44px; padding:8px 10px; border-radius:12px; border:var(--field-border); background:#fff; color:var(--ink); min-width:0; }
   #file { display:none; }
   #pick { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
   #thumb { height:64px; width:auto; border-radius:10px; border:1px solid var(--line); display:none; }
@@ -55,7 +56,7 @@
 </head>
 <body>
 <header>
-  <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><h1>Tapestry-Raster</h1><div class="sub">Bild → Häkelmuster</div></div></div>
+  <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><h1>Grid-Ersteller</h1><div class="sub">Bild → Tapestry-Muster</div></div></div>
   <div class="tools"><a class="home" href="../">‹ Alle Apps</a><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div>
 </header>
 
@@ -70,7 +71,7 @@
     <label class="f">Maschen (Breite)<input type="number" id="cols" min="5" max="200" value="40"></label>
     <label class="f">Reihen (Höhe)<input type="number" id="rowsN" min="5" max="200" value="40"></label>
     <label class="f">Farben<input type="number" id="ncol" min="2" max="10" value="4"></label>
-    <label class="f">Arbeitsweise<select id="mode"><option value="rows">Reihen (hin & zurück)</option><option value="rounds">Runden</option></select></label>
+    <label class="f">Arbeitsweise<select id="mode"><option value="rows">Reihen</option><option value="rounds">Runden</option></select></label>
   </div>
   <div class="grid2">
     <label class="c"><input type="checkbox" id="keep" checked> Seitenverhältnis beibehalten</label>

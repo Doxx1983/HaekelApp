@@ -31,7 +31,7 @@
   #back { flex:0 0 22%; background:var(--paper-alt); border:1px solid var(--line); color:var(--ink); border-radius:999px; font-size:1.1rem; font-weight:700; }
   #next { flex:1; background:var(--coral); color:var(--ink); border-radius:999px; box-shadow:var(--shadow-soft); font-family:var(--display); font-size:1.9rem; font-weight:700; padding:22px 0; }
   #setup { display:none; flex:1; flex-direction:column; gap:10px; overflow:auto; padding-bottom:12px; }
-  #setup textarea { flex:1; min-height:30vh; font:inherit; padding:10px; border-radius:10px; border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:16px; }
+  #setup textarea { flex:1; min-height:30vh; font:inherit; padding:10px; border-radius:10px; border:var(--field-border); background:#fff; color:var(--ink); border-radius:16px; }
   #setup .row { display:flex; gap:10px; }
   #setup button { flex:1; padding:14px; border-radius:999px; background:var(--coral); color:var(--ink); font-weight:800; }
   #colors { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
@@ -43,7 +43,7 @@
   #colors .pal button { width:34px; height:34px; padding:0; border-radius:50%; border:1px solid var(--ink-soft); }
   #colors .ed label { display:flex; align-items:center; gap:8px; font-size:.85rem; } #colors .ed label input { flex:1; }
   #colors .hexrow { display:flex; gap:8px; align-items:center; } #colors .prev { width:34px; height:34px; border-radius:50%; border:1px solid var(--ink-soft); }
-  #colors input:not([type=range]) { font:inherit; padding:8px 10px; border-radius:12px; border:1px solid var(--line); background:#fff; color:var(--ink); min-width:0; flex:1; }
+  #colors input:not([type=range]) { font:inherit; padding:8px 10px; border-radius:12px; border:var(--field-border); background:#fff; color:var(--ink); min-width:0; flex:1; }
   #row .dot { display:inline-block; width:.9em; height:.9em; border-radius:50%; vertical-align:middle; margin-left:6px; border:1px solid var(--ink-soft); }
   /* Auswahl aus der Mustersammlung */
   #setup #pick { flex:none; align-self:stretch; background:var(--paper-alt); border:1px solid var(--line); box-shadow:var(--shadow-card); font-weight:800; }
@@ -51,10 +51,10 @@
   #lib[hidden] { display:none; }
   #lib .head { display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-family:var(--display); font-size:1.15rem; font-weight:700; }
   #lib .head a { font-family:var(--body); font-size:.85rem; color:var(--ink-soft); text-decoration:none; white-space:nowrap; }
-  #libq { font:inherit; padding:10px 14px; border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--ink); min-width:0; }
+  #libq { font:inherit; padding:10px 14px; border-radius:999px; border:var(--field-border); background:#fff; color:var(--ink); min-width:0; }
   #libtags { display:flex; flex-wrap:wrap; gap:6px; } #libtags:empty { display:none; }
   #setup #libtags button, #setup #liblist button { flex:none; padding:0; border-radius:0; background:none; font-weight:700; }
-  #setup #libtags button { background:var(--paper); border:1px solid var(--line); border-radius:999px; padding:4px 12px; font-size:.85rem; }
+  #setup #libtags button { min-height:40px; background:var(--paper); border:1px solid var(--line); border-radius:999px; padding:4px 14px; font-size:.85rem; }
   #setup #libtags button.on { background:var(--coral-soft); border-color:var(--ink); }
   #liblist { display:flex; flex-direction:column; gap:6px; max-height:32vh; overflow:auto; }
   #setup #liblist button { display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:10px 12px; }
@@ -66,7 +66,7 @@
   #projs { display:flex; flex-direction:column; gap:8px; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; padding:12px; }
   #projs .head { display:flex; justify-content:space-between; align-items:center; gap:10px; font-family:var(--display); font-size:1.15rem; font-weight:700; }
   #projs .head small { font-family:var(--body); font-size:.8rem; color:var(--ink-soft); font-weight:700; }
-  #setup #newp { flex:none; padding:8px 14px; font-size:.85rem; box-shadow:none; }
+  #setup #newp { flex:none; min-height:44px; padding:8px 14px; font-size:.85rem; box-shadow:none; }
   #plist { display:flex; flex-direction:column; gap:6px; } #plist:empty { display:none; }
   #plist .it { display:flex; gap:6px; }
   #setup #plist button { border-radius:12px; background:var(--paper); border:1px solid var(--line); font-weight:700; padding:10px 12px; }
@@ -76,13 +76,13 @@
   #plist .open small { color:var(--ink-soft); font-size:.8rem; font-weight:600; }
   #setup #plist .del { flex:none; width:44px; padding:0; color:var(--ink-soft); font-size:1.2rem; }
   #edhead { font-family:var(--display); font-size:1.15rem; font-weight:700; margin:4px 0 -2px; }
-  #pname { font:inherit; padding:10px 14px; border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--ink); min-width:0; }
+  #pname { font:inherit; padding:10px 14px; border-radius:999px; border:var(--field-border); background:#fff; color:var(--ink); min-width:0; }
   body.setup #setup { display:flex; } body.setup #chips, body.setup #nav { display:none; }
 </style>
 </head>
 <body>
 <header>
-  <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><div id="row">–</div><div id="pos"></div></div></div>
+  <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><div id="row">Häkelhelfer</div><div id="pos"></div></div></div>
   <div class="actions"><div class="tools"><a class="home" href="../">‹ Alle Apps</a><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div><button class="small" id="menu">Projekte</button></div>
 </header>
 <main id="chips"></main>
@@ -276,6 +276,7 @@ function openSetup(proj) {
   $('edhead').textContent = E.id ? 'Anleitung bearbeiten' : 'Neues Projekt';
   $('ok').textContent = E.id ? 'Weiterhäkeln' : 'Starten';
   renderProjects(); renderColorPickers(); loadLib();
+  $('row').textContent = 'Häkelhelfer'; $('pos').textContent = '';
   document.body.classList.add('setup');
 }
 function renderProjects() {
