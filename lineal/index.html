@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Isadody Lineal</title>
+<meta name="theme-color" content="#FBF6EC">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../shared/icon-180.png">
+<link rel="stylesheet" href="../shared/isadody.css">
+<script src="../shared/store.js"></script>
+<script src="../shared/dialog.js"></script>
+<script src="../shared/erinnerung.js"></script>
+<script src="../shared/muster-db.js"></script>
+<script src="../shared/doctext.js"></script>
+<style>
+  html,body { height:100%; }
+  body { display:flex; flex-direction:column; padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom); }
+  header { display:flex; justify-content:space-between; align-items:center; padding:10px 0; gap:10px; }
+  .title { display:flex; align-items:center; gap:12px; min-width:0; }
+  .title > div { min-width:0; }
+  #row { font-family:var(--display); font-size:1.6rem; font-weight:700; line-height:1.1; background:none; padding:0; text-align:left; }
+  #sub { font-size:.9rem; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .actions { display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex:none; }
+
+  /* Auswahl */
+  #choose { flex:1; overflow:auto; display:flex; flex-direction:column; gap:10px; padding-bottom:12px; }
+  #choose h2 { margin:4px 0 0; font-family:var(--display); font-size:1.2rem; }
+  #choose p { margin:0; color:var(--ink-soft); }
+  #list { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:10px; }
+  #list button { display:flex; flex-direction:column; gap:6px; padding:8px; text-align:left; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-card); font-weight:700; min-height:44px; }
+  #list .th { aspect-ratio:3/4; border-radius:10px; background:var(--paper) center/cover no-repeat; display:grid; place-items:center; font-family:var(--display); font-size:1.4rem; color:var(--ink-soft); }
+  #list small { font-weight:400; color:var(--ink-soft); }
+  #open { align-self:flex-start; }
+
+  /* Ansicht mit Lineal */
+  #view { flex:1; min-height:0; overflow:auto; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; -webkit-overflow-scrolling:touch; }
+  #doc { position:relative; margin:0 auto; }
+  #pages > * { display:block; width:100%; background:#fff; }
+  #pages > * + * { margin-top:8px; }
+  #dim { position:absolute; left:0; right:0; top:0; background:rgba(251,246,236,.62); pointer-events:none; }
+  #band { position:absolute; left:0; right:0; border-top:3px solid var(--coral); border-bottom:3px solid var(--coral); background:rgba(242,137,107,.12); touch-action:none; cursor:ns-resize; }
+  #band .grip { position:absolute; right:6px; top:50%; transform:translateY(-50%); width:44px; height:44px; border-radius:50%; background:var(--coral); box-shadow:var(--shadow-card); display:grid; place-items:center; }
+  #band .grip::before { content:''; width:18px; height:10px; border-top:2px solid var(--ink); border-bottom:2px solid var(--ink); }
+  #tools { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; padding-top:8px; }
+  #tools .small { min-width:44px; border:1px solid var(--line); }
+  #tools span { align-self:center; font-size:.8rem; color:var(--ink-soft); }
+  #nav { display:flex; gap:10px; padding:10px 0 12px; }
+  #up { flex:0 0 22%; background:var(--paper-alt); border:1px solid var(--line); border-radius:999px; font-size:1.1rem; font-weight:700; }
+  #down { flex:1; background:var(--coral); border-radius:999px; box-shadow:var(--shadow-soft); font-family:var(--display); font-size:1.7rem; font-weight:700; padding:16px 0; }
+  #msg { margin:auto; color:var(--ink-soft); text-align:center; padding:20px; }
+  body.choose #view, body.choose #tools, body.choose #nav { display:none; }
+  body:not(.choose) #choose { display:none; }
+</style>
+</head>
+<body class="choose">
+<header>
+  <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><button id="row" type="button">Lineal</button><div id="sub">Anleitung als Bild oder PDF</div></div></div>
+  <div class="actions"><div class="tools"><a class="home" href="../">‹ Alle Apps</a><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div><button class="small" id="menu" hidden>Muster</button></div>
+</header>
+<section id="choose">
+  <p>Das Lineal markiert die Reihe, an der du gerade bist. Gut für Anleitungen, die der Häkelhelfer nicht lesen kann: Fotos, eingescannte PDFs, Diagramme.</p>
+  <button class="btn" id="open" type="button">Bild oder PDF öffnen</button>
+  <input type="file" id="file" accept="image/*,application/pdf,.pdf" hidden>
+  <h2>Aus der Sammlung</h2>
+  <div id="list"></div>
+</section>
+<main id="view"><div id="doc"><div id="pages"></div><div id="dim"></div><div id="band" aria-label="Lineal"><span class="grip"></span></div></div></main>
+<div id="tools">
+  <button class="small" id="zout" aria-label="Kleiner">−</button><button class="small" id="zin" aria-label="Größer">+</button><span>Ansicht</span>
+  <button class="small" id="hless" aria-label="Lineal schmaler">▁</button><button class="small" id="hmore" aria-label="Lineal breiter">▃</button><span>Lineal</span>
+</div>
+<div id="nav"><button id="up">‹ Zurück</button><button id="down">Weiter ›</button></div>
+<script>
+// Stand je Muster der Sammlung: lineal.s = { id: { y, h, row, zoom, used } }
+// y = Oberkante des Lineals als Anteil der Gesamthöhe, h = Höhe als Anteil der Breite (beides bleibt beim Zoomen gleich)
+const $ = id => document.getElementById(id), store = Store('lineal');
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+let it = null, S = null, pdf = null, rendering = 0;
+const states = () => { const s = store.get('s', {}); return s && typeof s === 'object' ? s : {}; };
+function save() {
+  if (!it) return;
+  const all = states(); S.used = Date.now(); all[it.id] = S;
+  // nur die 50 zuletzt benutzten behalten
+  const keep = Object.entries(all).sort((a, b) => (b[1].used || 0) - (a[1].used || 0)).slice(0, 50);
+  store.set('s', Object.fromEntries(keep)); store.set('last', it.id);
+}
+
+// ---- Auswahl ----
+const urls = [];
+async function showChoose() {
+  document.body.classList.add('choose'); $('menu').hidden = true; it = null;
+  $('row').textContent = 'Lineal'; $('sub').textContent = 'Anleitung als Bild oder PDF';
+  urls.splice(0).forEach(u => URL.revokeObjectURL(u));
+  let items = []; try { items = (await MusterDB.all()).filter(x => (x.kind === 'pdf' || x.kind === 'image') && x.blob); } catch {}
+  const st = states();
+  items.sort((a, b) => ((st[b.id] || {}).used || 0) - ((st[a.id] || {}).used || 0) || (b.added || 0) - (a.added || 0));
+  $('list').innerHTML = items.length ? items.map(x => {
+    let bg = ''; if (x.kind === 'image') { const u = URL.createObjectURL(x.thumb || x.blob); urls.push(u); bg = ` style="background-image:url('${u}')"`; }
+    const s = st[x.id];
+    return `<button data-id="${esc(x.id)}"><span class="th"${bg}>${x.kind === 'pdf' ? 'PDF' : ''}</span>${esc(x.title)}<small>${s ? `Reihe ${s.row}` : 'neu'}</small></button>`;
+  }).join('') : '<p>Noch keine Bilder oder PDFs in der Sammlung.</p>';
+}
+$('list').onclick = e => { const b = e.target.closest('[data-id]'); if (b) location.hash = encodeURIComponent(b.dataset.id); };
+$('open').onclick = () => $('file').click();
+// Neue Datei kommt in die Sammlung, damit sie (und der Stand) erhalten bleibt
+$('file').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  const kind = fileKind(f); if (kind !== 'pdf' && kind !== 'image') return Dialog.alert('Bitte ein Bild oder eine PDF wählen.');
+  const x = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), kind, title: f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim() || 'Muster', name: f.name,
+    mime: f.type || 'application/pdf', size: f.size, tags: [], fav: false, notes: '', added: Date.now(), blob: f };
+  if (kind === 'pdf') x.text = await pdfText(f);
+  try { await MusterDB.put(x); } catch { return Dialog.alert('Speicher voll: Die Datei konnte nicht gespeichert werden.'); }
+  location.hash = encodeURIComponent(x.id);
+};
+$('menu').onclick = () => { history.replaceState(null, '', location.pathname); showChoose(); };
+
+// ---- Ansicht ----
+async function openItem(id) {
+  let x; try { x = await MusterDB.get(id); } catch {}
+  if (!x || !x.blob) { await showChoose(); return Dialog.alert('Dieses Muster gibt es nicht mehr in der Sammlung.'); }
+  it = x; S = { y: 0, h: 0.06, row: 1, zoom: 1, ...states()[id] };
+  document.body.classList.remove('choose'); $('menu').hidden = false;
+  $('sub').textContent = it.title; showRow();
+  $('pages').innerHTML = ''; pdf = null;
+  if (it.kind === 'pdf') {
+    $('pages').innerHTML = '<p id="msg">PDF wird geladen …</p>';
+    try { pdf = await openPdf(it.blob); } catch { $('pages').innerHTML = '<p id="msg">Diese PDF lässt sich nicht anzeigen.</p>'; return; }
+    await renderPdf();
+  } else {
+    const img = new Image(); img.alt = it.title; img.src = URL.createObjectURL(it.blob);
+    await new Promise(ok => { img.onload = img.onerror = ok; });
+    $('pages').innerHTML = ''; $('pages').append(img);
+  }
+  layout(); scrollToBand(false);
+}
+const docW = () => Math.round($('view').clientWidth * S.zoom);
+async function renderPdf() {
+  const run = ++rendering, W = docW(), dpr = Math.min(2, devicePixelRatio || 1), box = $('pages');
+  $('doc').style.width = W + 'px';
+  const n = Math.min(pdf.numPages, 100), pages = [];
+  for (let i = 1; i <= n; i++) pages.push(await pdf.getPage(i));
+  if (run !== rendering) return;
+  // erst alle Seiten mit richtiger Höhe anlegen, damit das Lineal sofort stimmt, dann zeichnen
+  box.innerHTML = '';
+  const cvs = pages.map(pg => { const v = pg.getViewport({ scale: 1 }), c = document.createElement('canvas'); c.style.aspectRatio = `${v.width} / ${v.height}`; box.append(c); return c; });
+  layout();
+  for (let i = 0; i < pages.length; i++) {
+    if (run !== rendering) return;
+    const pg = pages[i], v0 = pg.getViewport({ scale: 1 }), k = Math.min(W * dpr, 2400) / v0.width, v = pg.getViewport({ scale: k });
+    cvs[i].width = Math.round(v.width); cvs[i].height = Math.round(v.height);
+    await pg.render({ canvasContext: cvs[i].getContext('2d'), viewport: v }).promise;
+  }
+}
+function layout() {
+  if (!it) return;
+  $('doc').style.width = docW() + 'px';
+  const H = $('doc').offsetHeight, W = $('doc').offsetWidth;
+  const h = Math.max(12, S.h * W), top = Math.max(0, Math.min(H - h, S.y * H));
+  Object.assign($('band').style, { top: top + 'px', height: h + 'px' });
+  $('dim').style.height = top + 'px';
+}
+function scrollToBand(smooth = true) {
+  const v = $('view'), top = parseFloat($('band').style.top) || 0;
+  v.scrollTo({ top: Math.max(0, top - v.clientHeight * 0.3), behavior: smooth ? 'smooth' : 'auto' });
+}
+function showRow() { $('row').textContent = `Reihe ${S.row}`; $('up').disabled = S.row <= 1 && S.y <= 0; }
+// Lineal um seine eigene Höhe verschieben, Reihe mitzählen
+function step(d) {
+  const H = $('doc').offsetHeight, W = $('doc').offsetWidth; if (!H) return;
+  S.y = Math.max(0, Math.min(1 - S.h * W / H, S.y + d * S.h * W / H));
+  S.row = Math.max(1, S.row + d);
+  layout(); showRow(); scrollToBand(); save();
+}
+$('down').onclick = () => step(1);
+$('up').onclick = () => step(-1);
+// Reihe von Hand setzen
+$('row').onclick = async () => {
+  if (!it) return;
+  const v = await Dialog.prompt('In welcher Reihe bist du?', String(S.row), { ok: 'Übernehmen' });
+  if (v !== null && /^\d{1,5}$/.test(v.trim()) && +v > 0) { S.row = +v; showRow(); save(); }
+};
+// Lineal ziehen; Tipp auf die Anleitung setzt es an diese Stelle
+let drag = null;
+$('band').addEventListener('pointerdown', e => { drag = { y: e.clientY, top: parseFloat($('band').style.top) || 0 }; $('band').setPointerCapture(e.pointerId); e.preventDefault(); });
+$('band').addEventListener('pointermove', e => {
+  if (!drag) return;
+  const H = $('doc').offsetHeight; S.y = Math.max(0, Math.min(1, (drag.top + e.clientY - drag.y) / H)); layout();
+});
+$('band').addEventListener('pointerup', () => { if (drag) { drag = null; save(); } });
+$('doc').addEventListener('click', e => {
+  if (e.target.closest('#band')) return;
+  const r = $('doc').getBoundingClientRect(), W = $('doc').offsetWidth, H = $('doc').offsetHeight;
+  S.y = Math.max(0, (e.clientY - r.top - S.h * W / 2) / H); layout(); save();
+});
+const zoom = f => { S.zoom = Math.max(1, Math.min(4, Math.round(S.zoom * f * 100) / 100)); save(); rerender(); };
+$('zin').onclick = () => zoom(1.25);
+$('zout').onclick = () => zoom(0.8);
+const hsize = f => { S.h = Math.max(0.01, Math.min(0.5, S.h * f)); layout(); save(); };
+$('hmore').onclick = () => hsize(1.25);
+$('hless').onclick = () => hsize(0.8);
+let rt;
+function rerender() { layout(); clearTimeout(rt); rt = setTimeout(async () => { if (pdf) await renderPdf(); layout(); scrollToBand(false); }, 200); }
+addEventListener('resize', () => it && rerender());
+
+// Start: Muster aus dem Link (#id, z. B. aus der Sammlung), sonst das zuletzt benutzte
+function route() { const id = decodeURIComponent(location.hash.slice(1)); id ? openItem(id) : showChoose(); }
+addEventListener('hashchange', route);
+if (!location.hash && store.get('last', '')) history.replaceState(null, '', '#' + encodeURIComponent(store.get('last', '')));
+route();
+Erinnerung.hint();
+</script>
+</body>
+</html>

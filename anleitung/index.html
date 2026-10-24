@@ -55,6 +55,18 @@
   #colors .hexrow { display:flex; gap:8px; align-items:center; } #colors .prev { width:34px; height:34px; border-radius:50%; border:1px solid var(--ink-soft); }
   #colors input:not([type=range]) { font:inherit; padding:8px 10px; border-radius:12px; border:var(--field-border); background:#fff; color:var(--ink); min-width:0; flex:1; }
   #row .dot { display:inline-block; width:.9em; height:.9em; border-radius:50%; vertical-align:middle; margin-left:6px; border:1px solid var(--ink-soft); }
+  /* Prüfschritt: was der Häkelhelfer aus dem Text liest */
+  #check { display:flex; flex-direction:column; gap:8px; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; padding:12px; }
+  #check[hidden] { display:none; }
+  #csum { margin:0; font-weight:700; } #csum .w { background:var(--coral-soft); border-radius:999px; padding:0 8px; }
+  #clist { margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:2px; max-height:26vh; overflow:auto; font-size:.9rem; }
+  #clist li { display:flex; gap:8px; padding:4px 8px; border-radius:8px; background:var(--paper); }
+  #clist li b { flex:0 0 auto; min-width:4.5em; } #clist li span { color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #clist li.w { background:var(--coral-soft); } #clist li.w span { color:var(--ink); }
+  #check .crow { display:flex; gap:10px; align-items:center; flex-wrap:wrap; } #check .crow small { flex:1 1 12em; color:var(--ink-soft); }
+  #setup #crop { flex:0 0 auto; padding:10px 16px; background:var(--paper); border:1px solid var(--line); }
+  #setup #crop:disabled { opacity:.5; }
+  #setup .tipp { margin:0; font-size:.85rem; color:var(--ink-soft); }
   /* Auswahl aus der Mustersammlung */
   #setup #pick { flex:none; align-self:stretch; background:var(--paper-alt); border:1px solid var(--line); box-shadow:var(--shadow-card); font-weight:800; }
   #lib { display:flex; flex-direction:column; gap:8px; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; padding:12px; }
@@ -130,7 +142,13 @@
   <input type="file" id="file" hidden>
   <input id="pname" placeholder="Name des Projekts" maxlength="60">
   <div id="colors"></div>
+  <p class="tipp">Foto oder Screenshot? Text im Bild markieren und kopieren (iPhone/iPad: Live Text, Android: Google Lens), dann hier einfügen.</p>
   <textarea id="text" placeholder="Anleitung hier einfügen"></textarea>
+  <div id="check" hidden>
+    <p id="csum"></p>
+    <ol id="clist"></ol>
+    <div class="crow"><small>Steht mehr als die Anleitung im Text? Den Teil mit den Reihen markieren und übernehmen.</small><button id="crop" type="button" disabled>Nur Markiertes behalten</button></div>
+  </div>
   <div class="row"><button id="ok">Starten</button></div>
 </section>
 <script>
@@ -149,7 +167,7 @@ const COLOR_RE = /^(?:(?:use|wechsel\w*|nimm|change)\s+)?(?:(?:to|zu)\s+)?(?:far
 // „change to color B in last st“: Ortsangabe nach dem Farbwechsel ist keine Masche
 const COLOR_AT = /^(?:in|im|into|beim|bei|at|during|on)\s+(?:the\s+|der\s+|dem\s+|den\s+)?(?:last|letzte\w*|final)\b.*$/i;
 // Materialliste vor der ersten Reihe: „Farbe A: weiß“, „Color B = pink“ (kein Farbwechsel)
-const MATERIAL = /^\s*[-•*]?\s*(?:farbe|colou?r|garn|yarn)\s+[\p{L}\d]+\s*[:=–]\s*\S/iu;
+const MATERIAL = /(?:^|[\s,;:(])[-•*]?\s*(?:farbe|colou?r|garn|yarn)\s+[\p{L}\d]+\s*[:=–]\s*\S/iu; // auch „Material: Farbe A: weiß, …“
 // Maschenglied: BLO/FLO bzw. hMg/vMg, vor oder hinter dem Kürzel
 const MOD = String.raw`(?:BLO|FLO|BL|FL|hMg|vMg|hinter\w*\s+Maschenglied\w*|vorder\w*\s+Maschenglied\w*)`;
 const MOD_RE = new RegExp(String.raw`^(?:(?:in|im|ins|into|nur|only|the)\s+)*(${MOD})(?:\s+(?:only|nur))?(?![\p{L}\d])[\s:]*`, 'iu');
@@ -499,17 +517,24 @@ function renderColorPickers() {
 const $ = id => document.getElementById(id);
 let rows = [], r = 0, p = 0;
 let done = {}; // Reihe -> Anzahl abgeschlossener Kacheln
-const save = () => { if (!P) return; P.pos = { r, p }; P.done = done; P.used = Date.now(); Projekte.put(P); };
+// Fortschritt gebündelt speichern: Jeder Tipp schreibt sonst alle Projekte neu (spürbar bei großen Tapestrys auf älteren Handys).
+// Spätestens 300 ms nach dem letzten Tipp, sofort beim Verlassen und bevor andere Projektdaten gelesen oder geändert werden (flush).
+let saveT = null;
+const save = () => { if (!P) return; P.pos = { r, p }; P.done = done; P.used = Date.now(); clearTimeout(saveT); saveT = setTimeout(flush, 300); };
+function flush() { if (saveT === null) return; clearTimeout(saveT); saveT = null; if (P) Projekte.put(P); }
+addEventListener('pagehide', flush);
+document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
 function load(proj) {
-  P = proj; rows = []; r = p = 0; done = {};
+  flush(); P = proj; rows = []; r = p = 0; done = {};
   if (!P) return;
   // Anleitung kam geändert aus einer anderen App (Grid): Häkchen unveränderter Reihen behalten
   if (typeof P.prev === 'string') { const x = { pattern: P.prev, done: P.done, pos: P.pos }; keepProgress(x, P.pattern); P.done = x.done; P.pos = x.pos; delete P.prev; Projekte.put(P); }
-  Projekte.setCurrent(P.id); colors = P.colors; rows = parse(P.pattern); done = P.done || {};
+  Projekte.setCurrent(P.id); colors = P.colors; rows = parse(P.pattern); done = P.done || {}; P.rows = rows.length;
   const s = P.pos || {};
   if (rows[s.r] && rows[s.r].pages[s.p]) { r = s.r; p = s.p; }
 }
 function openSetup(proj) {
+  flush();
   E = proj || draft(); colors = E.colors; editing = null;
   $('text').value = E.pattern || ''; $('pname').value = E.id ? E.name : '';
   $('edhead').textContent = E.id ? 'Anleitung bearbeiten' : 'Neues Projekt';
@@ -517,19 +542,28 @@ function openSetup(proj) {
   // Kopf zeigt, wo man ist; der Knopf führt zurück zum Häkeln (nur wenn es ein Projekt gibt)
   $('row').textContent = 'Projekte'; $('pos').innerHTML = P ? `Aktiv: <b>${esc(P.name)}</b>` : 'Leg dein erstes Projekt an';
   $('menu').textContent = '‹ Häkeln'; $('menu').hidden = !P;
-  renderProjects(); renderColorPickers(); loadLib();
+  renderProjects(); renderColorPickers(); setTimeout(renderCheck); loadLib();
   document.body.classList.add('setup');
 }
 const ago = t => {
   const d = Math.floor((new Date().setHours(0, 0, 0, 0) - new Date(t || 0).setHours(0, 0, 0, 0)) / 864e5);
   return d <= 0 ? 'heute' : d === 1 ? 'gestern' : d < 30 ? `vor ${d} Tagen` : new Date(t).toLocaleDateString('de-DE');
 };
+// Reihenzahl für die Projektliste: gemerkt im Projekt (rows) bzw. hier im Speicher, statt jede Anleitung neu zu lesen
+const counts = new Map();
+function rowCount(x) {
+  if (Number.isInteger(x.rows)) return x.rows;
+  if (!counts.has(x.pattern)) counts.set(x.pattern, parse(x.pattern).length);
+  return x.rows = counts.get(x.pattern);
+}
 function renderProjects() {
-  const list = Projekte.all().sort((a, b) => b.used - a.used);
+  const list = Projekte.all(), missing = list.some(x => !Number.isInteger(x.rows));
+  list.forEach(rowCount); if (missing) Projekte.saveAll(list); // einmalig nachtragen
+  list.sort((a, b) => b.used - a.used);
   $('pcount').textContent = list.length ? `${list.length} von ${Projekte.MAX}` : '';
   $('pempty').hidden = !!list.length;
   $('plist').innerHTML = list.map(x => {
-    const n = parse(x.pattern).length, at = Math.min(n, ((x.pos && x.pos.r) || 0) + 1), act = P && x.id === P.id;
+    const n = rowCount(x), at = Math.min(n, ((x.pos && x.pos.r) || 0) + 1), act = P && x.id === P.id;
     const pct = n ? Math.round((at - 1) / n * 100) : 0, keys = colorKeysIn(x.pattern).filter((k, i, a) => a.indexOf(k) === i && x.colors[k]);
     return `<div class="it"><button class="open${act ? ' cur' : ''}" data-id="${esc(x.id)}"><b>${esc(x.name)}</b>` +
       `<small>${act ? '<span class="tag">Aktiv</span>' : ''}Reihe ${at} von ${n} · ${ago(x.used)}` +
@@ -539,6 +573,7 @@ function renderProjects() {
   }).join('');
 }
 $('plist').onclick = async e => {
+  flush();
   const o = e.target.closest('[data-id]'), d = e.target.closest('[data-del]');
   if (o) { const x = Projekte.all().find(q => q.id === o.dataset.id); if (x) { x.used = Date.now(); Projekte.put(x); load(x); render(); } return; }
   if (!d) return;
@@ -621,19 +656,41 @@ $('chips').onclick = async e => {
 $('next').onclick = () => { if (p < rows[r].pages.length - 1) p++; else if (r < rows.length - 1) { r++; p = 0; } render(); };
 $('back').onclick = () => { if (p > 0) p--; else if (r > 0) { r--; p = rows[r].pages.length - 1; } render(); };
 $('menu').onclick = () => document.body.classList.contains('setup') && P ? render() : openSetup(P);
-$('text').oninput = renderColorPickers;
+// Prüfschritt: Reihen, Maschenzahl und Warnungen zeigen, bevor man startet
+function renderCheck() {
+  const t = $('text').value, box = $('check');
+  box.hidden = !t.trim(); if (box.hidden) return;
+  const rs = parse(t), warn = rs.filter(x => x.check), sk = rs.skipped;
+  $('csum').innerHTML = rs.length ? `${rs.length} ${rs.length === 1 ? 'Reihe' : 'Reihen'} erkannt` + (warn.length ? ` · <span class="w">⚠ ${warn.length} ${warn.length === 1 ? 'passt' : 'passen'} nicht zur Maschenzahl</span>` : '') +
+    (sk.length ? ` · <span class="w">${sk.length} ${sk.length === 1 ? 'Zeile' : 'Zeilen'} ohne Maschen</span>` : '') : 'Noch keine Reihen erkannt';
+  const li = rs.slice(0, 300).map(x => `<li${x.check ? ' class="w"' : ''}><b>Reihe ${esc(x.label)}</b><span>${x.check ? `⚠ gezählt ${x.count}, Anleitung ${x.target}` : `${x.target != null ? x.target : x.count} M`} · ${esc(x.pages.flat().map(c => (c.n > 1 ? c.n + '× ' : '') + c.s).join(', '))}</span></li>`);
+  $('clist').innerHTML = li.join('') + sk.map(l => `<li class="w"><b>fehlt</b><span>${esc(l)}</span></li>`).join('') + (rs.length > 300 ? `<li><span>… und ${rs.length - 300} weitere</span></li>` : '');
+}
+let checkT;
+$('text').oninput = () => { renderColorPickers(); clearTimeout(checkT); checkT = setTimeout(renderCheck, 300); };
+const selOk = () => { const a = $('text'); $('crop').disabled = a.selectionEnd - a.selectionStart < 3; };
+['select', 'keyup', 'mouseup', 'touchend'].forEach(ev => $('text').addEventListener(ev, selOk));
+document.addEventListener('selectionchange', selOk);
+$('crop').onclick = () => { const a = $('text'), t = a.value.slice(a.selectionStart, a.selectionEnd).trim(); if (!t) return; a.value = t; $('crop').disabled = true; renderColorPickers(); renderCheck(); };
 $('file').accept = FILE_ACCEPT;
 $('pick').onclick = () => $('file').click();
 $('file').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
+  $('pick').textContent = 'Datei wird gelesen …'; $('pick').disabled = true;
   const t = await fileText(f);
+  $('pick').textContent = 'Externe Datei laden'; $('pick').disabled = false;
   if (t.trim()) {
     // Datei wird ein neues Projekt, außer der Bereich ist gerade leer
     if (E.id && $('text').value.trim()) { if (Projekte.full()) { Dialog.alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`); e.target.value = ''; return; } openSetup(null); }
     if (!$('pname').value.trim()) $('pname').value = f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
-    $('text').value = t; renderColorPickers();
+    $('text').value = t; renderColorPickers(); renderCheck();
   }
-  else Dialog.alert(fileKind(f) ? 'Aus dieser Datei kann der Häkelhelfer keinen Text lesen (Bild, PDF oder alte .doc). Bitte den Text einfügen.' : 'Dieses Dateiformat wird nicht unterstützt.');
+  else {
+    const k = fileKind(f);
+    Dialog.alert(k === 'image' ? 'Aus einem Bild kann der Häkelhelfer keinen Text lesen. Markiere den Text im Foto und kopiere ihn (iPhone/iPad: Live Text, Android: Google Lens), dann hier einfügen. Oder öffne das Bild im Lineal.'
+      : k === 'pdf' ? 'Diese PDF enthält keinen lesbaren Text (vermutlich eingescannt). Öffne sie im Lineal oder kopiere den Text per Live Text/Google Lens aus einem Screenshot.'
+      : k ? 'Aus dieser Datei (alte .doc) kann der Häkelhelfer keinen Text lesen. Bitte als .docx speichern oder den Text einfügen.' : 'Dieses Dateiformat wird nicht unterstützt.');
+  }
   e.target.value = '';
 };
 // Textmuster aus der Mustersammlung (IndexedDB von muster/); Bilder, PDFs und .doc ohne Text sind nicht wählbar
@@ -698,6 +755,7 @@ $('ok').onclick = () => {
 // Andere Tabs oder Apps haben Projekte geändert: frisch laden, damit hier kein alter Stand zurückgeschrieben wird
 addEventListener('storage', e => {
   if (e.key !== 'anleitung.projects') return;
+  flush();
   const list = Projekte.all(), fresh = id => list.find(q => q.id === id);
   if (document.body.classList.contains('setup')) {
     if (E && E.id && fresh(E.id)) { const y = fresh(E.id); E.pos = y.pos; E.done = y.done; E.used = y.used; }

@@ -1,6 +1,6 @@
 // Projekte des Häkelhelfers (bis zu 10 Anleitungen mit eigenem Fortschritt und eigenen Farben).
 // Gemeinsam für anleitung/ und die Apps, die Anleitungen dorthin schicken (grid/, muster/). Braucht store.js.
-// Gespeichert unter anleitung.projects ([{ id, name, pattern, pos, done, colors, used, prev? }]) und anleitung.current (id).
+// Gespeichert unter anleitung.projects ([{ id, name, pattern, pos, done, colors, used, prev?, rows? (Reihenzahl, setzt der Häkelhelfer) }]) und anleitung.current (id).
 const Projekte = (() => {
   const MAX = 10, st = Store('anleitung');
   const DEFAULT_COLORS = { A: '#E53935', B: '#1E88E5' };
@@ -50,10 +50,10 @@ const Projekte = (() => {
   // der Häkelhelfer gleicht beim Öffnen ab und behält Häkchen unveränderter Reihen.
   function update(id, pattern, colors) {
     const p = all().find(x => x.id === id); if (!p) return null;
-    if (p.pattern !== pattern) { if (p.prev === undefined) p.prev = p.pattern; p.pattern = pattern; }
+    if (p.pattern !== pattern) { if (p.prev === undefined) p.prev = p.pattern; p.pattern = pattern; delete p.rows; }
     if (colors) p.colors = { ...p.colors, ...cleanColors(colors) };
     p.used = Date.now(); put(p); setCurrent(p.id); return p;
   }
   const FULL_MSG = `Im Häkelhelfer sind schon ${MAX} Projekte gespeichert. Bitte dort unter „Projekte“ erst eins löschen.`;
-  return { MAX, DEFAULT_COLORS, FULL_MSG, all, current, setCurrent, put, remove, full, create, open, update, nameOf, cleanColors };
+  return { MAX, DEFAULT_COLORS, FULL_MSG, all, saveAll, current, setCurrent, put, remove, full, create, open, update, nameOf, cleanColors };
 })();

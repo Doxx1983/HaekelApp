@@ -3,11 +3,12 @@
 // Neue Datei, die offline gebraucht wird: unten in FILES eintragen (fehlende Einträge stören nicht).
 const CACHE = 'haekel-apps';
 const FILES = ['./', 'manifest.webmanifest',
-  'anleitung/', 'zaehler/', 'grid/', 'muster/', 'lexikon/',
-  'anleitung/hilfe/', 'zaehler/hilfe/', 'grid/hilfe/', 'muster/hilfe/', 'lexikon/hilfe/',
+  'anleitung/', 'zaehler/', 'grid/', 'muster/', 'lexikon/', 'lineal/',
+  'anleitung/hilfe/', 'zaehler/hilfe/', 'grid/hilfe/', 'muster/hilfe/', 'lexikon/hilfe/', 'lineal/hilfe/',
   'shared/isadody.css', 'shared/hilfe.css', 'shared/fonts/fonts.css', 'shared/logo.png', 'shared/icon-180.png', 'shared/icon-192.png',
   'shared/fonts/baloo2-latin.woff2', 'shared/fonts/baloo2-latin-ext.woff2', 'shared/fonts/nunito-latin.woff2', 'shared/fonts/nunito-latin-ext.woff2',
-  'shared/store.js', 'shared/dialog.js', 'shared/erinnerung.js', 'shared/projekte.js', 'shared/muster-db.js', 'shared/sicherung.js', 'shared/doctext.js', 'shared/maschen.js'];
+  'shared/store.js', 'shared/dialog.js', 'shared/erinnerung.js', 'shared/projekte.js', 'shared/muster-db.js', 'shared/sicherung.js', 'shared/doctext.js', 'shared/maschen.js',
+  'shared/pdfjs/pdf.min.js', 'shared/pdfjs/pdf.worker.min.js']; // Schriften in shared/pdfjs/standard_fonts/ werden bei Bedarf gespeichert
 const WAIT = 4000; // so lange aufs Netz warten, dann den gespeicherten Stand zeigen
 
 self.addEventListener('install', e => {

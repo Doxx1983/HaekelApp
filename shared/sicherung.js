@@ -3,7 +3,7 @@
 // Alte Sicherungen der Sammlung ({ app: 'isadody-muster', items }) werden auch gelesen.
 // Beim Einspielen wird alles geprüft und nur Bekanntes übernommen: Die Datei kann von jemand anderem stammen.
 const Sicherung = (() => {
-  const APPS = ['anleitung', 'zaehler', 'grid', 'muster', 'lexikon'], st = Store('sicherung');
+  const APPS = ['anleitung', 'zaehler', 'grid', 'muster', 'lexikon', 'lineal'], st = Store('sicherung');
   const HEX = /^#[0-9a-f]{6}$/i, ID = /^[\w-]{1,64}$/, KINDS = ['image', 'pdf', 'word', 'text'];
   const int = (v, a, b, d) => Number.isInteger(v) && v >= a && v <= b ? v : d;
   const str = (v, n) => typeof v === 'string' ? v.slice(0, n) : '';
@@ -140,6 +140,18 @@ const Sicherung = (() => {
         g.set('state', gs); g.set('src', cleanSrc(json(L['grid.src'])));
         const mid = json(L['grid.mid']); if (typeof mid === 'string' && ID.test(mid)) g.set('mid', mid);
         parts.push('Grid');
+      }
+      // Lineal: Stand je Muster, der zuletzt benutzte gewinnt
+      const inL = json(L['lineal.s']);
+      if (obj(inL)) {
+        const ls = Store('lineal'), have = obj(ls.get('s', {})) ? ls.get('s', {}) : {}; let n = 0;
+        const num = (v, a, b, d) => Number.isFinite(v) && v >= a && v <= b ? v : d;
+        for (const [k, v] of Object.entries(inL)) {
+          if (!ID.test(k) || !obj(v) || Object.keys(have).length >= 50 && !have[k]) continue;
+          const c = { y: num(v.y, 0, 1, 0), h: num(v.h, 0.01, 0.5, 0.06), row: int(v.row, 1, 1e5, 1), zoom: num(v.zoom, 1, 4, 1), used: Number.isFinite(v.used) ? v.used : 0 };
+          if (!have[k] || c.used > (have[k].used || 0)) { have[k] = c; n++; }
+        }
+        if (n) { ls.set('s', have); parts.push(`${n} Lineal-${n === 1 ? 'Stand' : 'Stände'}`); }
       }
       // Lexikon: Favoriten zusammenführen (nur Einträge wie „abn“, höchstens 200)
       const inF = json(L['lexikon.fav']);

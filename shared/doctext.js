@@ -2,10 +2,42 @@
 const FILE_ACCEPT = 'image/*,application/pdf,.pdf,.txt,text/plain,.docx,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,.odt,application/vnd.oasis.opendocument.text';
 // 'image' | 'pdf' | 'word' (.docx, .odt, .doc) | 'text' | null
 const fileKind = f => /^image\//.test(f.type) ? 'image' : (f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) ? 'pdf' : /\.(docx?|odt)$/i.test(f.name) || /msword|wordprocessingml|opendocument\.text/.test(f.type) ? 'word' : (/^text\//.test(f.type) || /\.txt$/i.test(f.name)) ? 'text' : null;
-// Text einer Datei für den Häkelhelfer: .txt direkt, .docx/.odt ausgelesen, sonst '' (Bild, PDF, alte .doc)
+// Text einer Datei für den Häkelhelfer: .txt direkt, .docx/.odt/.pdf ausgelesen, sonst '' (Bild, eingescannte PDF, alte .doc)
 async function fileText(f) {
   const k = fileKind(f);
-  return k === 'text' ? f.text() : k === 'word' ? docText(f) : '';
+  return k === 'text' ? f.text() : k === 'word' ? docText(f) : k === 'pdf' ? pdfText(f) : '';
+}
+// pdf.js liegt lokal in shared/pdfjs/ und wird erst geladen, wenn eine PDF kommt (gut 1 MB)
+const PDFJS_BASE = new URL('pdfjs/', document.currentScript ? document.currentScript.src : location.href).href;
+function loadPdfjs() {
+  return loadPdfjs.p || (loadPdfjs.p = new Promise((ok, err) => {
+    const s = document.createElement('script'); s.src = PDFJS_BASE + 'pdf.min.js';
+    s.onload = () => { pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_BASE + 'pdf.worker.min.js'; ok(pdfjsLib); };
+    s.onerror = () => { loadPdfjs.p = null; err(new Error('pdf.js fehlt')); };
+    document.head.append(s);
+  }));
+}
+const openPdf = async blob => (await loadPdfjs()).getDocument({ data: new Uint8Array(await blob.arrayBuffer()), standardFontDataUrl: PDFJS_BASE + 'standard_fonts/', isEvalSupported: false }).promise;
+// Textebene einer PDF als Zeilen (Seiten durch Leerzeile getrennt); '' bei eingescannten PDFs oder Fehlern
+async function pdfText(blob) {
+  try {
+    const doc = await openPdf(blob), pages = [];
+    for (let n = 1; n <= Math.min(doc.numPages, 200); n++) {
+      const items = (await (await doc.getPage(n)).getTextContent()).items;
+      let out = '', y = null, x = 0;
+      for (const it of items) {
+        if (typeof it.str !== 'string') continue;
+        const [, , , h, ix, iy] = it.transform, lh = Math.abs(h) || 10;
+        if (y !== null && Math.abs(iy - y) > lh * 0.5) out = out.replace(/[ \t]+$/, '') + '\n';
+        else if (y !== null && it.str && !/\s$/.test(out) && ix - x > lh * 0.15) out += ' ';
+        out += it.str; y = iy; x = ix + (it.width || 0);
+        if (it.hasEOL) { out += '\n'; y = null; }
+      }
+      pages.push(out.replace(/[ \t]+\n/g, '\n').trim());
+    }
+    doc.destroy();
+    return pages.filter(Boolean).join('\n\n').replace(/\n{3,}/g, '\n\n');
+  } catch { return ''; }
 }
 // Text aus .docx (word/document.xml) oder .odt (content.xml) lesen; beides sind ZIP-Dateien. Ohne Bibliothek; alte .doc liefern ''
 async function docText(blob) {

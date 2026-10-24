@@ -158,7 +158,7 @@ async function addFiles(files) {
   for (const f of files) {
     const kind = fileKind(f); if (!kind) { skip++; continue; }
     const it = { id: uid(), kind, title: baseName(f.name) || 'Muster', name: f.name, mime: f.type || (kind === 'pdf' ? 'application/pdf' : 'text/plain'), size: f.size, tags: [], fav: false, notes: '', added: Date.now() };
-    if (kind === 'text') it.text = await f.text(); else { it.blob = f; if (kind === 'image') it.thumb = await thumbOf(f); if (kind === 'word') it.text = await docText(f); }
+    if (kind === 'text') it.text = await f.text(); else { it.blob = f; if (kind === 'image') it.thumb = await thumbOf(f); if (kind === 'word') it.text = await docText(f); if (kind === 'pdf') { toast('PDF wird gelesen …'); it.text = await pdfText(f); } }
     try { await put(it); } catch { render(); return toast(n ? `Speicher voll: nur ${n} Muster hinzugefügt` : 'Speicher voll: Muster nicht gespeichert'); }
     items.push(it); n++;
   }
@@ -231,7 +231,9 @@ function renderDetail() {
   $('dfav').textContent = cur.fav ? '★ Favorit' : '☆ Favorit';
   $('dtags').querySelectorAll('.tg').forEach(e => e.remove());
   $('tagin').insertAdjacentHTML('beforebegin', cur.tags.map((t, i) => `<span class="tg">${esc(t)}<button data-rm="${i}" aria-label="Tag ${esc(t)} entfernen">×</button></span>`).join(''));
-  $('dbtns').innerHTML = (cur.kind === 'text' || cur.text ? '<button class="btn" data-a="helper">Im Häkelhelfer öffnen</button>' : '') +
+  // PDFs aus der Zeit vor dem PDF-Lesen: Text wird beim Tippen nachgeholt
+  $('dbtns').innerHTML = (cur.kind === 'text' || cur.text || (cur.kind === 'pdf' && cur.text === undefined) ? '<button class="btn" data-a="helper">Im Häkelhelfer öffnen</button>' : '') +
+    (cur.kind === 'pdf' || cur.kind === 'image' ? '<button class="btn" data-a="lineal">Im Lineal öffnen</button>' : '') +
     (cur.grid ? '<button class="btn" data-a="grid">Im Grid-Ersteller öffnen</button>' : '') +
     (cur.kind === 'pdf' || cur.kind === 'image' ? `<button class="btn" data-a="openfile">${cur.kind === 'pdf' ? 'PDF öffnen' : 'Bild öffnen'}</button>` : '') +
     '<button class="small" data-a="download">Herunterladen</button><button class="small" id="del" data-a="delete">Löschen</button>';
@@ -266,7 +268,11 @@ async function importAll(f) {
 }
 
 // Text an den Häkelhelfer übergeben: neues Projekt dort, oder das vorhandene mit derselben Anleitung
-function openInHelper(it) {
+async function openInHelper(it) {
+  if (it.kind === 'pdf' && it.text === undefined) {
+    toast('PDF wird gelesen …'); it.text = await pdfText(it.blob); saveCur(); renderDetail();
+    if (!it.text) return Dialog.alert('Diese PDF enthält keinen lesbaren Text (vermutlich eingescannt). Öffne sie im Lineal.');
+  }
   // Garnfarben aus dem Grid-Ersteller gehen mit
   if (!Projekte.open(it.text, it.title, it.colors)) return Dialog.alert(Projekte.FULL_MSG);
   location.href = '../anleitung/';
@@ -287,6 +293,7 @@ async function act(a) {
   else if (a === 'import') $('imp').click();
   else if (!cur) return;
   else if (a === 'helper') openInHelper(cur);
+  else if (a === 'lineal') location.href = '../lineal/#' + encodeURIComponent(cur.id);
   else if (a === 'grid') openInGrid(cur);
   else if (a === 'openfile') window.open($('prev').dataset.url, '_blank');
   else if (a === 'download') download(blobOf(cur), fileName(cur));
