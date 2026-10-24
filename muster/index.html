@@ -7,6 +7,7 @@
 <meta name="theme-color" content="#FBF6EC">
 <link rel="stylesheet" href="../shared/isadody.css">
 <script src="../shared/store.js"></script>
+<script src="../shared/projekte.js"></script>
 <script src="../shared/muster-db.js"></script>
 <script src="../shared/doctext.js"></script>
 <style>
@@ -80,7 +81,7 @@
 <body>
 <header>
   <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><h1>Muster</h1><div id="count"></div></div></div>
-  <div class="actions"><a class="home" href="../">‹ Alle Apps</a><div class="tools"><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a><button class="small" id="more">Sichern</button></div></div>
+  <div class="actions"><div class="tools"><a class="home" href="../">‹ Alle Apps</a><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div><button class="small" id="more">Sichern</button></div>
 </header>
 <div class="wrap">
   <div id="bar"><input id="q" type="search" placeholder="Suchen: Name, Tag, Notiz, Text"><button class="btn" id="add">+ Muster</button></div>
@@ -275,11 +276,10 @@ async function importAll(f) {
   persist(); render(); toast(`${n} Muster eingespielt` + (same ? `, ${same} schon vorhanden` : ''));
 }
 
-// Text an den Häkelhelfer übergeben: er liest beim Start anleitung.pattern
+// Text an den Häkelhelfer übergeben: neues Projekt dort, oder das vorhandene mit derselben Anleitung
 function openInHelper(it) {
-  const a = Store('anleitung');
-  if (a.get('pattern', '') !== it.text) { a.set('pattern', it.text); a.set('pos', { r: 0, p: 0 }); a.set('done', {}); }
-  if (it.colors) a.set('colors', { ...a.get('colors', {}), ...it.colors }); // Garnfarben aus dem Grid-Ersteller
+  // Garnfarben aus dem Grid-Ersteller gehen mit
+  if (!Projekte.open(it.text, it.title, it.colors)) return alert(Projekte.FULL_MSG);
   location.href = '../anleitung/';
 }
 // Muster aus dem Grid-Ersteller dort weiterbearbeiten; erneutes Speichern aktualisiert dieses Muster

@@ -8,7 +8,7 @@ Sammlung kleiner Web-Apps fürs Häkeln. Die Startseite (`/index.html`) verlinkt
 | `zaehler/` | Reihenzähler im Pop-it-Stil |
 | `grid/` | Grid-Ersteller: Bild → Tapestry-Muster |
 | `muster/` | Mustersammlung: Bilder, PDFs, Word, Texte ablegen, taggen, suchen |
-| `shared/` | gemeinsam: `isadody.css` (CD-Tokens, Schriften, Grundstil, `.logo`, `.small`, `.btn`, `.home`), `store.js` (`Store('<app>')` speichert unter `<app>.<key>`), `muster-db.js` (Zugriff auf die Sammlung), `doctext.js` (Dateiformate, Text aus .docx/.odt), `hilfe.css` (Hilfeseiten), `logo.png` |
+| `shared/` | gemeinsam: `isadody.css` (CD-Tokens, Schriften, Grundstil, `.logo`, `.small`, `.btn`, `.home`), `store.js` (`Store('<app>')` speichert unter `<app>.<key>`), `muster-db.js` (Zugriff auf die Sammlung), `doctext.js` (Dateiformate, Text aus .docx/.odt), `hilfe.css` (Hilfeseiten), `projekte.js` (Projekte des Häkelhelfers, auch von `grid/` und `muster/` genutzt), `logo.png` |
 
 Hilfe: jede App hat `hilfe/index.html` (bindet `../../shared/isadody.css` und `../../shared/hilfe.css` ein, Link „‹ Zur App“) und im Kopf einen runden Knopf `<a class="help" href="hilfe/">?</a>` (in `.tools` neben dem Kopfknopf). Neue Funktion = Hilfeseite mitpflegen.
 
@@ -20,7 +20,7 @@ Neue App: eigener Ordner mit `index.html`, bindet `../shared/isadody.css` und `.
 - **Ordnen:** Name, Tags (Enter oder Komma, Vorschläge aus vorhandenen Tags), Notizen, Favorit. Übersicht mit Suche (Name, Tags, Notizen, Textinhalt), Tag-Filtern (mehrere = alle müssen passen), „★ Favoriten“, Sortierung Neueste/A–Z.
 - **Speicher:** IndexedDB `isadody-muster` (Dateien als Blob, Bilder mit kleinem Vorschaubild), Filter im Store `muster.*`. Die App bittet den Browser per `navigator.storage.persist()`, die Daten nicht automatisch zu löschen.
 - **Sicherung:** „Sicherung herunterladen“ erzeugt eine JSON-Datei mit allen Mustern (Dateien als Base64), „Sicherung einspielen“ fügt fehlende Muster hinzu (gleiche ID wird übersprungen).
-- **Häkelhelfer:** Textmuster lassen sich mit „Im Häkelhelfer öffnen“ direkt dort starten (schreibt `anleitung.pattern`; Fortschritt wird nur bei anderem Text zurückgesetzt).
+- **Häkelhelfer:** Textmuster lassen sich mit „Im Häkelhelfer öffnen“ direkt dort starten (neues Projekt dort, bei gleicher Anleitung das vorhandene mit Fortschritt).
 - Aus `.docx` und `.odt` liest die App den Text (eigener ZIP-Leser mit `DecompressionStream`, keine Bibliothek): Vorschau, Suche im Inhalt und „Im Häkelhelfer öffnen“. Alte `.doc` werden nur gespeichert und heruntergeladen.
 - PDFs werden am Computer eingebettet angezeigt, auf dem Handy per „PDF öffnen“.
 
@@ -32,7 +32,8 @@ Live: https://doxx1983.github.io/haekelapp/anleitung/ (Startseite: https://doxx1
 
 ## Funktionen
 
-- **Anleitung laden** aus der Mustersammlung (Liste der Textmuster mit Suche und Tags; Bilder, PDFs und alte .doc fehlen dort), als Datei (dieselben Formate wie die Sammlung; Text aus `.txt`, `.docx`, `.odt`) oder als eingefügter Text. Anleitung, Position und Fortschritt bleiben im Browser (`localStorage`, Schlüssel `anleitung.*`; ältere Daten ohne Präfix werden einmalig übernommen).
+- **Projekte:** bis zu 10 Anleitungen parallel, jede mit eigenem Fortschritt und eigenen Farben (`shared/projekte.js`, `anleitung.projects` + `anleitung.current`). Liste unter „Projekte“ (zuletzt benutzt zuerst), wechseln per Tipp, löschen mit ×. Sammlung und Grid-Ersteller legen über `Projekte.open` ein neues Projekt an oder öffnen das mit gleicher Anleitung. Die alte Einzel-Anleitung (`anleitung.pattern/pos/done/colors`) wird einmalig Projekt 1.
+- **Anleitung laden** aus der Mustersammlung (Liste der Textmuster mit Suche und Tags; Bilder, PDFs und alte .doc fehlen dort), als Datei (dieselben Formate wie die Sammlung; Text aus `.txt`, `.docx`, `.odt`) oder als eingefügter Text. Alles bleibt im Browser (`localStorage`, Schlüssel `anleitung.*`; ältere Daten ohne Präfix werden einmalig übernommen).
 - **Deutsch und Englisch:** Reihen beginnen mit `R`, `Row`, `Reihe`, `Runde`, `Round`, `Rnd` + Nummer. Kürzel (`fM`, `Stb`, `sc`, `dc`, `bs` …) werden unverändert angezeigt.
 - **Überschriften und Notizen:** Enthält die Anleitung nummerierte Reihen, werden Zeilen ohne Reihennummer (Titel, Material …) übersprungen; Farbwechsel darin gelten trotzdem. Ohne nummerierte Reihen ist jede Zeile eine Reihe.
 - **Wiederholungen:** `(fM, Zun) x 6`, `(3 fM, Abn) 5x`, Anzahl vor dem Kürzel (`254sc`, `6 fM`).
@@ -65,7 +66,6 @@ Wichtige Stellen in `anleitung/index.html`: `parse` / `expand` / `chipsOf` (Anle
 
 - Offline-Betrieb (Service Worker) und Web-App-Manifest mit Symbol für „Zum Startbildschirm“.
 - Anleitungen als PDF oder Foto einlesen.
-- Mehrere Anleitungen speichern und umschalten.
 - Einzelne Maschen einer Gruppe („13× dc“) abhaken.
 
 ## Grid-Ersteller (`grid/`)
@@ -76,5 +76,5 @@ Bild laden, Breite (Maschen), Höhe (Reihen) und Farbanzahl wählen → Raster f
 - **Richtung:** Reihe 1 unten, Rechtshänder beginnen rechts; in Reihen abwechselnd, in Runden immer gleich. „Linkshändig“ spiegelt das.
 - **Bearbeiten:** Farben der Legende ändern (Palette, Hex), einzelne Maschen malen, Rückgängig und Wiederholen (Malen und Farbänderungen).
 - **Sammlung:** „In Sammlung speichern“ legt ein Bild-Muster in `isadody-muster` an (PNG des Rasters, `text` = Häkelhelfer-Anleitung, `colors`, `grid` = Stand zum Weiterbearbeiten). Die id steht in `grid.mid`; erneutes Speichern aktualisiert dieses Muster, ein neues Bild setzt sie zurück. Die Sammlung zeigt dafür „Im Grid-Ersteller öffnen“; Häkelhelfer und Sammlung übernehmen `colors`.
-- **Ausgabe:** Raster als PNG, Anleitung als Text/.txt, „Im Häkelhelfer öffnen“ schreibt die Anleitung (`Reihe n: Farbe A, 5 fM, …`) samt Farben in den Speicher von `anleitung/`.
+- **Ausgabe:** Raster als PNG, Anleitung als Text/.txt, „Im Häkelhelfer öffnen“ legt die Anleitung (`Reihe n: Farbe A, 5 fM, …`) samt Farben als Projekt im Häkelhelfer an.
 - Gespeichert unter `grid.state` und `grid.src` (verkleinertes Bild). Kernfunktionen (`quantize`, `despeckle`, `instructions`, `toHelper`) laufen auch mit `node`.
