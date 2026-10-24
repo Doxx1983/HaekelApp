@@ -71,6 +71,8 @@
     <label class="f">Reihen (Höhe)<input type="number" id="rowsN" min="5" max="200" value="40"></label>
     <label class="f">Farben<input type="number" id="ncol" min="2" max="10" value="4"></label>
     <label class="f">Arbeitsweise<select id="mode"><option value="rows">Reihen (hin & zurück)</option><option value="rounds">Runden</option></select></label>
+    <label class="f">Probe: Maschen/10 cm<input type="number" id="gm" min="1" max="100" placeholder="leer = quadratisch"></label>
+    <label class="f">Probe: Reihen/10 cm<input type="number" id="gr" min="1" max="100" placeholder="leer = quadratisch"></label>
   </div>
   <div class="grid2">
     <label class="c"><input type="checkbox" id="keep" checked> Seitenverhältnis beibehalten</label>
@@ -243,7 +245,10 @@ const textOn = hex => { const n = parseInt(hex.slice(1), 16); return (0.299 * (n
 let img = null, src = '', aspect = 1; // Quelle, verkleinert als JPEG (wird mitgespeichert)
 let G = null; // { w, h, palette, cells }
 let sel = 0, zoom = 1, painting = false, undo = [], redo = [];
-const opts = () => ({ w: +$('cols').value, h: +$('rowsN').value, k: +$('ncol').value, mode: $('mode').value, left: $('left').checked, smooth: $('smooth').checked });
+const opts = () => ({ w: +$('cols').value, h: +$('rowsN').value, k: +$('ncol').value, mode: $('mode').value, left: $('left').checked, smooth: $('smooth').checked, gm: +$('gm').value || 0, gr: +$('gr').value || 0 });
+// Maschenprobe: Höhe einer Masche im Verhältnis zur Breite (ohne Angabe quadratisch)
+const ratio = () => { const o = opts(); return o.gm > 0 && o.gr > 0 ? o.gm / o.gr : 1; };
+const sizeCm = (w, h) => { const o = opts(); return o.gm > 0 && o.gr > 0 ? ` Fertig ca. ${(w * 10 / o.gm).toFixed(1).replace('.', ',')} × ${(h * 10 / o.gr).toFixed(1).replace('.', ',')} cm.` : ''; };
 const clamp = (v, a, b) => Math.max(a, Math.min(b, Math.round(v) || a));
 const store = Store('grid');
 const save = () => { store.set('state', { G, o: opts(), keep: $('keep').checked }); store.set('src', src); }; // Bild getrennt, falls es zu groß ist
@@ -274,28 +279,28 @@ function build() {
 const NUM = 30; // Rand für Reihen-/Maschenzahlen
 // zoom 1 = Fensterbreite; kleinster Wert = ganzes Raster passt ins Fenster (Breite und Höhe)
 const baseSize = () => ((($('wrap').clientWidth || 600) - 2 * NUM) / G.w);
-const fitSize = () => Math.max(1, Math.min(baseSize(), ((innerHeight * 0.75) - NUM - 2) / G.h));
+const fitSize = () => Math.max(1, Math.min(baseSize(), ((innerHeight * 0.75) - NUM - 2) / G.h / ratio()));
 function cellSize() { const cs = Math.max(fitSize(), baseSize() * zoom); return cs >= 4 ? Math.floor(cs) : cs; }
 function drawChart(cv, cs) {
-  const { w, h, palette, cells } = G, o = opts(), dpr = window.devicePixelRatio || 1;
-  const W = w * cs + 2 * NUM, H = h * cs + NUM;
+  const { w, h, palette, cells } = G, o = opts(), dpr = window.devicePixelRatio || 1, ch = cs * ratio(); // ch = Höhe eines Kästchens
+  const W = w * cs + 2 * NUM, H = h * ch + NUM;
   cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px';
   const cx = cv.getContext('2d'); cx.setTransform(dpr, 0, 0, dpr, 0, 0);
   cx.fillStyle = '#FFFFFF'; cx.fillRect(0, 0, W, H);
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { cx.fillStyle = palette[cells[y * w + x]]; cx.fillRect(NUM + x * cs, y * cs, cs, cs); }
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { cx.fillStyle = palette[cells[y * w + x]]; cx.fillRect(NUM + x * cs, y * ch, cs, ch); }
   const line = (x1, y1, x2, y2, c, lw) => { cx.strokeStyle = c; cx.lineWidth = lw; cx.beginPath(); cx.moveTo(x1, y1); cx.lineTo(x2, y2); cx.stroke(); };
-  if (cs >= 6) for (let x = 0; x <= w; x++) if (x % 10 && (w - x) % 10) line(NUM + x * cs, 0, NUM + x * cs, h * cs, 'rgba(34,32,27,.25)', 1);
-  if (cs >= 6) for (let y = 0; y <= h; y++) if ((h - y) % 10) line(NUM, y * cs, NUM + w * cs, y * cs, 'rgba(34,32,27,.25)', 1);
-  for (let x = 0; x <= w; x++) if ((w - x) % 10 === 0 || x === 0) line(NUM + x * cs, 0, NUM + x * cs, h * cs, '#22201B', 1.5);
-  for (let y = 0; y <= h; y++) if ((h - y) % 10 === 0 || y === 0) line(NUM, y * cs, NUM + w * cs, y * cs, '#22201B', 1.5);
+  if (cs >= 6) for (let x = 0; x <= w; x++) if (x % 10 && (w - x) % 10) line(NUM + x * cs, 0, NUM + x * cs, h * ch, 'rgba(34,32,27,.25)', 1);
+  if (ch >= 6) for (let y = 0; y <= h; y++) if ((h - y) % 10) line(NUM, y * ch, NUM + w * cs, y * ch, 'rgba(34,32,27,.25)', 1);
+  for (let x = 0; x <= w; x++) if ((w - x) % 10 === 0 || x === 0) line(NUM + x * cs, 0, NUM + x * cs, h * ch, '#22201B', 1.5);
+  for (let y = 0; y <= h; y++) if ((h - y) % 10 === 0 || y === 0) line(NUM, y * ch, NUM + w * cs, y * ch, '#22201B', 1.5);
   cx.fillStyle = '#5B5347'; cx.font = `700 ${Math.min(12, Math.max(9, cs))}px Nunito, system-ui, sans-serif`; cx.textBaseline = 'middle';
-  const every = cs >= 14 ? 1 : cs >= 8 ? 5 : 10;
-  for (let n = 1; n <= h; n++) if (n === 1 || n % every === 0) {
-    const right = fromRight(n, o.mode, o.left), y = Math.max(6, (h - n) * cs + cs / 2);
+  const every = cs >= 14 ? 1 : cs >= 8 ? 5 : 10, everyR = ch >= 14 ? 1 : ch >= 8 ? 5 : 10;
+  for (let n = 1; n <= h; n++) if (n === 1 || n % everyR === 0) {
+    const right = fromRight(n, o.mode, o.left), y = Math.max(6, (h - n) * ch + ch / 2);
     cx.textAlign = right ? 'left' : 'right'; cx.fillText(n, right ? NUM + w * cs + 4 : NUM - 4, y);
   }
   cx.textAlign = 'center';
-  for (let m = 1; m <= w; m++) if (m === 1 || m % every === 0) { const x = o.left ? m - 1 : w - m; cx.fillText(m, NUM + x * cs + cs / 2, h * cs + NUM / 2); }
+  for (let m = 1; m <= w; m++) if (m === 1 || m % every === 0) { const x = o.left ? m - 1 : w - m; cx.fillText(m, NUM + x * cs + cs / 2, h * ch + NUM / 2); }
 }
 
 function draw() {
@@ -304,7 +309,7 @@ function draw() {
   const counts = G.palette.map(() => 0); G.cells.forEach(c => counts[c]++);
   $('legend').innerHTML = G.palette.map((p, i) => `<button data-i="${i}" class="${i === sel ? 'on' : ''}"><i style="background:${p}"></i>${LETTERS[i]} <small>${counts[i]} M</small></button>`).join('');
   const o = opts(), ins = instructions(G.cells, G.w, G.h, o.mode, o.left);
-  $('cast').textContent = `${G.w} × ${G.h} Maschen. ` + castOn(G.w, o.mode);
+  $('cast').textContent = `${G.w} × ${G.h} Maschen.${sizeCm(G.w, G.h)} ` + castOn(G.w, o.mode);
   $('rows').innerHTML = ins.slice().reverse().map(r => `<li><b>${rowLabel(o.mode)} ${r.n}</b><span class="d">${r.right ? '← von rechts' : 'von links →'}</span>` +
     r.runs.map(([c, k]) => `<span class="s"><i style="background:${G.palette[c]}"></i>${k} ${LETTERS[c]}</span>`).join('') + '</li>').join('');
   $('undo').disabled = !undo.length; $('redo').disabled = !redo.length;
@@ -338,7 +343,7 @@ $('paint').onclick = () => { painting = !painting; $('paint').classList.toggle('
 let down = false;
 function paintAt(e) {
   const r = $('chart').getBoundingClientRect(), cs = cellSize();
-  const x = Math.floor((e.clientX - r.left - NUM) / cs), y = Math.floor((e.clientY - r.top) / cs);
+  const x = Math.floor((e.clientX - r.left - NUM) / cs), y = Math.floor((e.clientY - r.top) / (cs * ratio()));
   if (x < 0 || y < 0 || x >= G.w || y >= G.h || G.cells[y * G.w + x] === sel) return;
   G.cells[y * G.w + x] = sel; drawChart($('chart'), cs);
 }
@@ -369,8 +374,8 @@ function loadSrc(data, then) {
   im.onload = () => { img = im; src = data; aspect = im.height / im.width; $('thumb').src = data; $('thumb').style.display = 'block'; $('info').textContent = `${im.width} × ${im.height} px`; then && then(); };
   im.src = data;
 }
-const fitRows = () => { $('rowsN').value = clamp(+$('cols').value * aspect, 5, 200); };
-const fitCols = () => { $('cols').value = clamp(+$('rowsN').value / aspect, 5, 200); };
+const fitRows = () => { $('rowsN').value = clamp(+$('cols').value * aspect / ratio(), 5, 200); };
+const fitCols = () => { $('cols').value = clamp(+$('rowsN').value * ratio() / aspect, 5, 200); };
 let t = 0; const later = () => { clearTimeout(t); t = setTimeout(build, 250); };
 $('cols').oninput = () => { if ($('keep').checked && img) fitRows(); later(); };
 $('rowsN').oninput = () => { if ($('keep').checked && img) fitCols(); later(); };
@@ -378,6 +383,8 @@ $('cols').onchange = $('rowsN').onchange = $('ncol').onchange = () => { for (con
 $('ncol').oninput = later; $('smooth').onchange = build;
 $('keep').onchange = () => { if ($('keep').checked && img) { fitRows(); build(); } };
 $('mode').onchange = $('left').onchange = () => { if (G) { draw(); save(); } };
+// Maschenprobe ändert die Form der Kästchen; mit festem Seitenverhältnis passt sich die Reihenzahl an
+$('gm').onchange = $('gr').onchange = () => { for (const id of ['gm', 'gr']) if ($(id).value) $(id).value = clamp(+$(id).value, 1, 100); if ($('keep').checked && img) { fitRows(); build(); } else if (G) { draw(); save(); } };
 $('zoomIn').onclick = () => { zoom = Math.min(8, zoom * 1.4); draw(); };
 $('zoomOut').onclick = () => { zoom = Math.max(fitSize() / baseSize(), zoom / 1.4); draw(); };
 $('zoomFit').onclick = () => { zoom = fitSize() / baseSize(); draw(); };
@@ -434,7 +441,7 @@ $('toHelper').onclick = e => {
 {
   const s = store.get('state', null);
   if (s && s.G) {
-    $('cols').value = s.o.w; $('rowsN').value = s.o.h; $('ncol').value = s.o.k; $('mode').value = s.o.mode; $('left').checked = s.o.left; $('smooth').checked = s.o.smooth; $('keep').checked = s.keep;
+    $('cols').value = s.o.w; $('rowsN').value = s.o.h; $('ncol').value = s.o.k; $('mode').value = s.o.mode; $('left').checked = s.o.left; $('smooth').checked = s.o.smooth; $('keep').checked = s.keep; $('gm').value = s.o.gm || ''; $('gr').value = s.o.gr || '';
     G = s.G; draw(); setMid(mid);
     const im = store.get('src', ''); if (im) loadSrc(im);
   }

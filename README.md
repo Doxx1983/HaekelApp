@@ -37,6 +37,8 @@ Live: https://doxx1983.github.io/haekelapp/anleitung/ (Startseite: https://doxx1
 - **Deutsch und Englisch:** Reihen beginnen mit `R`, `Row`, `Reihe`, `Runde`, `Round`, `Rnd` + Nummer. Kürzel (`fM`, `Stb`, `sc`, `dc`, `bs` …) werden unverändert angezeigt.
 - **Überschriften und Notizen:** Enthält die Anleitung nummerierte Reihen, werden Zeilen ohne Reihennummer (Titel, Material …) übersprungen; Farbwechsel darin gelten trotzdem. Ohne nummerierte Reihen ist jede Zeile eine Reihe.
 - **Wiederholungen:** `(fM, Zun) x 6`, `(3 fM, Abn) 5x`, Anzahl vor dem Kürzel (`254sc`, `6 fM`).
+- Auch `[..]`, `*..* 6x wiederholen`, `repeat 6 times`, `rep from * 5 more times`, `ab * noch 5x wiederholen`, Anzahl hinter dem Kürzel (`sc 5`, `inc x 6`), Reihenbereiche (`R12-14`), Kürzel wie `sc2tog`, `sl st`, `inv dec`, `2 fM zus.`, Maschenglied (`BLO`, `hMg`, auch für die ganze Reihe).
+- **Maschenzahl am Reihenende:** aus der Anleitung (`(18)`, `[18]`, `= 18 M`) oder gezählt (Zun = 2, Lm/Km/Wenden = 0); „in jede M“/„around“ wird bis zur Zahl aufgefüllt. Passt die Zählung nicht zur Anleitung, erscheint ein Hinweis.
 - **Anzeige:** Folgen von bis zu 3 gleichen Maschen als einzelne Kacheln, ab 4 gleichen als eine Kachel „10× fM“ (`SINGLE_MAX` in `index.html`). Max. 8 Kacheln pro Seite (`MAX_CHIPS`).
 - **Garnfarben:** `Use color A`, `Farbe B`, `Wechsel zu Farbe C:` setzen die Farbe ab dieser Stelle, auch mitten in der Reihe, und gelten bis zum nächsten Wechsel (auch über Reihen hinweg). Farben werden vorher in der App festgelegt (Palette, Regler, Hex). Gleiche Maschen in verschiedenen Farben werden nicht zusammengefasst.
 - **Fortschritt:** Tipp auf eine Kachel = diese und alle vorigen in der Reihe werden blass. Tipp auf eine blasse Kachel = Rücksetzen dieser und aller folgenden, mit Bestätigung.
@@ -74,6 +76,7 @@ Bild laden, Breite (Maschen), Höhe (Reihen) und Farbanzahl wählen → Raster f
 
 - **Farbreduktion** im Lab-Farbraum: k-means mit vielen Gruppen, dann ähnlichste Gruppen (Ward) zusammenlegen; kleine, deutlich andere Flächen bleiben so erhalten. Optional werden Einzelmaschen geglättet.
 - **Richtung:** Reihe 1 unten, Rechtshänder beginnen rechts; in Reihen abwechselnd, in Runden immer gleich. „Linkshändig“ spiegelt das.
+- **Maschenprobe** (Maschen und Reihen auf 10 cm, optional): Kästchen in echter Maschenform, Reihenzahl passend zum Bild, fertige Größe in cm.
 - **Bearbeiten:** Farben der Legende ändern (Palette, Hex), einzelne Maschen malen, Rückgängig und Wiederholen (Malen und Farbänderungen).
 - **Sammlung:** „In Sammlung speichern“ legt ein Bild-Muster in `isadody-muster` an (PNG des Rasters, `text` = Häkelhelfer-Anleitung, `colors`, `grid` = Stand zum Weiterbearbeiten). Die id steht in `grid.mid`; erneutes Speichern aktualisiert dieses Muster, ein neues Bild setzt sie zurück. Die Sammlung zeigt dafür „Im Grid-Ersteller öffnen“; Häkelhelfer und Sammlung übernehmen `colors`.
 - **Ausgabe:** Raster als PNG, Anleitung als Text/.txt, „Im Häkelhelfer öffnen“ legt die Anleitung (`Reihe n: Farbe A, 5 fM, …`) samt Farben als Projekt im Häkelhelfer an.
