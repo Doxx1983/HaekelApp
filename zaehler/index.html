@@ -62,6 +62,8 @@
   .prow { display:flex; gap:8px; } .prow[hidden] { display:none; } .prow .ghost { flex:none; padding:10px 16px; }
   .ghost { padding:12px; border-radius:999px; background:var(--paper); border:1px solid var(--line); font-weight:700; }
 </style>
+<script src="../shared/offline.js"></script>
+<script src="../shared/wach.js"></script>
 </head>
 <body>
 <header>
@@ -267,11 +269,15 @@ $('whom').onclick = e => {
   pick(b.dataset.id); openSetup(); build();
 };
 // Eigene Projekte anlegen, umbenennen, löschen
-$('padd').onclick = () => {
+$('padd').onclick = async () => {
   const name = $('pnew').value.trim(); if (!name) return $('pnew').focus();
-  // Gleicher Name (z. B. doppelt getippt): vorhandenes Projekt wählen statt ein zweites anzulegen
+  // Gleicher Name: nach Rückfrage das vorhandene Projekt neu beginnen statt ein zweites anzulegen
   const same = projects().find(id => nameOf(id).toLowerCase() === name.toLowerCase());
-  if (same) { $('pnew').value = ''; pick(same); openSetup(); build(); return; }
+  if (same) {
+    if (!(await Dialog.confirm(`Das Projekt „${nameOf(same)}“ gibt es schon (Reihe ${counters[same].popped.length + counters[same].flips * counters[same].n}). Überschreiben setzt es auf 0 zurück.`, { ok: 'Überschreiben', danger: true }))) return;
+    counters[same] = { ...FRESH(nameOf(same)), used: Date.now() }; $('pnew').value = '';
+    pick(same); openSetup(); build(); return;
+  }
   if (projects().length >= MAX) return Dialog.alert(`Es gibt schon ${MAX} Projekte. Bitte erst eins löschen.`);
   const id = uid(); counters[id] = { ...FRESH(name), used: Date.now() }; $('pnew').value = '';
   pick(id); openSetup(); build();

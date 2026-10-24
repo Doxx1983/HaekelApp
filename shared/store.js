@@ -2,11 +2,6 @@
 // darum bekommt jeder Schlüssel den App-Namen als Präfix: Store('zaehler').set('n', 3) → "zaehler.n".
 // Browser bitten, gespeicherte Daten nicht automatisch zu löschen (wirkt nicht überall, z. B. nicht in Safari)
 try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch {}
-// Offline-Betrieb (sw.js liegt eine Ebene über shared/ und gilt für alle Apps)
-try {
-  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost'))
-    navigator.serviceWorker.register(new URL('../sw.js', document.currentScript.src)).catch(() => {});
-} catch {}
 // Speicher voll: einmal pro Seitenaufruf deutlich melden, statt still nichts mehr zu speichern
 function storeFull() {
   if (storeFull.shown) return; storeFull.shown = true;

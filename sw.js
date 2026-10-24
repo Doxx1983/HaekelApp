@@ -1,36 +1,38 @@
-// Offline-Betrieb: Die Apps kommen aus dem Netz, wenn es da ist (so sind Änderungen sofort live),
-// sonst aus dem Zwischenspeicher. Beim ersten Besuch wird alles Wichtige vorab gespeichert.
-// Neue Datei, die offline gebraucht wird: unten in FILES eintragen (fehlende Einträge stören nicht).
-const CACHE = 'haekel-apps';
-const FILES = ['./', 'manifest.webmanifest',
-  'anleitung/', 'zaehler/', 'grid/', 'muster/', 'lexikon/', 'lineal/',
-  'anleitung/hilfe/', 'zaehler/hilfe/', 'grid/hilfe/', 'muster/hilfe/', 'lexikon/hilfe/', 'lineal/hilfe/',
-  'shared/isadody.css', 'shared/hilfe.css', 'shared/fonts/fonts.css', 'shared/logo.png', 'shared/icon-180.png', 'shared/icon-192.png',
+// Offline-Cache der Häkel-Apps. Mit Netz kommt jede Datei frisch aus dem Netz und wird im Cache aktualisiert;
+// ohne Netz (oder nach 4 s ohne Antwort) aus dem Cache. Beim ersten Besuch werden alle Dateien vorab geladen.
+// Neue Dateien in FILES eintragen und VERSION erhöhen (Dateien, die nur besucht werden, landen auch so im Cache).
+const VERSION = 'isadody-2';
+const FILES = [
+  './', 'manifest.webmanifest',
+  'anleitung/', 'anleitung/hilfe/', 'grid/', 'grid/hilfe/', 'lexikon/', 'lexikon/hilfe/', 'lineal/', 'lineal/hilfe/', 'muster/', 'muster/hilfe/', 'zaehler/', 'zaehler/hilfe/',
+  'shared/isadody.css', 'shared/hilfe.css', 'shared/fonts/fonts.css',
   'shared/fonts/baloo2-latin.woff2', 'shared/fonts/baloo2-latin-ext.woff2', 'shared/fonts/nunito-latin.woff2', 'shared/fonts/nunito-latin-ext.woff2',
-  'shared/store.js', 'shared/dialog.js', 'shared/erinnerung.js', 'shared/projekte.js', 'shared/muster-db.js', 'shared/sicherung.js', 'shared/doctext.js', 'shared/maschen.js',
-  'shared/pdfjs/pdf.min.js', 'shared/pdfjs/pdf.worker.min.js']; // Schriften in shared/pdfjs/standard_fonts/ werden bei Bedarf gespeichert
-const WAIT = 4000; // so lange aufs Netz warten, dann den gespeicherten Stand zeigen
+  'shared/store.js', 'shared/dialog.js', 'shared/erinnerung.js', 'shared/muster-db.js', 'shared/doctext.js', 'shared/projekte.js', 'shared/sicherung.js', 'shared/maschen.js',
+  'shared/wach.js', 'shared/offline.js',
+  'shared/pdfjs/pdf.min.js', 'shared/pdfjs/pdf.worker.min.js', // Schriften in shared/pdfjs/standard_fonts/ kommen bei Bedarf in den Cache
+  'shared/logo.png', 'shared/icon-180.png', 'shared/icon-192.png', 'shared/icon-512.png',
+];
 
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => Promise.all(FILES.map(f => c.add(new Request(f, { cache: 'reload' })).catch(() => {})))).then(() => self.skipWaiting()));
-});
-self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+self.addEventListener('install', e => e.waitUntil(
+  caches.open(VERSION).then(c => Promise.all(FILES.map(f => c.add(new Request(f, { cache: 'reload' })).catch(() => {})))).then(() => self.skipWaiting())));
+self.addEventListener('activate', e => e.waitUntil(
+  caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSION).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 
 self.addEventListener('fetch', e => {
-  const req = e.request, url = new URL(req.url);
-  if (req.method !== 'GET' || url.origin !== location.origin) return;
+  const r = e.request, u = new URL(r.url);
+  if (r.method !== 'GET' || u.origin !== location.origin) return;
   e.respondWith((async () => {
-    const c = await caches.open(CACHE);
-    const net = fetch(req).then(res => { if (res.ok && res.type === 'basic') c.put(req, res.clone()); return res; });
-    net.catch(() => {}); // Fehler wird unten behandelt
-    const saved = () => c.match(req, { ignoreSearch: true });
-    try {
-      // Netz zuerst; hängt es zu lange (schlechtes WLAN), den gespeicherten Stand nehmen, falls es einen gibt
-      const res = await Promise.race([net, new Promise(ok => setTimeout(ok, WAIT))]);
-      if (res) return res;
-      return (await saved()) || await net;
-    } catch {
-      return (await saved()) || new Response('Offline und diese Seite ist noch nicht gespeichert.', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+    const c = await caches.open(VERSION);
+    // „anleitung/“ und „anleitung/index.html“ sind dieselbe Seite
+    const alt = u.pathname.endsWith('/') ? u.origin + u.pathname + 'index.html' : u.pathname.endsWith('/index.html') ? u.origin + u.pathname.slice(0, -10) : null;
+    const cached = async () => (await c.match(r, { ignoreSearch: true })) || (alt && await c.match(alt));
+    const net = fetch(r).then(res => { if (res.ok && res.type === 'basic') c.put(r, res.clone()); return res; });
+    net.catch(() => {});
+    try { return await Promise.race([net, new Promise((_, no) => setTimeout(no, 4000))]); }
+    catch {
+      const hit = await cached(); if (hit) return hit;
+      try { return await net; }
+      catch { return new Response('Offline, und diese Seite ist noch nicht gespeichert.', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }); }
     }
   })());
 });
