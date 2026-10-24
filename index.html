@@ -16,6 +16,7 @@
   .app { position:relative; display:flex; align-items:center; gap:16px; padding:20px 22px; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-card); color:var(--ink); text-decoration:none; }
   .app::after { content:''; position:absolute; inset:6px; border:3px dashed var(--ink); border-radius:11px; opacity:.18; pointer-events:none; }
   .app .ic { flex:none; width:56px; height:56px; border-radius:50%; background:var(--coral); display:grid; place-items:center; font-size:1.7rem; }
+  .app .ic svg { width:32px; height:32px; fill:none; stroke:var(--ink); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
   .app h2 { font-family:var(--display); font-size:1.35rem; font-weight:700; margin:0; line-height:1.15; }
   .app p { margin:2px 0 0; color:var(--ink-soft); font-size:.95rem; }
   .app.soon { opacity:.55; pointer-events:none; }
@@ -45,6 +46,10 @@
   <a class="app" href="muster/">
     <span class="ic" aria-hidden="true">📚</span>
     <div><h2>Mustersammlung</h2><p>Muster als Bild, PDF oder Text ablegen, taggen und finden.</p></div>
+  </a>
+  <a class="app" href="lexikon/">
+    <span class="ic" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 9c-3-2.5-7-3-11-2v17c4-1 8-.5 11 2 3-2.5 7-3 11-2V7c-4-1-8-.5-11 2z"/><path d="M16 9v17"/><path d="M8.5 12.5c2-.3 3.8 0 5 .8M8.5 17c2-.3 3.8 0 5 .8M18.5 13.3c1.2-.8 3-1.1 5-.8"/></svg></span>
+    <div><h2>Häkellexikon</h2><p>Maschen und Kürzel nachschlagen, US, UK und Deutsch.</p></div>
   </a>
 </main>
 </body>

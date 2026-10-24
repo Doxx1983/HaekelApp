@@ -8,7 +8,8 @@ Sammlung kleiner Web-Apps fürs Häkeln. Die Startseite (`/index.html`) verlinkt
 | `zaehler/` | Reihenzähler im Pop-it-Stil |
 | `grid/` | Grid-Ersteller: Bild → Tapestry-Muster |
 | `muster/` | Mustersammlung: Bilder, PDFs, Word, Texte ablegen, taggen, suchen |
-| `shared/` | gemeinsam: `isadody.css` (CD-Tokens, Schriften, Grundstil, `.logo`, `.small`, `.btn`, `.home`), `store.js` (`Store('<app>')` speichert unter `<app>.<key>`), `muster-db.js` (Zugriff auf die Sammlung), `doctext.js` (Dateiformate, Text aus .docx/.odt), `hilfe.css` (Hilfeseiten), `projekte.js` (Projekte des Häkelhelfers, auch von `grid/` und `muster/` genutzt), `logo.png` |
+| `lexikon/` | Häkellexikon: Maschen, Kürzel und Begriffe DE/US/UK |
+| `shared/` | gemeinsam: `isadody.css` (CD-Tokens, Schriften, Grundstil, `.logo`, `.small`, `.btn`, `.home`), `store.js` (`Store('<app>')` speichert unter `<app>.<key>`), `muster-db.js` (Zugriff auf die Sammlung), `doctext.js` (Dateiformate, Text aus .docx/.odt), `hilfe.css` (Hilfeseiten), `projekte.js` (Projekte des Häkelhelfers, auch von `grid/` und `muster/` genutzt), `maschen.js` (Begriffe und Kürzel DE/US/UK, `MASCHEN`, `KATEGORIEN`), `logo.png` |
 
 Hilfe: jede App hat `hilfe/index.html` (bindet `../../shared/isadody.css` und `../../shared/hilfe.css` ein, Link „‹ Zur App“) und im Kopf einen runden Knopf `<a class="help" href="hilfe/">?</a>` (in `.tools` neben dem Kopfknopf). Neue Funktion = Hilfeseite mitpflegen.
 
@@ -23,6 +24,14 @@ Neue App: eigener Ordner mit `index.html`, bindet `../shared/isadody.css` und `.
 - **Häkelhelfer:** Textmuster lassen sich mit „Im Häkelhelfer öffnen“ direkt dort starten (neues Projekt dort, bei gleicher Anleitung das vorhandene mit Fortschritt).
 - Aus `.docx` und `.odt` liest die App den Text (eigener ZIP-Leser mit `DecompressionStream`, keine Bibliothek): Vorschau, Suche im Inhalt und „Im Häkelhelfer öffnen“. Alte `.doc` werden nur gespeichert und heruntergeladen.
 - PDFs werden am Computer eingebettet angezeigt, auf dem Handy per „PDF öffnen“.
+
+## Häkellexikon (`lexikon/`)
+
+- **Daten:** `shared/maschen.js` (`MASCHEN`: id, Name, Kürzel DE/US/UK, Kategorie, Schwierigkeit, Erklärung, Schritte, `umr` = in der Umrechnungstabelle). Auch mit `node` ladbar (`module.exports`), damit der Parser des Häkelhelfers später dieselben Kürzel nutzen kann. Achtung: `dc`, `tr`, `dtr`, `dc2tog` bedeuten in US und UK Verschiedenes.
+- **Begriffe:** Suche nach Name oder Kürzel (Groß/klein, Punkte, Leerzeichen, Umlaute egal; genaue Kürzel zuerst), Hinweis bei US/UK-Doppelbedeutung, Filter nach Bereich und Schwierigkeit, ★ Favoriten.
+- **US · UK · DE:** Umrechnungstabelle, Zeilen mit unterschiedlichen US/UK-Namen hervorgehoben, Tipp auf den deutschen Namen öffnet den Eintrag.
+- **Links:** `lexikon/#<id>` öffnet einen Eintrag (z. B. `#abn`).
+- Gespeichert unter `lexikon.fav`, `lexikon.kat`, `lexikon.stufe`, `lexikon.favOnly`, `lexikon.tab`.
 
 ## Häkelhelfer (`anleitung/`)
 

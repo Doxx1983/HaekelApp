@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Isadody Häkellexikon</title>
+<meta name="theme-color" content="#FBF6EC">
+<link rel="stylesheet" href="../shared/isadody.css">
+<script src="../shared/store.js"></script>
+<script src="../shared/maschen.js"></script>
+<style>
+  body { padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom); max-width:760px; margin:0 auto; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 0 4px; }
+  header .title { display:flex; align-items:center; gap:12px; min-width:0; }
+  h1 { font-family:var(--display); font-size:1.8rem; font-weight:700; margin:0; line-height:1.1; }
+  #count { color:var(--ink-soft); font-size:.9rem; }
+  /* Umschalter Begriffe / Umrechnung */
+  #tabs { display:flex; gap:4px; background:var(--paper-alt); border:1px solid var(--line); border-radius:999px; padding:4px; margin:12px 0 4px; }
+  #tabs button { flex:1; background:none; border-radius:999px; padding:10px 12px; font-weight:800; min-height:44px; }
+  #tabs button.on { background:var(--coral); box-shadow:var(--shadow-card); }
+  input { font:inherit; padding:10px 14px; border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--ink); min-width:0; width:100%; }
+  #bar { padding:10px 0 8px; }
+  #filters { display:flex; flex-wrap:wrap; gap:6px; padding-bottom:6px; }
+  .pill { background:var(--paper-alt); border:1px solid var(--line); border-radius:999px; padding:5px 12px; font-size:.85rem; font-weight:700; color:var(--ink); }
+  .pill.on { background:var(--coral-soft); border-color:var(--ink); }
+  #hint { display:none; background:var(--coral-soft); border-radius:12px; padding:10px 14px; margin:6px 0; font-size:.92rem; }
+  #hint.on { display:block; }
+  #list { display:flex; flex-direction:column; gap:10px; padding:8px 0 24px; }
+  /* Eintrag mit angedeuteter Naht wie die Kacheln im Häkelhelfer */
+  .e { position:relative; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-card); scroll-margin-top:12px; }
+  .e::after { content:''; position:absolute; inset:4px; border:2px dashed var(--ink); border-radius:13px; opacity:.15; pointer-events:none; }
+  .e .hd { display:flex; align-items:center; gap:10px; width:100%; background:none; text-align:left; padding:14px 56px 14px 16px; min-height:56px; }
+  .e h2 { font-family:var(--display); font-size:1.15rem; font-weight:700; margin:0; line-height:1.2; }
+  .e .ab { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+  .k { font-size:.78rem; font-weight:700; background:var(--paper); border:1px solid var(--line); border-radius:999px; padding:1px 8px; white-space:nowrap; }
+  .k i { font-style:normal; color:var(--ink-soft); font-weight:600; margin-right:3px; }
+  .k.diff { border-color:var(--ink); }
+  .star { position:absolute; top:10px; right:10px; width:40px; height:40px; border-radius:50%; background:var(--paper); display:grid; place-items:center; box-shadow:var(--shadow-card); z-index:1; padding:0; }
+  .star svg { width:22px; height:22px; fill:none; stroke:var(--ink); stroke-width:2; stroke-linejoin:round; }
+  .star.on svg { fill:var(--coral); }
+  .bd { display:none; padding:0 16px 16px; }
+  .e.open .bd { display:block; }
+  .bd p { margin:6px 0; line-height:1.5; }
+  .bd ol { margin:6px 0; padding-left:1.3em; line-height:1.5; }
+  .bd table { width:100%; border-collapse:collapse; margin:8px 0; font-size:.92rem; }
+  .bd td { padding:5px 8px 5px 0; vertical-align:top; border-top:1px solid var(--line); }
+  .bd td:first-child { width:3.2em; font-weight:800; color:var(--ink-soft); }
+  .meta { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .meta span { font-size:.78rem; font-weight:700; color:var(--ink-soft); }
+  #empty { text-align:center; color:var(--ink-soft); padding:40px 10px; display:none; }
+  /* Umrechnungstabelle */
+  #conv { display:none; padding:10px 0 24px; }
+  body.conv #conv { display:block; } body.conv #begriffe { display:none; }
+  .box { background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; padding:12px 14px; margin-bottom:12px; font-size:.92rem; line-height:1.5; }
+  .box h2 { font-family:var(--display); font-size:1.15rem; margin:0 0 4px; }
+  .box p { margin:4px 0; }
+  .scroll { overflow-x:auto; border:1px solid var(--line); border-radius:16px; background:#fff; }
+  #ctab { border-collapse:collapse; width:100%; font-size:.9rem; }
+  #ctab th, #ctab td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  #ctab th { font-family:var(--display); font-size:1rem; background:var(--paper-alt); position:sticky; top:0; }
+  #ctab tr:last-child td { border-bottom:0; }
+  #ctab tr.diff td { background:color-mix(in srgb, var(--coral-soft), #fff 40%); }
+  #ctab b { display:block; }
+  #ctab small { color:var(--ink-soft); font-size:.82rem; }
+  #ctab a { color:inherit; text-decoration:none; }
+</style>
+</head>
+<body>
+<header>
+  <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><h1>Lexikon</h1><div id="count"></div></div></div>
+  <div class="tools"><a class="home" href="../">‹ Alle Apps</a><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div>
+</header>
+<div id="tabs" role="tablist"><button data-t="begriffe" role="tab">Begriffe</button><button data-t="conv" role="tab">US · UK · DE</button></div>
+
+<section id="begriffe">
+  <div id="bar"><input id="q" type="search" placeholder="Suchen: Masche oder Kürzel, z. B. sc2tog, Zun, BLO" autocomplete="off"></div>
+  <div id="filters"></div>
+  <div id="hint"></div>
+  <div id="list"></div>
+  <div id="empty">Nichts gefunden. Probier ein anderes Wort oder nimm Filter heraus.</div>
+</section>
+
+<section id="conv">
+  <div class="box">
+    <h2>US oder UK?</h2>
+    <p>Englische Anleitungen nutzen zwei Schreibweisen. Dieselben Kürzel bedeuten dort verschiedene Maschen: <b>„dc“ ist in US ein Stäbchen, in UK eine feste Masche.</b></p>
+    <p>So erkennst du sie: Kommt <b>sc</b> vor, ist es US (UK kennt kein sc). <b>htr</b>, <b>ss</b> oder „tension“ deuten auf UK. Im Zweifel steht es am Anfang der Anleitung.</p>
+  </div>
+  <div class="scroll"><table id="ctab"></table></div>
+  <p class="meta"><span>Hervorgehoben: US und UK sagen hier Verschiedenes.</span></p>
+</section>
+
+<script>
+const $ = id => document.getElementById(id);
+const store = Store('lexikon');
+const STUFEN = ['', 'Einstieg', 'Fortgeschritten', 'Profi'];
+const STAR = '<svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.8-4.5 4.2 1.1 6-5.4-2.9-5.4 2.9 1.1-6-4.5-4.2 6.1-.8z"/></svg>';
+let favs = new Set(store.get('fav', [])), kat = store.get('kat', ''), stufe = store.get('stufe', 0), favOnly = store.get('favOnly', false);
+const open = new Set();
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// Kleinbuchstaben, Umlaute vereinfacht, Punkte/Bindestriche weg: „sl st“ = „slst“, „Lm-Bogen“ = „lmbogen“
+const norm = s => String(s).toLowerCase().replace(/ä/g, 'a').replace(/ö/g, 'o').replace(/ü/g, 'u').replace(/ß/g, 'ss').replace(/[.\-\s*…()]/g, '');
+// US und UK benennen die Masche verschieden (sc/dc, skip/miss …)
+const differs = m => m.us.name !== m.uk.name;
+const abbrs = m => [...m.de, ...m.us.ab, ...m.uk.ab, ...(m.alias || [])];
+
+// Rang: 0 Kürzel genau, 1 Name genau, 2 Kürzel/Name beginnt so, 3 Name/Englisch enthält, 4 Erklärung enthält
+function rank(m, q) {
+  const n = norm(q);
+  if (abbrs(m).some(a => norm(a) === n)) return 0;
+  const names = [m.name, m.us.name, m.uk.name];
+  if (names.some(a => norm(a) === n)) return 1;
+  if ([...abbrs(m), ...names].some(a => norm(a).startsWith(n))) return 2;
+  if (names.some(a => norm(a).includes(n))) return 3;
+  if (norm(m.text).includes(n) || (m.schritte || []).some(s => norm(s).includes(n))) return 4;
+  return -1;
+}
+
+// Gleiches englisches Kürzel, verschiedene Maschen in US und UK (z. B. dc, tr, dc2tog)
+function ambiguity(q) {
+  const n = norm(q); if (!n) return '';
+  const us = MASCHEN.find(m => m.us.ab.some(a => norm(a) === n)), uk = MASCHEN.find(m => m.uk.ab.some(a => norm(a) === n));
+  if (!us || !uk || us === uk) return '';
+  return `<b>„${esc(q.trim())}“</b> heißt in US-Anleitungen <b>${esc(us.name)}</b>, in UK-Anleitungen <b>${esc(uk.name)}</b>. Die Umrechnung hilft beim Erkennen.`;
+}
+
+function badges(m) {
+  const out = [], diff = differs(m);
+  if (m.de.length) out.push(`<span class="k"><i>DE</i>${esc(m.de.join(', '))}</span>`);
+  if (m.us.ab.length) out.push(`<span class="k${diff ? ' diff' : ''}"><i>US</i>${esc(m.us.ab.join(', '))}</span>`);
+  if (m.uk.ab.length && diff) out.push(`<span class="k diff"><i>UK</i>${esc(m.uk.ab.join(', '))}</span>`);
+  return out.join('');
+}
+
+function entry(m) {
+  const fav = favs.has(m.id);
+  const steps = m.schritte ? `<ol>${m.schritte.map(s => `<li>${esc(s)}</li>`).join('')}</ol>` : '';
+  return `<article class="e${open.has(m.id) ? ' open' : ''}" id="${m.id}">
+    <button class="star${fav ? ' on' : ''}" data-fav="${m.id}" aria-label="${fav ? 'Aus Favoriten nehmen' : 'Zu Favoriten'}" aria-pressed="${fav}">${STAR}</button>
+    <button class="hd" data-open="${m.id}" aria-expanded="${open.has(m.id)}"><div><h2>${esc(m.name)}</h2><div class="ab">${badges(m)}</div></div></button>
+    <div class="bd">
+      <p>${esc(m.text)}</p>${steps}
+      <table>
+        ${m.de.length ? `<tr><td>DE</td><td>${esc(m.name)} (${esc(m.de.join(', '))})</td></tr>` : ''}
+        <tr><td>US</td><td>${esc(m.us.name)}${m.us.ab.length ? ` (${esc(m.us.ab.join(', '))})` : ''}</td></tr>
+        <tr><td>UK</td><td>${esc(m.uk.name)}${m.uk.ab.length ? ` (${esc(m.uk.ab.join(', '))})` : ''}</td></tr>
+      </table>
+      <div class="meta"><span class="k">${KATEGORIEN[m.kat]}</span><span class="k">${'●'.repeat(m.stufe)}${'○'.repeat(3 - m.stufe)} ${STUFEN[m.stufe]}</span></div>
+    </div>
+  </article>`;
+}
+
+function render() {
+  store.set('kat', kat); store.set('stufe', stufe); store.set('favOnly', favOnly); store.set('fav', [...favs]);
+  const q = $('q').value.trim();
+  let rows = MASCHEN.map((m, i) => ({ m, i, r: q ? rank(m, q) : 0 })).filter(x => x.r >= 0);
+  rows = rows.filter(({ m }) => (!kat || m.kat === kat) && (!stufe || m.stufe === stufe) && (!favOnly || favs.has(m.id)));
+  rows.sort((a, b) => a.r - b.r || a.i - b.i);
+  $('filters').innerHTML = `<button class="pill${favOnly ? ' on' : ''}" data-favonly>★ Favoriten${favs.size ? ` (${favs.size})` : ''}</button>` +
+    Object.entries(KATEGORIEN).map(([k, t]) => `<button class="pill${kat === k ? ' on' : ''}" data-kat="${k}">${t}</button>`).join('') +
+    [1, 2, 3].map(s => `<button class="pill${stufe === s ? ' on' : ''}" data-stufe="${s}">${STUFEN[s]}</button>`).join('');
+  const amb = ambiguity(q);
+  $('hint').innerHTML = amb; $('hint').classList.toggle('on', !!amb);
+  $('list').innerHTML = rows.map(x => entry(x.m)).join('');
+  $('empty').style.display = rows.length ? 'none' : 'block';
+  $('count').textContent = rows.length === MASCHEN.length ? `${MASCHEN.length} Begriffe` : `${rows.length} von ${MASCHEN.length}`;
+}
+
+function renderConv() {
+  const cell = (name, ab) => `<b>${esc(ab.length ? ab.join(', ') : '–')}</b><small>${esc(name)}</small>`;
+  $('ctab').innerHTML = '<tr><th>US</th><th>UK</th><th>Deutsch</th></tr>' + MASCHEN.filter(m => m.umr).map(m =>
+    `<tr class="${differs(m) ? 'diff' : ''}"><td>${cell(m.us.name, m.us.ab)}</td><td>${cell(m.uk.name, m.uk.ab)}</td>` +
+    `<td><a href="#${m.id}" data-go="${m.id}">${cell(m.name, m.de)}</a></td></tr>`).join('');
+}
+
+function tab(t) {
+  document.body.classList.toggle('conv', t === 'conv'); store.set('tab', t);
+  document.querySelectorAll('#tabs button').forEach(b => { b.classList.toggle('on', b.dataset.t === t); b.setAttribute('aria-selected', b.dataset.t === t); });
+}
+
+// Link auf einen Eintrag (lexikon/#abn): Filter lösen, aufklappen, hinscrollen
+function go(id) {
+  if (!MASCHEN.some(m => m.id === id)) return;
+  $('q').value = ''; kat = ''; stufe = 0; favOnly = false; open.add(id);
+  tab('begriffe'); render();
+  $(id).scrollIntoView({ block: 'start' });
+}
+
+$('tabs').onclick = e => { const b = e.target.closest('button'); if (b) tab(b.dataset.t); };
+$('q').oninput = render;
+$('filters').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if ('favonly' in b.dataset) favOnly = !favOnly;
+  if (b.dataset.kat) kat = kat === b.dataset.kat ? '' : b.dataset.kat;
+  if (b.dataset.stufe) stufe = stufe === +b.dataset.stufe ? 0 : +b.dataset.stufe;
+  render();
+};
+$('list').onclick = e => {
+  const f = e.target.closest('[data-fav]'), o = e.target.closest('[data-open]');
+  if (f) { const id = f.dataset.fav; favs.has(id) ? favs.delete(id) : favs.add(id); render(); }
+  else if (o) { const id = o.dataset.open; open.has(id) ? open.delete(id) : open.add(id); const el = $(id); el.classList.toggle('open', open.has(id)); o.setAttribute('aria-expanded', open.has(id)); }
+};
+$('ctab').onclick = e => { const a = e.target.closest('[data-go]'); if (a) { e.preventDefault(); history.replaceState(null, '', '#' + a.dataset.go); go(a.dataset.go); } };
+addEventListener('hashchange', () => go(decodeURIComponent(location.hash.slice(1))));
+
+renderConv(); tab(store.get('tab', 'begriffe')); render();
+if (location.hash) go(decodeURIComponent(location.hash.slice(1)));
+</script>
+</body>
+</html>
