@@ -74,7 +74,7 @@ Wichtige Stellen in `anleitung/index.html`: `parse` / `expand` / `chipsOf` (Anle
 
 ## Reihenzähler (`zaehler/`)
 
-Pop-it-Zähler: jede Blase eine Reihe, volle Platte dreht sich um. Ein **freier Zähler** plus je einer **pro Projekt** des Häkelhelfers (`zaehler.counters` = `{ frei, <Projekt-id>: { n, flips, popped, target, used } }`, gewählt in `zaehler.current`, Ton/Vibration in `zaehler.prefs`). `zaehler/?p=<id>` öffnet den Zähler eines Projekts (Knopf „Zähler“ im Häkelhelfer, zeigt den Stand). Zähler gelöschter Projekte werden entfernt. Der alte Einzelzähler `zaehler.state` wird einmalig der freie Zähler.
+Pop-it-Zähler: jede Blase eine Reihe, volle Platte dreht sich um. Ein **freier Zähler** plus je einer **pro Projekt** des Häkelhelfers (`zaehler.counters` = `{ frei, <Projekt-id>: { n, flips, popped, target, used } }`, gewählt in `zaehler.current`, Ton/Vibration in `zaehler.prefs`). `zaehler/?p=<id>` öffnet den Zähler eines Projekts. Zähler gelöschter Projekte werden entfernt. Der alte Einzelzähler `zaehler.state` wird einmalig der freie Zähler.
 
 ## Grid-Ersteller (`grid/`)
 

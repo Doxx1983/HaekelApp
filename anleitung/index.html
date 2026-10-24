@@ -20,7 +20,6 @@
   #row { font-family:var(--display); font-size:1.6rem; font-weight:700; color:var(--ink); }
   #pos { font-size:.9rem; color:var(--ink-soft); }
   #pos b { color:var(--ink); } #pos .warn { white-space:nowrap; color:var(--ink); background:var(--coral-soft); border-radius:999px; padding:0 8px; font-weight:700; }
-  #zlink { text-decoration:none; }
   .actions { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
   #chips { flex:1; display:flex; flex-wrap:wrap; justify-content:center; align-content:center; gap:10px; min-height:0; }
   .chip { flex:0 0 calc(25% - 8px); height:calc(50% - 5px); max-height:220px; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-card); display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--display); font-size:clamp(1.6rem,7vw,3.2rem); font-weight:700; }
@@ -87,7 +86,7 @@
 <body>
 <header>
   <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><div id="row">Häkelhelfer</div><div id="pos"></div></div></div>
-  <div class="actions"><div class="tools"><a class="home" href="../">‹ Alle Apps</a><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div><div class="tools"><a class="small" id="zlink" href="../zaehler/">Zähler</a><button class="small" id="menu">Projekte</button></div></div>
+  <div class="actions"><div class="tools"><a class="home" href="../">‹ Alle Apps</a><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div><button class="small" id="menu">Projekte</button></div>
 </header>
 <main id="chips"></main>
 <div id="nav"><button id="back">‹ Zurück</button><button id="next">Weiter ›</button></div>
@@ -408,7 +407,6 @@ function render(noSave) {
   const last = r === rows.length - 1 && p === row.pages.length - 1;
   $('next').textContent = last ? 'Fertig ✓' : 'Weiter ›';
   $('next').disabled = last;
-  zLink();
   if (!noSave) save();
 }
 
@@ -493,15 +491,8 @@ $('ok').onclick = () => {
   render();
 };
 
-// Reihenzähler dieses Projekts (zaehler/?p=id), mit aktuellem Stand im Knopf
-function zLink() {
-  const c = P && (Store('zaehler').get('counters', {}) || {})[P.id], n = c ? (c.flips || 0) * (c.n || 10) + (c.popped || []).length : 0;
-  $('zlink').href = P ? `../zaehler/?p=${encodeURIComponent(P.id)}` : '../zaehler/';
-  $('zlink').textContent = c ? `Zähler ${n}` : 'Zähler';
-}
 // Andere Tabs oder Apps haben Projekte geändert: frisch laden, damit hier kein alter Stand zurückgeschrieben wird
 addEventListener('storage', e => {
-  if (e.key === 'zaehler.counters') return zLink();
   if (e.key !== 'anleitung.projects') return;
   const list = Projekte.all(), fresh = id => list.find(q => q.id === id);
   if (document.body.classList.contains('setup')) {
