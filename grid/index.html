@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Isadody Tapestry-Raster</title>
+<meta name="theme-color" content="#FBF6EC">
+<link rel="stylesheet" href="../shared/isadody.css">
+<script src="../shared/store.js"></script>
+<style>
+  body { padding:env(safe-area-inset-top) 12px calc(env(safe-area-inset-bottom) + 24px); max-width:960px; margin-inline:auto; }
+  header { display:flex; justify-content:space-between; align-items:center; padding:10px 0; gap:10px; }
+  .title { display:flex; align-items:center; gap:12px; }
+  h1 { font-family:var(--display); font-size:1.6rem; font-weight:700; margin:0; line-height:1.1; }
+  h2 { font-family:var(--display); font-size:1.2rem; font-weight:700; margin:0 0 8px; }
+  .sub { font-size:.9rem; color:var(--ink-soft); }
+  .btn { cursor:pointer; text-decoration:none; display:inline-block; text-align:center; }
+  .small { border:1px solid var(--line); white-space:nowrap; }
+  .small.on { border-color:var(--ink); background:var(--coral-soft); }
+  section { background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-card); padding:14px; margin:12px 0; }
+  .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-top:12px; }
+  label.f { display:flex; flex-direction:column; gap:4px; font-size:.85rem; font-weight:700; }
+  label.c { display:flex; align-items:center; gap:8px; font-size:.9rem; }
+  input[type=number], select, input.hex { font:inherit; padding:8px 10px; border-radius:12px; border:1px solid var(--line); background:#fff; color:var(--ink); min-width:0; }
+  #file { display:none; }
+  #pick { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  #thumb { height:64px; width:auto; border-radius:10px; border:1px solid var(--line); display:none; }
+  .bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+  #wrap { overflow:auto; max-height:75vh; background:#fff; border-radius:12px; border:1px solid var(--line); }
+  #chart { display:block; }
+  #chart.paint { touch-action:none; cursor:crosshair; }
+  #legend { display:flex; flex-wrap:wrap; gap:8px; }
+  #legend button { background:var(--paper); color:var(--ink); border:1px solid var(--line); border-radius:999px; padding:6px 12px 6px 6px; font-weight:700; display:flex; align-items:center; gap:8px; }
+  #legend button.on { border-color:var(--ink); box-shadow:0 0 0 1px var(--ink); }
+  #legend i, .prev { width:26px; height:26px; border-radius:50%; border:1px solid var(--ink-soft); display:inline-block; flex:none; }
+  #legend small { font-weight:400; color:var(--ink-soft); }
+  #editor { display:none; flex-direction:column; gap:8px; margin-top:10px; padding:12px; background:var(--paper); border-radius:12px; }
+  #editor.open { display:flex; }
+  .pal { display:flex; flex-wrap:wrap; gap:8px; }
+  .pal button { width:34px; height:34px; padding:0; border-radius:50%; border:1px solid var(--ink-soft); }
+  .hexrow { display:flex; gap:8px; align-items:center; }
+  #rows { margin:0; padding:0; list-style:none; max-height:50vh; overflow:auto; font-size:.95rem; }
+  #rows li { padding:6px 4px; border-bottom:1px dashed var(--line); display:flex; gap:4px 12px; flex-wrap:wrap; }
+  #rows b { font-family:var(--display); min-width:5.5em; }
+  #rows .d { color:var(--ink-soft); font-size:.8rem; align-self:center; }
+  #rows .s { display:inline-flex; align-items:center; gap:3px; }
+  #rows .s i { width:12px; height:12px; border-radius:3px; border:1px solid var(--ink-soft); display:inline-block; }
+  .hint { font-size:.85rem; color:var(--ink-soft); margin:8px 0 0; }
+  #empty { text-align:center; color:var(--ink-soft); padding:20px 0; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<header>
+  <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><h1>Tapestry-Raster</h1><div class="sub">Bild → Häkelmuster</div></div></div>
+  <a class="home" href="../">‹ Alle Apps</a>
+</header>
+
+<section>
+  <div id="pick">
+    <label class="btn" for="file">Bild wählen</label>
+    <input type="file" id="file" accept="image/*">
+    <img id="thumb" alt="Vorschau">
+    <span class="sub" id="info">Foto oder Grafik laden. Klare Formen mit wenigen Farben ergeben die schönsten Muster.</span>
+  </div>
+  <div class="grid2">
+    <label class="f">Maschen (Breite)<input type="number" id="cols" min="5" max="200" value="40"></label>
+    <label class="f">Reihen (Höhe)<input type="number" id="rowsN" min="5" max="200" value="40"></label>
+    <label class="f">Farben<input type="number" id="ncol" min="2" max="10" value="4"></label>
+    <label class="f">Arbeitsweise<select id="mode"><option value="rows">Reihen (hin & zurück)</option><option value="rounds">Runden</option></select></label>
+  </div>
+  <div class="grid2">
+    <label class="c"><input type="checkbox" id="keep" checked> Seitenverhältnis beibehalten</label>
+    <label class="c"><input type="checkbox" id="smooth" checked> Einzelne Maschen glätten</label>
+    <label class="c"><input type="checkbox" id="left"> Linkshändig</label>
+  </div>
+</section>
+
+<div id="out" class="hidden">
+  <section>
+    <h2>Raster</h2>
+    <div class="bar">
+      <button class="small" id="zoomOut" aria-label="Verkleinern">−</button>
+      <button class="small" id="zoomIn" aria-label="Vergrößern">+</button>
+      <button class="small" id="paint">✎ Malen</button>
+      <button class="small" id="undo" disabled>↶ Rückgängig</button>
+      <button class="small" id="png">Bild speichern</button>
+    </div>
+    <div id="wrap"><canvas id="chart"></canvas></div>
+    <p class="hint">Reihe 1 ist unten. Die Zahl steht an der Seite, an der die Reihe beginnt. Zum Malen eine Farbe in der Legende wählen. Neu berechnen überschreibt Gemaltes.</p>
+  </section>
+
+  <section>
+    <h2>Farben</h2>
+    <div id="legend"></div>
+    <div id="editor">
+      <div class="pal" id="pal"></div>
+      <div class="hexrow"><i class="prev" id="prev"></i><input class="hex" id="hex" maxlength="7"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Anleitung</h2>
+    <div class="bar">
+      <a class="btn" id="toHelper" href="../anleitung/">Im Häkelhelfer öffnen</a>
+      <button class="small" id="copy">Text kopieren</button>
+      <button class="small" id="txt">Als .txt</button>
+    </div>
+    <p class="hint" id="cast"></p>
+    <ul id="rows"></ul>
+  </section>
+</div>
+<p id="empty">Noch kein Bild geladen.</p>
+
+<script>
+// ---- Kern (ohne DOM, auch mit node testbar) ----
+const LETTERS = 'ABCDEFGHIJ';
+
+function rgbToLab([r, g, b]) {
+  const f = v => { v /= 255; return v > 0.04045 ? ((v + 0.055) / 1.055) ** 2.4 : v / 12.92; };
+  const R = f(r), G = f(g), B = f(b);
+  let x = (R * 0.4124 + G * 0.3576 + B * 0.1805) / 0.95047, y = R * 0.2126 + G * 0.7152 + B * 0.0722, z = (R * 0.0193 + G * 0.1192 + B * 0.9505) / 1.08883;
+  const h = t => t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116;
+  x = h(x); y = h(y); z = h(z);
+  return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
+}
+const dist2 = (a, b) => (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2;
+const toHex = c => '#' + c.map(v => Math.round(v).toString(16).padStart(2, '0')).join('').toUpperCase();
+
+// Farbreduktion: k-means mit vielen Gruppen (feste Startwerte → gleiches Bild, gleiches Ergebnis),
+// dann die ähnlichsten Gruppen nach Ward zusammenlegen. So bleiben kleine, aber deutlich andere Flächen erhalten,
+// während Übergangstöne an Kanten in den Nachbarfarben aufgehen.
+function kmeans(lab, cent, iters) {
+  const n = lab.length, idx = new Uint8Array(n);
+  for (let it = 0; it < iters; it++) {
+    let moved = false;
+    for (let i = 0; i < n; i++) {
+      let best = 0, bd = Infinity;
+      for (let c = 0; c < cent.length; c++) { const v = dist2(lab[i], cent[c]); if (v < bd) { bd = v; best = c; } }
+      if (idx[i] !== best) { moved = true; idx[i] = best; }
+    }
+    const acc = cent.map(() => [0, 0, 0, 0]);
+    for (let i = 0; i < n; i++) { const a = acc[idx[i]]; a[0] += lab[i][0]; a[1] += lab[i][1]; a[2] += lab[i][2]; a[3]++; }
+    acc.forEach((a, c) => { if (a[3]) cent[c] = [a[0] / a[3], a[1] / a[3], a[2] / a[3]]; });
+    if (!moved && it) break;
+  }
+  return idx;
+}
+function quantize(pixels, k) {
+  const lab = pixels.map(rgbToLab), n = lab.length;
+  let seed = 1; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const K = Math.min(n, Math.max(16, 3 * k));
+  let cent = [lab[Math.floor(n / 2)]]; const d = new Float64Array(n).fill(Infinity);
+  while (cent.length < K) { // k-means++
+    let sum = 0;
+    for (let i = 0; i < n; i++) { d[i] = Math.min(d[i], dist2(lab[i], cent[cent.length - 1])); sum += d[i]; }
+    if (!sum) break;
+    let t = rnd() * sum, i = 0;
+    while (i < n - 1 && (t -= d[i]) > 0) i++;
+    cent.push(lab[i]);
+  }
+  let idx = kmeans(lab, cent, 15);
+  let grp = cent.map((c, j) => ({ c, m: 0 })); idx.forEach(j => grp[j].m++);
+  grp = grp.filter(g => g.m);
+  while (grp.length > k) { // Ward: Paar mit dem geringsten Zuwachs an Fehler zusammenlegen
+    let bi = 0, bj = 1, bc = Infinity;
+    for (let i = 0; i < grp.length; i++) for (let j = i + 1; j < grp.length; j++) {
+      const v = grp[i].m * grp[j].m / (grp[i].m + grp[j].m) * dist2(grp[i].c, grp[j].c);
+      if (v < bc) { bc = v; bi = i; bj = j; }
+    }
+    const a = grp[bi], b = grp[bj], m = a.m + b.m;
+    grp[bi] = { c: a.c.map((v, q) => (v * a.m + b.c[q] * b.m) / m), m }; grp.splice(bj, 1);
+  }
+  cent = grp.map(g => g.c);
+  idx = kmeans(lab, cent, 1); // jede Masche der nächsten Farbe zuordnen
+  // Garnfarbe = Mittel der Original-RGB-Werte jeder Gruppe; nach Häufigkeit sortiert (A = häufigste)
+  const rgb = cent.map(() => [0, 0, 0, 0]);
+  for (let i = 0; i < n; i++) { const a = rgb[idx[i]]; a[0] += pixels[i][0]; a[1] += pixels[i][1]; a[2] += pixels[i][2]; a[3]++; }
+  const order = rgb.map((a, c) => c).filter(c => rgb[c][3]).sort((a, b) => rgb[b][3] - rgb[a][3]);
+  const remap = new Uint8Array(cent.length); order.forEach((c, j) => remap[c] = j);
+  return { palette: order.map(c => toHex(rgb[c].slice(0, 3).map(v => v / rgb[c][3]))), cells: Array.from(idx, c => remap[c]) };
+}
+
+// Einzelne Maschen entfernen, deren 4 Nachbarn alle anders sind (spart Farbwechsel)
+function despeckle(cells, w, h) {
+  const out = cells.slice();
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const c = cells[y * w + x], nb = [];
+    if (x > 0) nb.push(cells[y * w + x - 1]); if (x < w - 1) nb.push(cells[y * w + x + 1]);
+    if (y > 0) nb.push(cells[(y - 1) * w + x]); if (y < h - 1) nb.push(cells[(y + 1) * w + x]);
+    if (nb.includes(c)) continue;
+    const cnt = {}; nb.forEach(v => cnt[v] = (cnt[v] || 0) + 1);
+    out[y * w + x] = +Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0];
+  }
+  return out;
+}
+
+// Ungenutzte Farben entfernen (z. B. nach dem Glätten), Reihenfolge nach Häufigkeit neu
+function compact(palette, cells) {
+  const cnt = palette.map(() => 0); cells.forEach(c => cnt[c]++);
+  const order = palette.map((p, i) => i).filter(i => cnt[i]).sort((a, b) => cnt[b] - cnt[a]), remap = [];
+  order.forEach((i, j) => remap[i] = j);
+  return { palette: order.map(i => palette[i]), cells: cells.map(c => remap[c]) };
+}
+
+// Reihe n (1 = unten) beginnt rechts (Rechtshänder: R1 von rechts, in Reihen abwechselnd, in Runden immer)
+const fromRight = (n, mode, left) => (mode === 'rounds' || n % 2 === 1) !== left;
+
+// Maschenfolge je Reihe in Häkelrichtung: [{n: Reihe, right: bool, runs: [[Farbindex, Anzahl], ...]}]
+function instructions(cells, w, h, mode, left) {
+  const res = [];
+  for (let n = 1; n <= h; n++) {
+    const y = h - n, right = fromRight(n, mode, left), runs = [];
+    for (let i = 0; i < w; i++) {
+      const c = cells[y * w + (right ? w - 1 - i : i)];
+      if (runs.length && runs[runs.length - 1][0] === c) runs[runs.length - 1][1]++; else runs.push([c, 1]);
+    }
+    res.push({ n, right, runs });
+  }
+  return res;
+}
+
+const castOn = (w, mode) => mode === 'rounds' ? `Anschlag: ${w} Lm, zur Runde schließen.` : `Anschlag: ${w + 1} Lm, Reihe 1 ab der 2. Lm von der Nadel.`;
+const rowLabel = (mode) => mode === 'rounds' ? 'Runde' : 'Reihe';
+const toText = (ins, w, mode) => [castOn(w, mode), 'Tapestry: feste Maschen, nicht genutzte Farben mitführen.', '',
+  ...ins.map(r => `${rowLabel(mode)} ${r.n} (von ${r.right ? 'rechts' : 'links'}): ` + r.runs.map(([c, k]) => `${k} ${LETTERS[c]}`).join(', '))].join('\n');
+// Format für den Häkelhelfer (../anleitung/): Farbwechsel + Anzahl fM
+const toHelper = ins => ins.map(r => `Reihe ${r.n}: ` + r.runs.map(([c, k]) => `Farbe ${LETTERS[c]}, ${k} fM`).join(', ')).join('\n');
+
+if (typeof module !== 'undefined') { module.exports = { quantize, despeckle, compact, instructions, toText, toHelper, fromRight }; }
+else {
+// ---- Oberfläche ----
+const $ = id => document.getElementById(id);
+const PRESETS = ['#E53935','#F2896B','#F5C84C','#FFEB3B','#8FC9A9','#43A047','#1B5E20','#8CB4D9','#1E88E5','#0D47A1','#8E24AA','#F48FB1','#D81B60','#795548','#BCAAA4','#FFFFFF','#BDBDBD','#616161','#22201B'];
+const textOn = hex => { const n = parseInt(hex.slice(1), 16); return (0.299 * (n >> 16) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) > 150 ? '#22201B' : '#FFFFFF'; };
+
+let img = null, src = '', aspect = 1; // Quelle, verkleinert als JPEG (wird mitgespeichert)
+let G = null; // { w, h, palette, cells }
+let sel = 0, zoom = 1, painting = false, undo = [];
+const opts = () => ({ w: +$('cols').value, h: +$('rowsN').value, k: +$('ncol').value, mode: $('mode').value, left: $('left').checked, smooth: $('smooth').checked });
+const clamp = (v, a, b) => Math.max(a, Math.min(b, Math.round(v) || a));
+const store = Store('grid');
+const save = () => { store.set('state', { G, o: opts(), keep: $('keep').checked }); store.set('src', src); }; // Bild getrennt, falls es zu groß ist
+
+function sample(w, h) { // Bild auf w×h Felder mitteln (4×4 Unterpunkte je Feld)
+  const S = 4, cv = document.createElement('canvas'); cv.width = w * S; cv.height = h * S;
+  const cx = cv.getContext('2d', { willReadFrequently: true });
+  cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height); // Transparenz → Weiß
+  cx.imageSmoothingQuality = 'high'; cx.drawImage(img, 0, 0, cv.width, cv.height);
+  const d = cx.getImageData(0, 0, cv.width, cv.height).data, px = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let r = 0, g = 0, b = 0;
+    for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) { const o = ((y * S + j) * cv.width + x * S + i) * 4; r += d[o]; g += d[o + 1]; b += d[o + 2]; }
+    px.push([r / S / S, g / S / S, b / S / S]);
+  }
+  return px;
+}
+
+function build() {
+  if (!img) return;
+  const o = opts();
+  const q = quantize(sample(o.w, o.h), o.k);
+  G = { w: o.w, h: o.h, ...compact(q.palette, o.smooth ? despeckle(q.cells, o.w, o.h) : q.cells) };
+  sel = Math.min(sel, G.palette.length - 1); undo = []; draw(); save();
+}
+
+// ---- Zeichnen ----
+const NUM = 30; // Rand für Reihen-/Maschenzahlen
+function cellSize() { return Math.max(4, Math.floor((($('wrap').clientWidth || 600) - 2 * NUM) / G.w * zoom)); }
+function drawChart(cv, cs) {
+  const { w, h, palette, cells } = G, o = opts(), dpr = window.devicePixelRatio || 1;
+  const W = w * cs + 2 * NUM, H = h * cs + NUM;
+  cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  const cx = cv.getContext('2d'); cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  cx.fillStyle = '#FFFFFF'; cx.fillRect(0, 0, W, H);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { cx.fillStyle = palette[cells[y * w + x]]; cx.fillRect(NUM + x * cs, y * cs, cs, cs); }
+  const line = (x1, y1, x2, y2, c, lw) => { cx.strokeStyle = c; cx.lineWidth = lw; cx.beginPath(); cx.moveTo(x1, y1); cx.lineTo(x2, y2); cx.stroke(); };
+  if (cs >= 6) for (let x = 0; x <= w; x++) if (x % 10 && (w - x) % 10) line(NUM + x * cs, 0, NUM + x * cs, h * cs, 'rgba(34,32,27,.25)', 1);
+  if (cs >= 6) for (let y = 0; y <= h; y++) if ((h - y) % 10) line(NUM, y * cs, NUM + w * cs, y * cs, 'rgba(34,32,27,.25)', 1);
+  for (let x = 0; x <= w; x++) if ((w - x) % 10 === 0 || x === 0) line(NUM + x * cs, 0, NUM + x * cs, h * cs, '#22201B', 1.5);
+  for (let y = 0; y <= h; y++) if ((h - y) % 10 === 0 || y === 0) line(NUM, y * cs, NUM + w * cs, y * cs, '#22201B', 1.5);
+  cx.fillStyle = '#5B5347'; cx.font = `700 ${Math.min(12, Math.max(9, cs))}px Nunito, system-ui, sans-serif`; cx.textBaseline = 'middle';
+  const every = cs >= 14 ? 1 : cs >= 8 ? 5 : 10;
+  for (let n = 1; n <= h; n++) if (n === 1 || n % every === 0) {
+    const right = fromRight(n, o.mode, o.left), y = (h - n) * cs + cs / 2;
+    cx.textAlign = right ? 'left' : 'right'; cx.fillText(n, right ? NUM + w * cs + 4 : NUM - 4, y);
+  }
+  cx.textAlign = 'center';
+  for (let m = 1; m <= w; m++) if (m === 1 || m % every === 0) { const x = o.left ? m - 1 : w - m; cx.fillText(m, NUM + x * cs + cs / 2, h * cs + NUM / 2); }
+}
+
+function draw() {
+  $('out').classList.remove('hidden'); $('empty').classList.add('hidden');
+  drawChart($('chart'), cellSize());
+  const counts = G.palette.map(() => 0); G.cells.forEach(c => counts[c]++);
+  $('legend').innerHTML = G.palette.map((p, i) => `<button data-i="${i}" class="${i === sel ? 'on' : ''}"><i style="background:${p}"></i>${LETTERS[i]} <small>${counts[i]} M</small></button>`).join('');
+  const o = opts(), ins = instructions(G.cells, G.w, G.h, o.mode, o.left);
+  $('cast').textContent = `${G.w} × ${G.h} Maschen. ` + castOn(G.w, o.mode);
+  $('rows').innerHTML = ins.slice().reverse().map(r => `<li><b>${rowLabel(o.mode)} ${r.n}</b><span class="d">${r.right ? '← von rechts' : 'von links →'}</span>` +
+    r.runs.map(([c, k]) => `<span class="s"><i style="background:${G.palette[c]}"></i>${k} ${LETTERS[c]}</span>`).join('') + '</li>').join('');
+  $('undo').disabled = !undo.length;
+  if ($('editor').classList.contains('open')) openEditor();
+}
+
+// ---- Farben bearbeiten ----
+function openEditor() {
+  const ed = $('editor'); ed.classList.add('open');
+  $('pal').innerHTML = PRESETS.map(p => `<button data-c="${p}" style="background:${p}" aria-label="${p}"></button>`).join('');
+  $('hex').value = G.palette[sel]; $('prev').style.background = G.palette[sel];
+}
+const setColor = hex => { G.palette[sel] = hex.toUpperCase(); draw(); save(); };
+$('legend').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const i = +b.dataset.i, again = i === sel && $('editor').classList.contains('open');
+  sel = i; if (again) $('editor').classList.remove('open'); else openEditor();
+  draw();
+};
+$('pal').onclick = e => { const b = e.target.closest('button'); if (b) setColor(b.dataset.c); };
+$('hex').oninput = () => { let v = $('hex').value.trim(); if (v && v[0] !== '#') v = '#' + v; if (/^#[0-9a-f]{6}$/i.test(v)) { G.palette[sel] = v.toUpperCase(); $('prev').style.background = v; drawChart($('chart'), cellSize()); $('legend').querySelector('.on i').style.background = v; save(); } };
+$('hex').onchange = draw;
+
+// ---- Malen ----
+$('paint').onclick = () => { painting = !painting; $('paint').classList.toggle('on', painting); $('chart').classList.toggle('paint', painting); };
+let down = false;
+function paintAt(e) {
+  const r = $('chart').getBoundingClientRect(), cs = cellSize();
+  const x = Math.floor((e.clientX - r.left - NUM) / cs), y = Math.floor((e.clientY - r.top) / cs);
+  if (x < 0 || y < 0 || x >= G.w || y >= G.h || G.cells[y * G.w + x] === sel) return;
+  G.cells[y * G.w + x] = sel; drawChart($('chart'), cs);
+}
+$('chart').onpointerdown = e => { if (!painting) return; down = true; undo.push(G.cells.slice()); if (undo.length > 30) undo.shift(); $('chart').setPointerCapture(e.pointerId); paintAt(e); };
+$('chart').onpointermove = e => { if (down) paintAt(e); };
+$('chart').onpointerup = $('chart').onpointercancel = () => { if (!down) return; down = false; draw(); save(); };
+$('undo').onclick = () => { if (undo.length) { G.cells = undo.pop(); draw(); save(); } };
+
+// ---- Einstellungen ----
+$('file').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const u = URL.createObjectURL(f), im = new Image();
+  im.onload = () => {
+    const s = Math.min(1, 800 / Math.max(im.width, im.height)), cv = document.createElement('canvas');
+    cv.width = Math.round(im.width * s); cv.height = Math.round(im.height * s);
+    const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height); cx.drawImage(im, 0, 0, cv.width, cv.height);
+    URL.revokeObjectURL(u);
+    loadSrc(cv.toDataURL('image/jpeg', 0.9), () => { if ($('keep').checked) fitRows(); build(); });
+  };
+  im.onerror = () => alert('Dieses Bild lässt sich nicht öffnen.');
+  im.src = u;
+};
+function loadSrc(data, then) {
+  const im = new Image();
+  im.onload = () => { img = im; src = data; aspect = im.height / im.width; $('thumb').src = data; $('thumb').style.display = 'block'; $('info').textContent = `${im.width} × ${im.height} px`; then && then(); };
+  im.src = data;
+}
+const fitRows = () => { $('rowsN').value = clamp(+$('cols').value * aspect, 5, 200); };
+const fitCols = () => { $('cols').value = clamp(+$('rowsN').value / aspect, 5, 200); };
+let t = 0; const later = () => { clearTimeout(t); t = setTimeout(build, 250); };
+$('cols').oninput = () => { if ($('keep').checked && img) fitRows(); later(); };
+$('rowsN').oninput = () => { if ($('keep').checked && img) fitCols(); later(); };
+$('cols').onchange = $('rowsN').onchange = $('ncol').onchange = () => { for (const [id, a, b] of [['cols', 5, 200], ['rowsN', 5, 200], ['ncol', 2, 10]]) $(id).value = clamp(+$(id).value, a, b); build(); };
+$('ncol').oninput = later; $('smooth').onchange = build;
+$('keep').onchange = () => { if ($('keep').checked && img) { fitRows(); build(); } };
+$('mode').onchange = $('left').onchange = () => { if (G) { draw(); save(); } };
+$('zoomIn').onclick = () => { zoom = Math.min(8, zoom * 1.4); draw(); };
+$('zoomOut').onclick = () => { zoom = Math.max(0.3, zoom / 1.4); draw(); };
+addEventListener('resize', () => { if (G) drawChart($('chart'), cellSize()); });
+
+// ---- Ausgabe ----
+const download = (blob, name) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const curText = () => { const o = opts(); return toText(instructions(G.cells, G.w, G.h, o.mode, o.left), G.w, o.mode) + '\n\nFarben:\n' + G.palette.map((p, i) => `${LETTERS[i]} = ${p}`).join('\n'); };
+$('png').onclick = () => { const cv = document.createElement('canvas'); drawChart(cv, Math.max(12, Math.min(24, Math.floor(2400 / Math.max(G.w, G.h))))); cv.toBlob(b => download(b, 'tapestry-raster.png')); };
+$('txt').onclick = () => download(new Blob([curText()], { type: 'text/plain' }), 'tapestry-anleitung.txt');
+$('copy').onclick = async () => { try { await navigator.clipboard.writeText(curText()); $('copy').textContent = 'Kopiert ✓'; } catch { $('copy').textContent = 'Nicht möglich'; } setTimeout(() => $('copy').textContent = 'Text kopieren', 1500); };
+$('toHelper').onclick = e => {
+  e.preventDefault();
+  const helper = Store('anleitung'); // Speicher des Häkelhelfers
+  if (helper.get('pattern', '') && !confirm('Die Anleitung im Häkelhelfer wird ersetzt. Weiter?')) return;
+  const o = opts(), cols = helper.get('colors', {});
+  G.palette.forEach((p, i) => cols[LETTERS[i]] = p);
+  helper.set('pattern', toHelper(instructions(G.cells, G.w, G.h, o.mode, o.left)));
+  helper.set('colors', cols); helper.set('pos', { r: 0, p: 0 }); helper.set('done', {});
+  location.href = '../anleitung/';
+};
+
+// ---- Start: letzten Stand laden ----
+{
+  const s = store.get('state', null);
+  if (s && s.G) {
+    $('cols').value = s.o.w; $('rowsN').value = s.o.h; $('ncol').value = s.o.k; $('mode').value = s.o.mode; $('left').checked = s.o.left; $('smooth').checked = s.o.smooth; $('keep').checked = s.keep;
+    G = s.G; draw();
+    const im = store.get('src', ''); if (im) loadSrc(im);
+  }
+}
+}
+</script>
+</body>
+</html>
