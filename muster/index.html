@@ -16,22 +16,21 @@
 <script src="../shared/muster-db.js"></script>
 <script src="../shared/doctext.js"></script>
 <style>
-  body { padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom); max-width:960px; margin:0 auto; }
-  header { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 0 4px; }
-  .title { display:flex; align-items:center; gap:12px; min-width:0; }
-  h1 { font-family:var(--display); font-size:1.6rem; font-weight:700; margin:0; line-height:1.1; }
+  body { padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom); max-width:960px; margin:0 auto; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:10px 0 4px; }
   #count { color:var(--ink-soft); font-size:.9rem; }
-  .actions { display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex:none; }
   input, textarea { font:inherit; padding:10px 14px; border-radius:999px; border:var(--field-border); background:#fff; color:var(--ink); min-width:0; }
   textarea { border-radius:16px; resize:vertical; }
   #bar { display:flex; gap:10px; padding:12px 0 8px; }
   #q { flex:1; }
-  #add { padding:10px 18px; box-shadow:var(--shadow-card); white-space:nowrap; }
+  /* „+ Muster“ schwebt unten rechts; einziger Coral-Knopf der Seite */
+  #add { position:fixed; right:16px; bottom:calc(16px + env(safe-area-inset-bottom)); z-index:4; padding:14px 22px; white-space:nowrap; }
+  body.open #add, body.paste #add { display:none; }
   #filters { display:flex; flex-wrap:wrap; gap:6px; padding-bottom:6px; }
   .pill { min-height:40px; background:var(--paper-alt); border:1px solid var(--line); border-radius:999px; padding:5px 12px; font-size:.85rem; font-weight:700; color:var(--ink); }
   .pill.on { background:var(--coral-soft); border-color:var(--ink); }
   .pill.sort { margin-left:auto; color:var(--ink-soft); }
-  #grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; padding:8px 0 24px; }
+  #grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; padding:8px 0 96px; }
   /* Karte mit angedeuteter Naht wie die Kacheln im Häkelhelfer */
   .card { position:relative; display:flex; flex-direction:column; text-align:left; padding:8px; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-card); }
   .card::after { content:''; position:absolute; inset:4px; border:2px dashed var(--ink); border-radius:13px; opacity:.15; pointer-events:none; }
@@ -43,7 +42,7 @@
   .tg { font-size:.72rem; font-weight:700; color:var(--ink-soft); background:var(--paper); border:1px solid var(--line); border-radius:999px; padding:1px 8px; }
   .star { position:absolute; top:12px; right:12px; width:30px; height:30px; border-radius:50%; background:var(--paper); display:grid; place-items:center; font-size:1rem; box-shadow:var(--shadow-card); }
   #empty { text-align:center; color:var(--ink-soft); padding:40px 10px; }
-  #empty .btn { margin-top:12px; } #empty .note { font-size:.85rem; }
+  #empty .note { font-size:.85rem; }
   /* Detailansicht */
   #detail { position:fixed; inset:0; background:var(--paper); overflow:auto; padding:env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 24px); display:none; }
   body.open #detail { display:block; } body.open { overflow:hidden; }
@@ -73,6 +72,8 @@
   #paste .row { display:flex; gap:10px; } #paste .row .btn { flex:1; }
   #menu { position:absolute; right:16px; top:100%; margin-top:6px; background:var(--paper); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-soft); padding:6px; display:none; flex-direction:column; z-index:5; min-width:220px; }
   #menu.on { display:flex; }
+  /* Menü von „+ Muster“ öffnet über dem Knopf */
+  #menu.add { position:fixed; top:auto; right:16px; bottom:calc(80px + env(safe-area-inset-bottom)); }
   #menu button { background:none; text-align:left; padding:10px 12px; border-radius:10px; font-weight:700; }
   #menu button:hover { background:var(--paper-alt); }
   #menu.add .m-save, #menu.save .m-add { display:none; }
@@ -86,8 +87,8 @@
 </head>
 <body>
 <header>
-  <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><h1>Muster&shy;sammlung</h1><div id="count"></div></div></div>
-  <div class="actions"><div class="tools"><a class="home" href="../">‹ Alle Apps</a><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div><button class="small" id="more">Sichern</button></div>
+  <div class="title"><a class="home" href="../" aria-label="Alle Apps" title="Alle Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/></svg></a><img class="logo" src="../shared/logo.png" alt="Isadody"><div><h1 class="apptitle">Mustersammlung</h1><div id="count"></div></div></div>
+  <div class="tools"><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a><button class="small icon-m" id="more"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/></svg><span class="lbl">Sichern</span></button></div>
 </header>
 <div class="wrap">
   <div id="bar"><input id="q" type="search" placeholder="Suchen …" aria-label="Suchen: Name, Tag, Notiz, Text"><button class="btn" id="add">+ Muster</button></div>
@@ -208,7 +209,9 @@ function render() {
   $('grid').innerHTML = vis.map(it => `<button class="card" data-id="${esc(it.id)}">
     <div class="thumb">${thumbHtml(it)}</div>${it.fav ? '<span class="star">★</span>' : ''}
     <h3>${esc(it.title)}</h3>${it.tags.length ? `<div class="tags">${it.tags.map(t => `<span class="tg">${esc(t)}</span>`).join('')}</div>` : ''}</button>`).join('');
-  $('empty').innerHTML = !items.length ? `<p>Noch keine Muster. Lege Bilder, PDFs, Word-, ODT- oder Textdateien ab und ordne sie mit Tags.</p><p class="note">Die Muster bleiben nur auf diesem Gerät. Gekaufte Anleitungen bitte nicht weitergeben.</p><button class="btn" data-a="file">+ Datei</button> <button class="btn" data-a="paste">+ Text einfügen</button>`
+  // Leere Sammlung: Suche erst ab dem ersten Muster
+  $('q').hidden = !items.length;
+  $('empty').innerHTML = !items.length ? `<p>Noch keine Muster. Lege Bilder, PDFs, Word-, ODT- oder Textdateien ab und ordne sie mit Tags.</p><p class="note">Die Muster bleiben nur auf diesem Gerät. Gekaufte Anleitungen bitte nicht weitergeben.</p><p>Tippe unten rechts auf <b>+ Muster</b>.</p>`
     : !vis.length ? '<p>Nichts gefunden. Filter oder Suche ändern.</p>' : '';
 }
 

@@ -16,8 +16,6 @@
 <style>
   body { padding:env(safe-area-inset-top) 12px calc(env(safe-area-inset-bottom) + 24px); max-width:960px; margin-inline:auto; }
   header { display:flex; justify-content:space-between; align-items:center; padding:10px 0; gap:10px; }
-  .title { display:flex; align-items:center; gap:12px; }
-  h1 { font-family:var(--display); font-size:1.6rem; font-weight:700; margin:0; line-height:1.1; }
   h2 { font-family:var(--display); font-size:1.2rem; font-weight:700; margin:0 0 8px; }
   .sub { font-size:.9rem; color:var(--ink-soft); }
   #limits { margin:10px 0 0; }
@@ -64,8 +62,8 @@
 </head>
 <body>
 <header>
-  <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><h1>Grid-Ersteller</h1><div class="sub">Bild → Tapestry-Muster</div></div></div>
-  <div class="tools"><a class="home" href="../">‹ Alle Apps</a><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div>
+  <div class="title"><a class="home" href="../" aria-label="Alle Apps" title="Alle Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/></svg></a><img class="logo" src="../shared/logo.png" alt="Isadody"><div><h1 class="apptitle">Grid-Ersteller</h1><div class="sub">Bild → Tapestry-Muster</div></div></div>
+  <div class="tools"><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div>
 </header>
 
 <section>

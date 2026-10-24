@@ -23,7 +23,7 @@
   .title > div { min-width:0; }
   #row { font-family:var(--display); font-size:1.6rem; font-weight:700; line-height:1.1; background:none; padding:0; text-align:left; }
   #sub { font-size:.9rem; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .actions { display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex:none; }
+  header .tools { flex:none; }
 
   /* Auswahl */
   #choose { flex:1; overflow:auto; display:flex; flex-direction:column; gap:10px; padding-bottom:12px; }
@@ -57,8 +57,8 @@
 </head>
 <body class="choose">
 <header>
-  <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><button id="row" type="button">Lineal</button><div id="sub">Anleitung als Bild oder PDF</div></div></div>
-  <div class="actions"><div class="tools"><a class="home" href="../">‹ Alle Apps</a><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div><button class="small" id="menu" hidden>Muster</button></div>
+  <div class="title"><a class="home" href="../" aria-label="Alle Apps" title="Alle Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/></svg></a><img class="logo" src="../shared/logo.png" alt="Isadody"><div><button id="row" type="button">Lineal</button><div id="sub">Anleitung als Bild oder PDF</div></div></div>
+  <div class="tools"><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a><button class="small" id="menu" hidden>Muster</button></div>
 </header>
 <section id="choose">
   <p>Das Lineal markiert die Reihe, an der du gerade bist. Gut für Anleitungen, die der Häkelhelfer nicht lesen kann: Fotos, eingescannte PDFs, Diagramme.</p>

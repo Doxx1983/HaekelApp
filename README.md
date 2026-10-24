@@ -20,7 +20,7 @@ Häkelhelfer: Unter dem Textfeld zeigt ein Prüfschritt die erkannten Reihen mit
 
 Grid → Häkelhelfer: Die Anleitung trägt die Richtung („Reihe 3 (von rechts): …“), der Häkelhelfer zeigt sie als Hinweis zur Reihe; auch der Text-Export („3 A, 2 B“ und „A = #RRGGBB“) wird gelesen. Der Grid-Ersteller merkt sich das geschickte Projekt (`grid.pid`) und bietet beim erneuten Schicken an, es zu aktualisieren (`Projekte.update`, `prev` = alte Anleitung; der Häkelhelfer behält beim Öffnen die Häkchen unveränderter Reihen).
 
-Neue App: eigener Ordner mit `index.html`, bindet `../shared/isadody.css` und `../shared/store.js` ein, Logo `../shared/logo.png`, Link `<a class="home" href="../">‹ Alle Apps</a>`, Karte auf der Startseite eintragen (mit Strich-Icon wie die anderen), Hilfeseite anlegen. Kein Build.
+Neue App: eigener Ordner mit `index.html`, bindet `../shared/isadody.css` und `../shared/store.js` ein, Logo `../shared/logo.png`, im Kopf links der Haus-Link `.home` (wie in den anderen Apps, `aria-label="Alle Apps"`), rechts `.tools` mit „?“ und höchstens einem App-Knopf, Karte auf der Startseite eintragen (mit Strich-Icon wie die anderen), Hilfeseite anlegen. Kein Build.
 
 ## Mustersammlung (`muster/`)
 

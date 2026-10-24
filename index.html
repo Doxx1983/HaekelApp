@@ -106,7 +106,7 @@ stand();
 const last = Projekte.all().sort((a, b) => b.used - a.used)[0];
 if (last) {
   document.getElementById('rname').textContent = last.name;
-  document.getElementById('rpos').textContent = `Häkelhelfer · Reihe ${((last.pos && last.pos.r) || 0) + 1}`;
+  document.getElementById('rpos').textContent = `Häkelhelfer · Reihe ${(last.pos && last.pos.label) || ((last.pos && last.pos.r) || 0) + 1}`;
   const r = document.getElementById('resume'); r.classList.add('on');
   r.onclick = () => Projekte.setCurrent(last.id);
 }

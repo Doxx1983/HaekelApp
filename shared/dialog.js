@@ -3,7 +3,7 @@
 //   await Dialog.alert('Text')                                   → undefined
 //   await Dialog.confirm('Text', { ok: 'Löschen' })              → true / false
 //   await Dialog.prompt('Name', 'Vorschlag', { ok: 'Speichern' }) → Text / null
-// Optionen: title, ok, cancel; danger: true setzt den Fokus auf „Abbrechen“ (für Löschen u. Ä.).
+// Optionen: title, ok, cancel; danger: true setzt den Fokus auf „Abbrechen“ und färbt den Knopf dunkel (für Löschen u. Ä.).
 // Esc, „Abbrechen“ und Tipp neben das Fenster brechen ab. Ohne <dialog>-Unterstützung: Browser-Fenster.
 const Dialog = (() => {
   let queue = Promise.resolve();
@@ -18,6 +18,7 @@ const Dialog = (() => {
     d.querySelector('p').textContent = text;
     const inp = d.querySelector('input'), ok = d.querySelector('.btn'), no = d.querySelector('.small');
     ok.textContent = o.ok || 'OK';
+    if (o.danger) ok.classList.add('danger');
     if (no) no.textContent = o.cancel || 'Abbrechen';
     if (inp) inp.value = value ?? '';
     const back = document.activeElement;

@@ -43,7 +43,7 @@ const Sicherung = (() => {
     if (obj(o.done)) for (const [k, v] of Object.entries(o.done)) if (/^\d{1,5}$/.test(k) && int(v, 0, 1e6, -1) === v) done[k] = v;
     const pos = obj(o.pos) ? o.pos : {};
     return { id: o.id, name: str(o.name, 80).trim() || Projekte.nameOf(o.pattern), pattern: o.pattern.slice(0, 2e6),
-      pos: { r: int(pos.r, 0, 1e5, 0), p: int(pos.p, 0, 1e5, 0) }, done, colors: { ...Projekte.DEFAULT_COLORS, ...Projekte.cleanColors(o.colors) }, used: Number.isFinite(o.used) ? o.used : 0,
+      pos: { r: int(pos.r, 0, 1e5, 0), p: int(pos.p, 0, 1e5, 0), ...(typeof pos.label === 'string' && /^[\w.\- ]{1,12}$/.test(pos.label) ? { label: pos.label } : {}) }, done, colors: { ...Projekte.DEFAULT_COLORS, ...Projekte.cleanColors(o.colors) }, used: Number.isFinite(o.used) ? o.used : 0,
       ...(typeof o.prev === 'string' ? { prev: o.prev.slice(0, 2e6) } : {}) };
   }
   function cleanCounter(o) {
