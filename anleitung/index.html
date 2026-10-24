@@ -103,10 +103,13 @@ function chipsOf(stitches) {
 }
 
 function parse(text) {
-  const rows = [], ctx = { color: '' };
-  for (const line of text.split(/\r?\n/)) {
+  const rows = [], ctx = { color: '' }, ROW = /^\s*(?:R|Row|Reihe|Runde|Round|Rnd|Rd)\.?\s*(\d+)\s*[:.\-–]?\s*(.*)$/i;
+  const lines = text.split(/\r?\n/), numbered = lines.some(l => ROW.test(l));
+  for (const line of lines) {
     if (!line.trim()) continue;
-    const m = line.match(/^\s*(?:R|Row|Reihe|Runde|Round|Rnd|Rd)\.?\s*(\d+)\s*[:.\-–]?\s*(.*)$/i);
+    const m = line.match(ROW);
+    // Gibt es nummerierte Reihen, sind andere Zeilen Überschriften oder Notizen: keine Maschen, nur Farbwechsel zählen
+    if (!m && numbered) { expand(line, ctx); continue; }
     const label = m ? m[1] : String(rows.length + 1);
     const chips = chipsOf(expand(m ? m[2] : line, ctx)), pages = [];
     for (let i = 0; i < chips.length; i += MAX_CHIPS) pages.push(chips.slice(i, i + MAX_CHIPS));

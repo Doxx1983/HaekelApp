@@ -32,6 +32,7 @@ Live: https://doxx1983.github.io/haekelapp/anleitung/ (Startseite: https://doxx1
 
 - **Anleitung laden** als `.txt`-Datei oder eingefügter Text. Anleitung, Position und Fortschritt bleiben im Browser (`localStorage`, Schlüssel `anleitung.*`; ältere Daten ohne Präfix werden einmalig übernommen).
 - **Deutsch und Englisch:** Reihen beginnen mit `R`, `Row`, `Reihe`, `Runde`, `Round`, `Rnd` + Nummer. Kürzel (`fM`, `Stb`, `sc`, `dc`, `bs` …) werden unverändert angezeigt.
+- **Überschriften und Notizen:** Enthält die Anleitung nummerierte Reihen, werden Zeilen ohne Reihennummer (Titel, Material …) übersprungen; Farbwechsel darin gelten trotzdem. Ohne nummerierte Reihen ist jede Zeile eine Reihe.
 - **Wiederholungen:** `(fM, Zun) x 6`, `(3 fM, Abn) 5x`, Anzahl vor dem Kürzel (`254sc`, `6 fM`).
 - **Anzeige:** Folgen von bis zu 3 gleichen Maschen als einzelne Kacheln, ab 4 gleichen als eine Kachel „10× fM“ (`SINGLE_MAX` in `index.html`). Max. 8 Kacheln pro Seite (`MAX_CHIPS`).
 - **Garnfarben:** `Use color A`, `Farbe B`, `Wechsel zu Farbe C:` setzen die Farbe ab dieser Stelle, auch mitten in der Reihe, und gelten bis zum nächsten Wechsel (auch über Reihen hinweg). Farben werden vorher in der App festgelegt (Palette, Regler, Hex). Gleiche Maschen in verschiedenen Farben werden nicht zusammengefasst.
