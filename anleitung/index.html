@@ -14,9 +14,12 @@
   html,body { height:100%; }
   body { display:flex; flex-direction:column; padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom); }
   header { display:flex; justify-content:space-between; align-items:center; padding:10px 0; }
-  .title { display:flex; align-items:center; gap:12px; }
+  .title { display:flex; align-items:center; gap:12px; min-width:0; }
+  .title > div { min-width:0; }
   #row { font-family:var(--display); font-size:1.6rem; font-weight:700; color:var(--ink); }
-  #pos { font-size:.9rem; color:var(--ink-soft); }
+  #pos { font-size:.9rem; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #pos b { color:var(--ink); }
+  header { gap:10px; }
   .actions { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
   #chips { flex:1; display:flex; flex-wrap:wrap; justify-content:center; align-content:center; gap:10px; min-height:0; }
   .chip { flex:0 0 calc(25% - 8px); height:calc(50% - 5px); max-height:220px; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-card); display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--display); font-size:clamp(1.6rem,7vw,3.2rem); font-weight:700; }
@@ -73,7 +76,12 @@
   #setup #plist .open { flex:1; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; }
   #setup #plist .open.cur { border-color:var(--ink); }
   #plist .open b { font-family:var(--display); font-size:1.05rem; line-height:1.2; overflow-wrap:anywhere; }
-  #plist .open small { color:var(--ink-soft); font-size:.8rem; font-weight:600; }
+  #plist .open small { color:var(--ink-soft); font-size:.8rem; font-weight:600; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  #plist .open .tag { background:var(--ink); color:var(--paper); border-radius:999px; padding:1px 8px; font-size:.7rem; }
+  #plist .open .dots i { display:inline-block; width:10px; height:10px; border-radius:50%; border:1px solid var(--ink-soft); margin-right:2px; vertical-align:-1px; }
+  #plist .open .prog { align-self:stretch; height:6px; border-radius:3px; background:var(--paper-alt); overflow:hidden; margin-top:4px; }
+  #plist .open .prog i { display:block; height:100%; background:var(--coral); border-radius:3px; }
+  #pempty { margin:0; color:var(--ink-soft); font-size:.9rem; }
   #setup #plist .del { flex:none; width:44px; padding:0; color:var(--ink-soft); font-size:1.2rem; }
   #edhead { font-family:var(--display); font-size:1.15rem; font-weight:700; margin:4px 0 -2px; }
   #pname { font:inherit; padding:10px 14px; border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--ink); min-width:0; }
@@ -89,8 +97,9 @@
 <div id="nav"><button id="back">‹ Zurück</button><button id="next">Weiter ›</button></div>
 <section id="setup">
   <div id="projs">
-    <div class="head"><span>Projekte <small id="pcount"></small></span><button id="newp" type="button">+ Neues Projekt</button></div>
+    <div class="head"><span>Meine Projekte <small id="pcount"></small></span><button id="newp" type="button">+ Neues Projekt</button></div>
     <div id="plist"></div>
+    <p id="pempty" hidden>Noch keine Projekte. Füge unten eine Anleitung ein oder lade eine Datei, gib ihr einen Namen und tippe auf <b>Starten</b>.</p>
   </div>
   <div id="lib" hidden>
     <div class="head">Aus der Sammlung<a href="../muster/">Sammlung öffnen ›</a></div>
@@ -275,16 +284,27 @@ function openSetup(proj) {
   $('text').value = E.pattern || ''; $('pname').value = E.id ? E.name : '';
   $('edhead').textContent = E.id ? 'Anleitung bearbeiten' : 'Neues Projekt';
   $('ok').textContent = E.id ? 'Weiterhäkeln' : 'Starten';
+  // Kopf zeigt, wo man ist; der Knopf führt zurück zum Häkeln (nur wenn es ein Projekt gibt)
+  $('row').textContent = 'Projekte'; $('pos').innerHTML = P ? `Aktiv: <b>${esc(P.name)}</b>` : 'Leg dein erstes Projekt an';
+  $('menu').textContent = '‹ Häkeln'; $('menu').hidden = !P;
   renderProjects(); renderColorPickers(); loadLib();
   document.body.classList.add('setup');
 }
+const ago = t => {
+  const d = Math.floor((new Date().setHours(0, 0, 0, 0) - new Date(t || 0).setHours(0, 0, 0, 0)) / 864e5);
+  return d <= 0 ? 'heute' : d === 1 ? 'gestern' : d < 30 ? `vor ${d} Tagen` : new Date(t).toLocaleDateString('de-DE');
+};
 function renderProjects() {
   const list = Projekte.all().sort((a, b) => b.used - a.used);
-  $('pcount').textContent = list.length ? `${list.length}/${Projekte.MAX}` : '';
+  $('pcount').textContent = list.length ? `${list.length} von ${Projekte.MAX}` : '';
+  $('pempty').hidden = !!list.length;
   $('plist').innerHTML = list.map(x => {
-    const n = parse(x.pattern).length, at = Math.min(n, ((x.pos && x.pos.r) || 0) + 1);
-    return `<div class="it"><button class="open${P && x.id === P.id ? ' cur' : ''}" data-id="${esc(x.id)}"><b>${esc(x.name)}</b>` +
-      `<small>${P && x.id === P.id ? 'Aktiv · ' : ''}Reihe ${at} von ${n}</small></button>` +
+    const n = parse(x.pattern).length, at = Math.min(n, ((x.pos && x.pos.r) || 0) + 1), act = P && x.id === P.id;
+    const pct = n ? Math.round((at - 1) / n * 100) : 0, keys = colorKeysIn(x.pattern).filter((k, i, a) => a.indexOf(k) === i && x.colors[k]);
+    return `<div class="it"><button class="open${act ? ' cur' : ''}" data-id="${esc(x.id)}"><b>${esc(x.name)}</b>` +
+      `<small>${act ? '<span class="tag">Aktiv</span>' : ''}Reihe ${at} von ${n} · ${ago(x.used)}` +
+      (keys.length ? `<span class="dots">${keys.map(k => `<i style="background:${esc(x.colors[k])}" title="Farbe ${esc(k)}"></i>`).join('')}</span>` : '') + `</small>` +
+      `<span class="prog" aria-label="${pct} % geschafft"><i style="width:${pct}%"></i></span></button>` +
       `<button class="del" data-del="${esc(x.id)}" aria-label="Projekt ${esc(x.name)} löschen" title="Löschen">×</button></div>`;
   }).join('');
 }
@@ -306,10 +326,11 @@ $('newp').onclick = () => {
 function render() {
   if (!rows.length) { openSetup(P); return; }
   document.body.classList.remove('setup'); colors = P.colors;
+  $('menu').textContent = 'Projekte'; $('menu').hidden = false;
   const row = rows[r], page = row.pages[p];
   const used = [...new Set(page.map(c => c.c).filter(k => colors[k]))];
   $('row').innerHTML = `Reihe ${row.label}` + used.map(k => `<span class="dot" style="background:${colors[k]}" title="Farbe ${k}"></span>`).join('');
-  $('pos').textContent = `Seite ${p + 1}/${row.pages.length} · ${r + 1}/${rows.length}`;
+  $('pos').innerHTML = `${r + 1} von ${rows.length}` + (row.pages.length > 1 ? ` · Seite ${p + 1}/${row.pages.length}` : '') + ` · <b>${esc(P.name)}</b>`;
   const d = done[r] || 0;
   $('chips').innerHTML = page.map((c, i) => {
     const col = colors[c.c], fade = p * MAX_CHIPS + i < d ? ' fade' : '', st = col ? ` style="background:${col};color:${textOn(col)}"` : '';

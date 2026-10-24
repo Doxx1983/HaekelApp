@@ -70,7 +70,7 @@
   #menu.on { display:flex; }
   #menu button { background:none; text-align:left; padding:10px 12px; border-radius:10px; font-weight:700; }
   #menu button:hover { background:var(--paper-alt); }
-  #menu hr { border:0; border-top:1px solid var(--line); margin:4px 6px; width:auto; }
+  #menu.add .m-save, #menu.save .m-add { display:none; }
   .wrap { position:relative; }
   #drop { position:fixed; inset:0; background:rgba(251,217,203,.85); display:none; place-items:center; font-family:var(--display); font-size:1.6rem; font-weight:700; pointer-events:none; z-index:9; }
   body.drag #drop { display:grid; }
@@ -86,11 +86,10 @@
 <div class="wrap">
   <div id="bar"><input id="q" type="search" placeholder="Suchen: Name, Tag, Notiz, Text"><button class="btn" id="add">+ Muster</button></div>
   <div id="menu">
-    <button data-a="file">Datei hinzufügen (Bild, PDF, Text)</button>
-    <button data-a="paste">Text einfügen</button>
-    <hr>
-    <button data-a="export">Sicherung herunterladen</button>
-    <button data-a="import">Sicherung einspielen</button>
+    <button class="m-add" data-a="file">Datei hinzufügen (Bild, PDF, Word, Text)</button>
+    <button class="m-add" data-a="paste">Text einfügen</button>
+    <button class="m-save" data-a="export">Sicherung herunterladen</button>
+    <button class="m-save" data-a="import">Sicherung einspielen</button>
   </div>
 </div>
 <div id="filters"></div>
@@ -202,7 +201,7 @@ function render() {
   $('grid').innerHTML = vis.map(it => `<button class="card" data-id="${it.id}">
     <div class="thumb">${thumbHtml(it)}</div>${it.fav ? '<span class="star">★</span>' : ''}
     <h3>${esc(it.title)}</h3>${it.tags.length ? `<div class="tags">${it.tags.map(t => `<span class="tg">${esc(t)}</span>`).join('')}</div>` : ''}</button>`).join('');
-  $('empty').innerHTML = !items.length ? `<p>Noch keine Muster. Lege Bilder, PDFs, Word-, ODT- oder Textdateien ab und ordne sie mit Tags.</p><p class="note">Die Muster bleiben nur auf diesem Gerät. Gekaufte Anleitungen bitte nicht weitergeben.</p><button class="btn" data-a="file">+ Erstes Muster</button>`
+  $('empty').innerHTML = !items.length ? `<p>Noch keine Muster. Lege Bilder, PDFs, Word-, ODT- oder Textdateien ab und ordne sie mit Tags.</p><p class="note">Die Muster bleiben nur auf diesem Gerät. Gekaufte Anleitungen bitte nicht weitergeben.</p><button class="btn" data-a="file">+ Datei</button> <button class="btn" data-a="paste">+ Text einfügen</button>`
     : !vis.length ? '<p>Nichts gefunden. Filter oder Suche ändern.</p>' : '';
 }
 
@@ -308,8 +307,13 @@ function act(a) {
   }
 }
 
-$('add').onclick = e => { e.stopPropagation(); if (!items.length) return act('file'); $('menu').classList.toggle('on'); };
-$('more').onclick = e => { e.stopPropagation(); $('menu').classList.toggle('on'); };
+// „+ Muster“ zeigt Datei/Text, „Sichern“ nur die Sicherung
+function menu(mode) {
+  const m = $('menu'), again = m.classList.contains('on') && m.classList.contains(mode);
+  m.className = again ? '' : 'on ' + mode;
+}
+$('add').onclick = e => { e.stopPropagation(); menu('add'); };
+$('more').onclick = e => { e.stopPropagation(); menu('save'); };
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-a]'); if (b) return act(b.dataset.a);
   if (!e.target.closest('#menu')) $('menu').classList.remove('on');

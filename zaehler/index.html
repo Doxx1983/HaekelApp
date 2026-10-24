@@ -78,6 +78,7 @@
   </div>
   <div class="card">
     <h2>Stand</h2>
+    <p>Aktuelle Reihe, falls du ohne App weitergehäkelt hast.</p>
     <input id="set" type="number" min="0" inputmode="numeric" aria-label="Aktuelle Reihe">
     <label><input type="checkbox" id="sound"> Plopp-Geräusch</label>
     <label><input type="checkbox" id="buzz"> Vibration</label>
@@ -191,10 +192,20 @@ function flip() {
   }, 350);
 }
 
+// Tipp auf Blase i: Stand = Nummer dieser Blase (alle davor gedrückt); Tipp auf gedrückte Blase: Stand = Blase davor
+function jump(k) {
+  if (flipping || k === s.popped.length) return;
+  const down = k > s.popped.length;
+  s.popped = [...Array(k).keys()]; save(); feedback(down);
+  const d = $('board').children[down ? k - 1 : k];
+  if (down) { d.classList.remove('pop'); void d.offsetWidth; d.classList.add('pop'); }
+  render();
+  if (s.popped.length >= s.n) flip();
+}
 $('board').addEventListener('click', e => {
   const d = e.target.closest('.b'); if (!d) return;
   const i = +d.dataset.i;
-  s.popped.includes(i) ? unpop(i) : pop(i);
+  jump(s.popped.includes(i) ? i : i + 1);
 });
 $('plus').onclick = () => pop();
 $('minus').onclick = () => unpop();
@@ -203,7 +214,7 @@ $('minus').onclick = () => unpop();
 function setTotal(t) { t = Math.max(0, Math.floor(t) || 0); s.flips = Math.floor(t / s.n); s.popped = [...Array(t % s.n).keys()]; }
 function openSetup() {
   $('sizes').innerHTML = SIZES.map(n => `<button data-n="${n}" class="${n === s.n ? 'on' : ''}">${n}</button>`).join('');
-  $('target').value = s.target || ''; $('set').value = total();
+  $('target').value = s.target || ''; $('set').value = total(); zeroOk = false;
   $('sound').checked = s.sound; $('buzz').checked = s.buzz;
   document.body.classList.add('setup');
 }
@@ -212,13 +223,20 @@ $('sizes').onclick = e => {
   [...$('sizes').children].forEach(x => x.classList.toggle('on', x === b));
 };
 $('menu').onclick = () => document.body.classList.contains('setup') ? $('ok').click() : openSetup();
-$('reset').onclick = () => { if (confirm('Zähler auf 0 zurücksetzen?')) $('set').value = 0; };
+let zeroOk = false;
+$('reset').onclick = () => { if (confirm('Zähler auf 0 zurücksetzen?')) { $('set').value = 0; zeroOk = true; } };
 $('ok').onclick = () => {
   const on = $('sizes').querySelector('.on');
   s.n = on ? +on.dataset.n : s.n;
   s.target = Math.max(0, parseInt($('target').value) || 0);
   s.sound = $('sound').checked; s.buzz = $('buzz').checked;
-  setTotal(+$('set').value);
+  // Leeres Feld = Stand bleibt; 0 nur nach Rückfrage (oder über „Auf 0 zurücksetzen“)
+  const v = $('set').value.trim(), t = total();
+  if (v !== '' && +v !== t) {
+    if (+v === 0 && !zeroOk && !confirm(`Zähler von Reihe ${t} auf 0 zurücksetzen?`)) return;
+    setTotal(+v);
+  } else setTotal(t);
+  zeroOk = false;
   save(); document.body.classList.remove('setup'); build();
 };
 

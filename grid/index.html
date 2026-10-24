@@ -16,6 +16,8 @@
   h1 { font-family:var(--display); font-size:1.6rem; font-weight:700; margin:0; line-height:1.1; }
   h2 { font-family:var(--display); font-size:1.2rem; font-weight:700; margin:0 0 8px; }
   .sub { font-size:.9rem; color:var(--ink-soft); }
+  #limits { margin:10px 0 0; }
+  #limits.warn { color:var(--ink); font-weight:700; }
   .btn { cursor:pointer; text-decoration:none; display:inline-block; text-align:center; }
   .small { border:1px solid var(--line); white-space:nowrap; }
   button:disabled { opacity:.4; cursor:default; }
@@ -72,6 +74,7 @@
     <label class="f">Farben<input type="number" id="ncol" min="2" max="10" value="4"></label>
     <label class="f">Arbeitsweise<select id="mode"><option value="rows">Reihen (hin & zurück)</option><option value="rounds">Runden</option></select></label>
   </div>
+  <p class="sub" id="limits">Breite und Höhe je 5 bis 200 Maschen, 2 bis 10 Farben.</p>
   <div class="grid2">
     <label class="c"><input type="checkbox" id="keep" checked> Seitenverhältnis beibehalten</label>
     <label class="c"><input type="checkbox" id="smooth" checked> Einzelne Maschen glätten</label>
@@ -305,7 +308,7 @@ function draw() {
   $('legend').innerHTML = G.palette.map((p, i) => `<button data-i="${i}" class="${i === sel ? 'on' : ''}"><i style="background:${p}"></i>${LETTERS[i]} <small>${counts[i]} M</small></button>`).join('');
   const o = opts(), ins = instructions(G.cells, G.w, G.h, o.mode, o.left);
   $('cast').textContent = `${G.w} × ${G.h} Maschen. ` + castOn(G.w, o.mode);
-  $('rows').innerHTML = ins.slice().reverse().map(r => `<li><b>${rowLabel(o.mode)} ${r.n}</b><span class="d">${r.right ? '← von rechts' : 'von links →'}</span>` +
+  $('rows').innerHTML = ins.map(r => `<li><b>${rowLabel(o.mode)} ${r.n}</b><span class="d">${r.right ? '← von rechts' : 'von links →'}</span>` +
     r.runs.map(([c, k]) => `<span class="s"><i style="background:${G.palette[c]}"></i>${k} ${LETTERS[c]}</span>`).join('') + '</li>').join('');
   $('undo').disabled = !undo.length; $('redo').disabled = !redo.length;
   if ($('editor').classList.contains('open')) openEditor();
@@ -374,7 +377,19 @@ const fitCols = () => { $('cols').value = clamp(+$('rowsN').value / aspect, 5, 2
 let t = 0; const later = () => { clearTimeout(t); t = setTimeout(build, 250); };
 $('cols').oninput = () => { if ($('keep').checked && img) fitRows(); later(); };
 $('rowsN').oninput = () => { if ($('keep').checked && img) fitCols(); later(); };
-$('cols').onchange = $('rowsN').onchange = $('ncol').onchange = () => { for (const [id, a, b] of [['cols', 5, 200], ['rowsN', 5, 200], ['ncol', 2, 10]]) $(id).value = clamp(+$(id).value, a, b); build(); };
+const LIMITS = [['cols', 5, 200, 'Breite', 'Maschen'], ['rowsN', 5, 200, 'Höhe', 'Reihen'], ['ncol', 2, 10, 'Farben', 'Farben']];
+const LIMIT_TEXT = $('limits').textContent;
+$('cols').onchange = $('rowsN').onchange = $('ncol').onchange = () => {
+  const msg = [];
+  for (const [id, a, b, name, unit] of LIMITS) {
+    const v = +$(id).value, c = clamp(v, a, b);
+    if (c !== v) msg.push(`${name}: ${v > b ? 'höchstens' : 'mindestens'} ${c} ${unit}`);
+    $(id).value = c;
+  }
+  $('limits').textContent = msg.length ? msg.join(' · ') + ', Wert angepasst.' : LIMIT_TEXT;
+  $('limits').classList.toggle('warn', !!msg.length);
+  build();
+};
 $('ncol').oninput = later; $('smooth').onchange = build;
 $('keep').onchange = () => { if ($('keep').checked && img) { fitRows(); build(); } };
 $('mode').onchange = $('left').onchange = () => { if (G) { draw(); save(); } };
