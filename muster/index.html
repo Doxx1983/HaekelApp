@@ -292,7 +292,9 @@ async function act(a) {
   else if (a === 'download') download(blobOf(cur), fileName(cur));
   else if (a === 'delete') {
     if (!(await Dialog.confirm(`„${cur.title}“ wirklich löschen?`, { ok: 'Löschen', danger: true }))) return;
-    const id = cur.id; del(id).catch(() => toast('Löschen nicht möglich')); items = items.filter(it => it.id !== id);
+    const id = cur.id;
+    try { await del(id); } catch { return toast('Löschen nicht möglich'); } // erst aus der Liste nehmen, wenn die Datenbank fertig ist
+    items = items.filter(it => it.id !== id);
     if (urls.has(id)) { URL.revokeObjectURL(urls.get(id)); urls.delete(id); }
     history.back(); toast('Gelöscht');
   }

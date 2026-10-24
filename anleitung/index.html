@@ -363,7 +363,11 @@ function parse(text) {
       if (!rows.length) pending = pending.slice(-1).filter(x => x.length <= 40);
       continue;
     }
-    let body = m ? m.body : line, target = m ? m.target : null, after = '', t;
+    let body = m ? m.body : line, target = m ? m.target : null, after = '', t, dir = '';
+    // Richtung aus dem Grid-Ersteller: „Reihe 3 (von rechts): …“ → Hinweis zur Reihe
+    if ((t = body.match(/^\(?\s*(?:von|from)\s+(rechts|links|right|left)\s*\)?\s*:?\s*/i))) { dir = /^r/i.test(t[1]) ? '← von rechts' : 'von links →'; body = body.slice(t[0].length); }
+    // Text-Export des Grid-Erstellers: „3 A, 2 B“ = 3 fM in Farbe A, 2 fM in Farbe B
+    if (/^\s*\d+\s+[A-J](?:\s*,\s*\d+\s+[A-J])*\s*$/.test(body)) body = body.split(',').map(x => x.trim().replace(/^(\d+)\s+([A-J])$/, 'Farbe $2, $1 fM')).join(', ');
     if ((t = body.match(TARGET))) { if (target == null) target = +(t[1] || t[2]); body = body.slice(0, t.index); after = t[3] || ''; }
     // Varianten durchprobieren; Farbe erst nach der Wahl übernehmen
     let best = null;
@@ -383,7 +387,7 @@ function parse(text) {
     // Ohne Reihennummern: Zeilen ohne bekanntes Kürzel und ohne Zahl (Titel, „Kopf“, „Füllen“) sind keine Reihe
     if (!m && !/\d/.test(body) && !best.list.some(x => known(x.s))) continue;
     ctx.color = best.color;
-    const notes = [...pending, ...best.notes]; pending = [];
+    const notes = [...(dir ? [dir] : []), ...pending, ...best.notes]; pending = [];
     if (after) { const c = after.match(COLOR_RE); if (c) ctx.color = c[1].toUpperCase(); else notes.push(after); }
     const check = target != null && best.count !== target;
     const chips = chipsOf(best.list), pages = [];
@@ -418,6 +422,8 @@ const draft = () => ({ id: null, name: '', pattern: '', colors: { ...Projekte.DE
 const saveColors = () => { if (E && E.id) Projekte.put(E); };
 const textOn = hex => { const n = parseInt(hex.slice(1), 16);
   return (0.299 * (n >> 16) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) > 150 ? '#222' : '#fff'; };
+// Farbliste wie im Text-Export des Grid-Erstellers: „A = #E53935“
+const colorDefsIn = t => Object.fromEntries([...t.matchAll(/^\s*([A-J])\s*=\s*(#[0-9a-f]{6})\s*$/gim)].map(m => [m[1].toUpperCase(), m[2].toUpperCase()]));
 const colorKeysIn = t => [...t.matchAll(/(?:farbe|colou?r)\s+([\p{L}\d]+)/giu)].map(m => m[1].toUpperCase());
 
 const PRESETS = ['#E53935','#F2896B','#F5C84C','#FFEB3B','#8FC9A9','#43A047','#1B5E20','#8CB4D9','#1E88E5','#0D47A1','#8E24AA','#F48FB1','#D81B60','#795548','#BCAAA4','#FFFFFF','#BDBDBD','#616161','#22201B'];
@@ -497,6 +503,8 @@ const save = () => { if (!P) return; P.pos = { r, p }; P.done = done; P.used = D
 function load(proj) {
   P = proj; rows = []; r = p = 0; done = {};
   if (!P) return;
+  // Anleitung kam geändert aus einer anderen App (Grid): Häkchen unveränderter Reihen behalten
+  if (typeof P.prev === 'string') { const x = { pattern: P.prev, done: P.done, pos: P.pos }; keepProgress(x, P.pattern); P.done = x.done; P.pos = x.pos; delete P.prev; Projekte.put(P); }
   Projekte.setCurrent(P.id); colors = P.colors; rows = parse(P.pattern); done = P.done || {};
   const s = P.pos || {};
   if (rows[s.r] && rows[s.r].pages[s.p]) { r = s.r; p = s.p; }
@@ -675,11 +683,11 @@ $('ok').onclick = () => {
   const parsed = parse(t);
   if (!parsed.length) return Dialog.alert('In diesem Text sind keine Maschen zu finden.');
   if (!E.id) {
-    const x = Projekte.create(t, name, E.colors);
+    const x = Projekte.create(t, name, { ...E.colors, ...colorDefsIn(t) });
     if (!x) return Dialog.alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`);
     load(x);
   } else {
-    if (E.pattern !== t) keepProgress(E, t);
+    if (E.pattern !== t) { keepProgress(E, t); Object.assign(E.colors, colorDefsIn(t)); }
     E.pattern = t; E.name = name || Projekte.nameOf(t); E.used = Date.now(); Projekte.put(E); load(E);
   }
   render();

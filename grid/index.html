@@ -242,7 +242,8 @@ const rowLabel = (mode) => mode === 'rounds' ? 'Runde' : 'Reihe';
 const toText = (ins, w, mode) => [castOn(w, mode), 'Tapestry: feste Maschen, nicht genutzte Farben mitführen.', '',
   ...ins.map(r => `${rowLabel(mode)} ${r.n} (von ${r.right ? 'rechts' : 'links'}): ` + r.runs.map(([c, k]) => `${k} ${LETTERS[c]}`).join(', '))].join('\n');
 // Format für den Häkelhelfer (../anleitung/): Farbwechsel + Anzahl fM
-const toHelper = ins => ins.map(r => `Reihe ${r.n}: ` + r.runs.map(([c, k]) => `Farbe ${LETTERS[c]}, ${k} fM`).join(', ')).join('\n');
+// mit Richtung, die der Häkelhelfer als Hinweis zur Reihe zeigt
+const toHelper = ins => ins.map(r => `Reihe ${r.n} (von ${r.right ? 'rechts' : 'links'}): ` + r.runs.map(([c, k]) => `Farbe ${LETTERS[c]}, ${k} fM`).join(', ')).join('\n');
 
 if (typeof module !== 'undefined') { module.exports = { quantize, despeckle, compact, instructions, toText, toHelper, fromRight }; }
 else {
@@ -460,12 +461,16 @@ $('toHelper').onclick = async e => {
   // als eigenes Projekt im Häkelhelfer; gleiche Anleitung öffnet das vorhandene Projekt
   const o = opts(), cols = {};
   G.palette.forEach((p, i) => cols[LETTERS[i]] = p);
-  if (!Projekte.open(toHelper(instructions(G.cells, G.w, G.h, o.mode, o.left)), `Tapestry ${G.w} × ${G.h}`, cols)) return Dialog.alert(Projekte.FULL_MSG);
+  const text = toHelper(instructions(G.cells, G.w, G.h, o.mode, o.left)), sent = Projekte.all().find(p => p.id === store.get('pid', ''));
+  // schon einmal geschickt und seitdem geändert: dieses Projekt aktualisieren statt ein neues anzulegen
+  if (sent && sent.pattern !== text && await Dialog.confirm(`Projekt „${sent.name}“ im Häkelhelfer aktualisieren? Häkchen unveränderter Reihen bleiben.`, { ok: 'Aktualisieren', cancel: 'Neues Projekt' })) Projekte.update(sent.id, text, cols);
+  else if (!Projekte.open(text, `Tapestry ${G.w} × ${G.h}`, cols)) return Dialog.alert(Projekte.FULL_MSG);
+  store.set('pid', Projekte.current().id);
   location.href = '../anleitung/';
 };
 
 // ---- Start: letzten Stand laden ----
-{
+function loadState() {
   const s = store.get('state', null);
   if (s && s.G) {
     $('cols').value = s.o.w; $('rowsN').value = s.o.h; $('ncol').value = s.o.k; $('mode').value = s.o.mode; $('left').checked = s.o.left; $('smooth').checked = s.o.smooth; $('keep').checked = s.keep; $('gm').value = s.o.gm || ''; $('gr').value = s.o.gr || '';
@@ -473,6 +478,9 @@ $('toHelper').onclick = async e => {
     const im = store.get('src', ''); if (im) loadSrc(im);
   }
 }
+loadState();
+// Stand aus einem anderen Tab übernehmen, damit hier kein alter Stand zurückgeschrieben wird
+addEventListener('storage', e => { if (e.key === 'grid.state' && !painting) { mid = store.get('mid', null); undo = []; redo = []; loadState(); } });
 }
 // Erinnerung an die Sicherung (shared/erinnerung.js)
 Erinnerung.hint();

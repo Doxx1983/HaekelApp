@@ -43,7 +43,8 @@ const Sicherung = (() => {
     if (obj(o.done)) for (const [k, v] of Object.entries(o.done)) if (/^\d{1,5}$/.test(k) && int(v, 0, 1e6, -1) === v) done[k] = v;
     const pos = obj(o.pos) ? o.pos : {};
     return { id: o.id, name: str(o.name, 80).trim() || Projekte.nameOf(o.pattern), pattern: o.pattern.slice(0, 2e6),
-      pos: { r: int(pos.r, 0, 1e5, 0), p: int(pos.p, 0, 1e5, 0) }, done, colors: { ...Projekte.DEFAULT_COLORS, ...Projekte.cleanColors(o.colors) }, used: Number.isFinite(o.used) ? o.used : 0 };
+      pos: { r: int(pos.r, 0, 1e5, 0), p: int(pos.p, 0, 1e5, 0) }, done, colors: { ...Projekte.DEFAULT_COLORS, ...Projekte.cleanColors(o.colors) }, used: Number.isFinite(o.used) ? o.used : 0,
+      ...(typeof o.prev === 'string' ? { prev: o.prev.slice(0, 2e6) } : {}) };
   }
   function cleanCounter(o) {
     if (!obj(o)) return null;
@@ -77,10 +78,12 @@ const Sicherung = (() => {
     for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (APPS.some(a => k.startsWith(a + '.'))) local[k] = localStorage.getItem(k); }
     let items = [];
     try { items = await MusterDB.all(); } catch {}
-    const out = [];
-    for (const it of items) { const o = { ...it }; delete o.thumb; if (it.blob) o.blob = await b64(it.blob); out.push(o); }
+    // Datei aus Einzelteilen zusammensetzen: nie die ganze Sammlung als ein langer Text im Speicher (große PDFs, ältere Handys)
+    const parts = [`{"app":"isadody","v":2,"date":${Date.now()},"local":${JSON.stringify(local)},"items":[`];
+    for (const it of items) { const o = { ...it }; delete o.thumb; if (it.blob) o.blob = await b64(it.blob); parts.push((parts.length > 1 ? ',' : '') + JSON.stringify(o)); }
+    parts.push(']}');
     const d = new Date().toISOString().slice(0, 10);
-    const ok = await keep(new Blob([JSON.stringify({ app: 'isadody', v: 2, date: Date.now(), local, items: out })], { type: 'application/json' }), `isadody-sicherung-${d}.json`);
+    const ok = await keep(new Blob(parts, { type: 'application/json' }), `isadody-sicherung-${d}.json`);
     if (ok) st.set('last', Date.now());
     return ok;
   }
