@@ -48,7 +48,7 @@ const Sicherung = (() => {
   function cleanCounter(o) {
     if (!obj(o)) return null;
     const n = int(o.n, 2, 60, 10), popped = Array.isArray(o.popped) ? [...new Set(o.popped.filter(i => int(i, 0, n - 1, -1) === i))] : [];
-    return { n, flips: int(o.flips, 0, 1e5, 0), popped: popped.length >= n ? [] : popped, target: int(o.target, 0, 1e5, 0), used: Number.isFinite(o.used) ? o.used : 0 };
+    return { name: str(o.name, 40).trim(), n, flips: int(o.flips, 0, 1e5, 0), popped: popped.length >= n ? [] : popped, target: int(o.target, 0, 1e5, 0), used: Number.isFinite(o.used) ? o.used : 0 };
   }
 
   // ---- Sichern ----

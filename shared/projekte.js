@@ -30,12 +30,7 @@ const Projekte = (() => {
   const current = () => { const list = all(), id = st.get('current', ''); return list.find(p => p.id === id) || null; };
   const setCurrent = id => st.set('current', id);
   function put(p) { const list = all(), i = list.findIndex(x => x.id === p.id); if (i < 0) list.push(p); else list[i] = p; saveAll(list); }
-  // Löschen nimmt auch den Reihenzähler des Projekts mit
-  function remove(id) {
-    saveAll(all().filter(p => p.id !== id)); if (st.get('current', '') === id) st.remove('current');
-    const z = Store('zaehler'), cs = z.get('counters', null);
-    if (cs && cs[id]) { delete cs[id]; z.set('counters', cs); if (z.get('current', '') === id) z.set('current', 'frei'); }
-  }
+  function remove(id) { saveAll(all().filter(p => p.id !== id)); if (st.get('current', '') === id) st.remove('current'); }
   const full = () => all().length >= MAX;
   // Neues Projekt; Farben vom aktuellen Projekt übernehmen, damit die eigene Palette bleibt
   function create(pattern, name, colors) {
