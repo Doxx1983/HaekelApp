@@ -45,6 +45,7 @@
   #colors input:not([type=range]) { font:inherit; padding:8px 10px; border-radius:12px; border:1px solid var(--line); background:#fff; color:var(--ink); min-width:0; flex:1; }
   #row .dot { display:inline-block; width:.9em; height:.9em; border-radius:50%; vertical-align:middle; margin-left:6px; border:1px solid var(--ink-soft); }
   /* Auswahl aus der Mustersammlung */
+  #setup #pick { flex:none; align-self:stretch; background:var(--paper-alt); border:1px solid var(--line); box-shadow:var(--shadow-card); font-weight:800; }
   #lib { display:flex; flex-direction:column; gap:8px; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; padding:12px; }
   #lib[hidden] { display:none; }
   #lib .head { display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-family:var(--display); font-size:1.15rem; font-weight:700; }
@@ -82,9 +83,11 @@
     <div id="liblist"></div>
     <p class="note" id="libnote"></p>
   </div>
+  <button id="pick" type="button">Externe Datei laden</button>
+  <input type="file" id="file" hidden>
   <div id="colors"></div>
   <textarea id="text" placeholder="R1: 6 fM in Fadenring"></textarea>
-  <div class="row"><input type="file" id="file"><button id="ok">Starten</button></div>
+  <div class="row"><button id="ok">Starten</button></div>
 </section>
 <script>
 const MAX_CHIPS = 8, SINGLE_MAX = 3; // Folgen bis 3 Maschen einzeln, ab 4 als ein Kürzel mit Anzahl
@@ -275,6 +278,7 @@ $('back').onclick = () => { if (p > 0) p--; else if (r > 0) { r--; p = rows[r].p
 $('menu').onclick = () => { renderColorPickers(); loadLib(); document.body.classList.add('setup'); };
 $('text').oninput = renderColorPickers;
 $('file').accept = FILE_ACCEPT;
+$('pick').onclick = () => $('file').click();
 $('file').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
   const t = await fileText(f);
