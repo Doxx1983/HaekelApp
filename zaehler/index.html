@@ -9,7 +9,6 @@
 <link rel="apple-touch-icon" href="../shared/icon-180.png">
 <link rel="stylesheet" href="../shared/isadody.css">
 <script src="../shared/store.js"></script>
-<script src="../shared/projekte.js"></script>
 <style>
   html,body { height:100%; }
   body { display:flex; flex-direction:column; padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom); }
@@ -57,6 +56,8 @@
   .card input { font:inherit; padding:10px 12px; border-radius:12px; border:var(--field-border); background:#fff; color:var(--ink); width:100%; }
   .card label { display:flex; align-items:center; gap:10px; font-weight:700; }
   .card label input { width:auto; }
+  .card h2 small { font-family:var(--body); font-size:.8rem; color:var(--ink-soft); }
+  .prow { display:flex; gap:8px; } .prow[hidden] { display:none; } .prow .ghost { flex:none; padding:10px 16px; }
   .ghost { padding:12px; border-radius:999px; background:var(--paper); border:1px solid var(--line); font-weight:700; }
 </style>
 </head>
@@ -70,9 +71,11 @@
 <div id="nav"><button id="minus">− 1</button><button id="plus">Reihe fertig</button></div>
 <section id="setup">
   <div class="card">
-    <h2>Zähler für</h2>
-    <p>Jedes Projekt aus dem Häkelhelfer hat einen eigenen Zähler. Der freie Zähler gehört zu keinem Projekt.</p>
+    <h2>Projekt <small id="pcount"></small></h2>
+    <p>Jedes Projekt hat einen eigenen Stand, eigene Blasen und ein eigenes Ziel. Der freie Zähler gehört zu keinem Projekt.</p>
     <div class="opts" id="whom"></div>
+    <div class="prow" id="pedit"><input id="pname" maxlength="40" aria-label="Name des Projekts"><button class="ghost" id="pdel">Löschen</button></div>
+    <div class="prow"><input id="pnew" maxlength="40" placeholder="Neues Projekt, z. B. Mütze"><button class="ghost" id="padd">+ Anlegen</button></div>
   </div>
   <div class="card">
     <h2>Blasen pro Platte</h2>
@@ -99,10 +102,13 @@ const TONES = ['#F2896B', '#F6A488', '#F8BBA3', '#F3B48F', '#EFC9A6', '#E3B98F']
 const store = Store('zaehler');
 const $ = id => document.getElementById(id);
 
-// Zähler: „frei“ plus je einer pro Projekt des Häkelhelfers (Schlüssel = Projekt-id), gespeichert unter zaehler.counters.
+// Zähler-Projekte, gespeichert unter zaehler.counters: { frei, <id>: { name, n, flips, popped, target, used } }.
+// „frei“ ist der freie Zähler (immer da, nicht löschbar), dazu bis zu 10 eigene Projekte (unabhängig vom Häkelhelfer).
 // Je Zähler: n Blasen pro Platte, flips = volle Platten, popped = gedrückte Blasen in Reihenfolge, target, used.
 // Ton und Vibration gelten für alle (zaehler.prefs).
-const FRESH = () => ({ n:10, flips:0, popped:[], target:0, used:0 });
+const MAX = 10;
+const FRESH = name => ({ name, n:10, flips:0, popped:[], target:0, used:0 });
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 let counters = store.get('counters', null), cur = store.get('current', 'frei');
 let prefs = { sound:true, buzz:true, ...store.get('prefs', {}) };
 if (!counters) { // einmalig: der bisherige einzelne Zähler wird der freie Zähler
@@ -111,19 +117,20 @@ if (!counters) { // einmalig: der bisherige einzelne Zähler wird der freie Zäh
   if (old) prefs = { sound: old.sound !== false, buzz: old.buzz !== false };
   store.set('counters', counters); store.set('prefs', prefs);
 }
-const projects = () => Projekte.all().sort((a, b) => b.used - a.used);
-const nameOf = id => id === 'frei' ? 'Freier Zähler' : (Projekte.all().find(p => p.id === id) || {}).name || 'Projekt';
-// Zähler gelöschter Projekte aufräumen; ?p=<id> aus dem Häkelhelfer wählt den Zähler des Projekts
+// Zähler, die noch an Häkelhelfer-Projekten hingen (ohne Namen), behalten Stand und bekommen dessen Namen
+for (const [k, c] of Object.entries(counters)) if (k !== 'frei' && !c.name) {
+  const hp = (Store('anleitung').get('projects', []) || []).find(p => p.id === k);
+  c.name = (hp && hp.name) || 'Projekt';
+}
+const projects = () => Object.keys(counters).filter(k => k !== 'frei').sort((a, b) => (counters[b].used || 0) - (counters[a].used || 0));
+const nameOf = id => id === 'frei' ? 'Freier Zähler' : (counters[id] && counters[id].name) || 'Projekt';
+let s;
 function pick(id) {
-  const ids = new Set(Projekte.all().map(p => p.id));
-  for (const k of Object.keys(counters)) if (k !== 'frei' && !ids.has(k)) delete counters[k];
   if (!counters.frei) counters.frei = FRESH();
-  cur = id === 'frei' || ids.has(id) ? id : 'frei';
-  if (!counters[cur]) counters[cur] = FRESH();
+  cur = counters[id] ? id : 'frei';
   s = counters[cur]; store.set('current', cur); store.set('counters', counters);
 }
-let s;
-{ const q = new URLSearchParams(location.search).get('p'); pick(q || cur); if (q) history.replaceState(null, '', location.pathname); }
+pick(cur);
 const save = () => { s.used = Date.now(); counters[cur] = s; store.set('counters', counters); };
 const total = () => s.flips * s.n + s.popped.length;
 
@@ -233,7 +240,9 @@ $('minus').onclick = () => unpop();
 function setTotal(t) { t = Math.max(0, Math.floor(t) || 0); s.flips = Math.floor(t / s.n); s.popped = [...Array(t % s.n).keys()]; }
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 function openSetup() {
-  $('whom').innerHTML = ['frei', ...projects().map(p => p.id)].map(id => `<button data-id="${esc(id)}" class="${id === cur ? 'on' : ''}">${esc(nameOf(id))}</button>`).join('');
+  $('pcount').textContent = `${projects().length}/${MAX}`;
+  $('pedit').hidden = cur === 'frei'; $('pname').value = cur === 'frei' ? '' : nameOf(cur);
+  $('whom').innerHTML = ['frei', ...projects()].map(id => `<button data-id="${esc(id)}" class="${id === cur ? 'on' : ''}">${esc(nameOf(id))}</button>`).join('');
   $('sizes').innerHTML = SIZES.map(n => `<button data-n="${n}" class="${n === s.n ? 'on' : ''}">${n}</button>`).join('');
   $('target').value = s.target || ''; $('set').value = total();
   $('sound').checked = prefs.sound; $('buzz').checked = prefs.buzz;
@@ -243,6 +252,19 @@ function openSetup() {
 $('whom').onclick = e => {
   const b = e.target.closest('[data-id]'); if (!b || b.dataset.id === cur) return;
   pick(b.dataset.id); openSetup(); build();
+};
+// Eigene Projekte anlegen, umbenennen, löschen
+$('padd').onclick = () => {
+  const name = $('pnew').value.trim(); if (!name) return $('pnew').focus();
+  if (projects().length >= MAX) return alert(`Es gibt schon ${MAX} Projekte. Bitte erst eins löschen.`);
+  const id = uid(); counters[id] = { ...FRESH(name), used: Date.now() }; $('pnew').value = '';
+  pick(id); openSetup(); build();
+};
+$('pnew').onkeydown = e => { if (e.key === 'Enter') $('padd').click(); };
+$('pname').onchange = () => { if (cur === 'frei') return; s.name = $('pname').value.trim() || 'Projekt'; save(); openSetup(); render(); };
+$('pdel').onclick = () => {
+  if (cur === 'frei' || !confirm(`Projekt „${nameOf(cur)}“ löschen? Der Zählerstand geht verloren.`)) return;
+  delete counters[cur]; pick('frei'); openSetup(); build();
 };
 $('sizes').onclick = e => {
   const b = e.target.closest('button'); if (!b) return;

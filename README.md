@@ -9,7 +9,7 @@ Sammlung kleiner Web-Apps fürs Häkeln. Die Startseite (`/index.html`) verlinkt
 | `grid/` | Grid-Ersteller: Bild → Tapestry-Muster |
 | `muster/` | Mustersammlung: Bilder, PDFs, Word, Texte ablegen, taggen, suchen |
 | `lexikon/` | Häkellexikon: Maschen, Kürzel und Begriffe DE/US/UK |
-| `shared/` | gemeinsam: `isadody.css` (CD-Tokens, Schriften, Grundstil, `.logo`, `.small`, `.btn`, `.home`), `store.js` (`Store('<app>')` speichert unter `<app>.<key>`), `muster-db.js` (Zugriff auf die Sammlung), `doctext.js` (Dateiformate, Text aus .docx/.odt), `hilfe.css` (Hilfeseiten), `projekte.js` (Projekte des Häkelhelfers, auch von `grid/`, `muster/` und `zaehler/` genutzt), `sicherung.js` (Gesamtsicherung, prüft eingespielte Dateien), `maschen.js` (Begriffe und Kürzel DE/US/UK, `MASCHEN`, `KATEGORIEN`), `logo.png`, `icon-*.png` (App-Symbol, Logo auf Papierton) |
+| `shared/` | gemeinsam: `isadody.css` (CD-Tokens, Schriften, Grundstil, `.logo`, `.small`, `.btn`, `.home`), `store.js` (`Store('<app>')` speichert unter `<app>.<key>`), `muster-db.js` (Zugriff auf die Sammlung), `doctext.js` (Dateiformate, Text aus .docx/.odt), `hilfe.css` (Hilfeseiten), `projekte.js` (Projekte des Häkelhelfers, auch von `grid/` und `muster/` genutzt), `sicherung.js` (Gesamtsicherung, prüft eingespielte Dateien), `maschen.js` (Begriffe und Kürzel DE/US/UK, `MASCHEN`, `KATEGORIEN`), `logo.png`, `icon-*.png` (App-Symbol, Logo auf Papierton) |
 
 Daten: alles liegt im Browser. `Store.set` meldet einen vollen Speicher einmal per Hinweis (statt still nichts zu speichern) und gibt `false` zurück. **Sicherung** (Startseite, Sammlung → „Sichern“): eine JSON-Datei `isadody-sicherung-Datum.json` mit allen Schlüsseln `anleitung.*`, `zaehler.*`, `grid.*`, `muster.*`, `lexikon.*` und der Sammlung (Dateien als Base64). Beim Einspielen wird jedes Feld geprüft (ids, Farben nur `#RRGGBB`, Grid-Raster, Tags), Vorhandenes bleibt, bei Projekten und Zählern gewinnt der zuletzt benutzte Stand. Die Startseite zeigt, wann zuletzt gesichert wurde (hervorgehoben nach 14 Tagen oder nie), und auf iPhone/iPad den Hinweis „Zum Home-Bildschirm“ (Safari löscht Daten sonst nach 7 Tagen ohne Nutzung). `manifest.webmanifest` macht die Sammlung als App installierbar.
 
@@ -83,7 +83,7 @@ Wichtige Stellen in `anleitung/index.html`: `parse` / `expand` / `chipsOf` (Anle
 
 ## Reihenzähler (`zaehler/`)
 
-Pop-it-Zähler: jede Blase eine Reihe, volle Platte dreht sich um. Ein **freier Zähler** plus je einer **pro Projekt** des Häkelhelfers (`zaehler.counters` = `{ frei, <Projekt-id>: { n, flips, popped, target, used } }`, gewählt in `zaehler.current`, Ton/Vibration in `zaehler.prefs`). `zaehler/?p=<id>` öffnet den Zähler eines Projekts (Knopf „Zähler“ im Häkelhelfer, zeigt den Stand). Zähler gelöschter Projekte werden entfernt. Der alte Einzelzähler `zaehler.state` wird einmalig der freie Zähler.
+Pop-it-Zähler: jede Blase eine Reihe, volle Platte dreht sich um. Ein **freier Zähler** plus bis zu 10 **eigene Projekte** (unabhängig vom Häkelhelfer), anlegen, umbenennen, löschen unter Einstellungen (`zaehler.counters` = `{ frei, <id>: { name, n, flips, popped, target, used } }`, gewählt in `zaehler.current`, Ton/Vibration in `zaehler.prefs`). Der alte Einzelzähler `zaehler.state` wird einmalig der freie Zähler; Zähler, die kurz an Häkelhelfer-Projekten hingen, werden eigene Projekte mit deren Namen.
 
 ## Grid-Ersteller (`grid/`)
 
