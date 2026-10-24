@@ -138,7 +138,12 @@ const FILL = /\b(?:each|every|all|around|across|jede\w*|alle\w*|rundherum|ringsu
 function stitchOf(part) {
   let p = part, n = 1, m;
   const num = () => { if ((m = p.match(/^(\d+)\s*(?:[x×*]\s*)?/))) { n = +m[1]; p = p.slice(m[0].length); } };
+  // „jede M verdoppeln“ / „in jede M 2 fM“ / „2 sc in each st“: Zunahme in jeder Masche
+  if (/^(?:in\s+)?(?:jede|alle)\w*\s+M\w*\s+verdoppeln/i.test(p)) return { s: 'Zun', n: 1, fill: true };
+  if ((m = p.match(/^(?:in\s+)?(?:jede|each|every)\w*\s+(?:M|Masche|st|stitch)\w*\s*:?\s+(\d+)\s*([A-Za-zÄÖÜäöüß]+)/i))) p = `${m[1]} ${m[2]} in jede M`;
   num();
+  if (n > 1 && (m = p.match(/^([A-Za-zÄÖÜäöüß]+)\s+(?:in|into)\s+(?:jede|each|every)\w*\s+(?:M|Masche|st|stitch)\b/i)))
+    return { s: n === 2 ? (/^(sc|hdc|dc|tr)$/i.test(m[1]) ? 'inc' : 'Zun') : `${n} ${m[1]} in 1 M`, n: 1, fill: true };
   let mod = ''; if ((m = p.match(MOD_RE))) { mod = modName(m[1]); p = p.slice(m[0].length); num(); }
   if (!p && mod) return { mod };
   let s;
@@ -193,12 +198,14 @@ function expand(s, ctx) {
 
 // Maschen, die eine Masche ergibt: Zunahme 2, Lm/Km/Wenden 0, sonst 1. known = sicher gezählt (für die Kontrolle)
 function weight(s) {
-  const t = s.toLowerCase().replace(/ (blo|flo|hmg|vmg)$/, '');
+  let m; const t = s.toLowerCase().replace(/ (blo|flo|hmg|vmg)$/, '');
   if (/^(inc|zun\w*|zu)$/.test(t)) return 2;
+  if ((m = t.match(/^(\d+) \S+ in 1 m$/))) return +m[1];
+  if (/^(wende-?lm|wendeluftm\w*|t-?ch)$/.test(t)) return 0;
   if (/^(ch|lm|luftm\w*|sl st|ss|km|kettm\w*|turn|wenden?|mr|magic \w+|magischer ring|fadenring|fr)$/.test(t)) return 0;
   return 1;
 }
-const known = s => /^(sc|fm|hdc|hstb|dc|stb|tr|dstb|dtr|inc|zun\w*|zu|dec|abn\w*|\w+tog|\d \w+ zus\.|inv dec|inv abn\w*|unsichtbare? abn\w*|turn|wenden?|mr|magic \w+|magischer ring|fadenring)$/
+const known = s => /^(\d+ \S+ in 1 m|wende-?lm|sc|fm|hdc|hstb|dc|stb|tr|dstb|dtr|inc|zun\w*|zu|dec|abn\w*|\w+tog|\d \w+ zus\.|inv dec|inv abn\w*|unsichtbare? abn\w*|turn|wenden?|mr|magic \w+|magischer ring|fadenring)$/
   .test(s.toLowerCase().replace(/ (blo|flo|hmg|vmg)$/, ''));
 
 function chipsOf(stitches) {
@@ -216,12 +223,15 @@ function chipsOf(stitches) {
 // Reihe: {label, pages, count (Maschen am Ende), target (Zahl aus der Anleitung, z. B. „(18)“), check (gezählt ≠ Anleitung)}
 const ROW = /^\s*(?:Reihen|Reihe|Runden|Runde|Rounds|Round|Rows|Row|Rnds|Rnd|Rds|Rd|R)\.?\s*(\d+)(?:\s*(?:-|–|—|bis|to)\s*(?:Reihe|Runde|Round|Row|Rnd|Rd|R)?\.?\s*(\d+)(?=\s*(?:[:.)(]|$)))?\s*[:.\-–)]?\s*(.*)$/i;
 const TARGET = /\s*(?:[(\[{]\s*(\d+)\s*(?:M|Maschen|Masche|st|sts|stitches|fM|sc)?\.?\s*[)\]}]|(?:=|–|—|\s-)\s*(\d+)\s*(?:M|Maschen|st|sts|stitches)?\.?)\s*\.?\s*$/i;
+// Zahl vorn: „1. Rd:“, „3.-5. Runde:“ → wie ROW [_, von, bis, Rest]
+const ROW_DE = /^\s*(\d+)\.?(?:\s*(?:-|–|—|bis)\s*(\d+)\.?)?\s*(?:Reihen|Reihe|Runden|Runde|Rnd|Rd|R)\b\.?\s*[:.\-–)]?\s*(.*)$/i;
+const rowOf = l => l.match(ROW) || l.match(ROW_DE);
 function parse(text) {
   const rows = [], ctx = { color: '' };
-  const lines = text.split(/\r?\n/), numbered = lines.some(l => ROW.test(l));
+  const lines = text.split(/\r?\n/), numbered = lines.some(l => rowOf(l));
   for (const line of lines) {
     if (!line.trim()) continue;
-    const m = line.match(ROW);
+    const m = rowOf(line);
     // Gibt es nummerierte Reihen, sind andere Zeilen Überschriften oder Notizen: keine Maschen, nur Farbwechsel zählen
     if (!m && numbered) { expand(line, ctx); continue; }
     let body = m ? m[3] : line, target = null, t;
@@ -229,6 +239,8 @@ function parse(text) {
     body = normalize(body.replace(new RegExp(String.raw`^\(\s*(${MOD})[^)]*\)\s*:?\s*`, 'i'), '$1, '));
     ctx.mod = '';
     let list = expand(body, ctx).list;
+    // Ohne Reihennummern: Zeilen ohne bekanntes Kürzel und ohne Zahl (Titel, „Kopf“, „Füllen“) sind keine Reihe
+    if (!m && !/\d/.test(body) && !list.some(x => known(x.s) || (x.fill && x.fill.some(y => known(y.s))))) continue;
     const fills = list.filter(x => x.fill);
     if (fills.length) { // auffüllen bis zur Maschenzahl, ohne Angabe einmal
       const rest = list.filter(x => !x.fill).reduce((a, x) => a + weight(x.s), 0), g = fills[0].fill, gw = g.reduce((a, x) => a + weight(x.s), 0);
