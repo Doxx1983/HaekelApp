@@ -92,18 +92,22 @@
   #edhead { font-family:var(--display); font-size:1.15rem; font-weight:700; margin:4px 0 -2px; }
   #pname { font:inherit; padding:10px 14px; border-radius:999px; border:var(--field-border); background:#fff; color:var(--ink); min-width:0; }
   /* Lange Kürzel („2 hStb in 1 M“) kleiner, Hinweise aus der Anleitung und Kürzel-Leiste */
-  .chip.long { font-size:clamp(1rem,4.2vw,1.6rem); line-height:1.15; text-align:center; padding:0 10px; overflow-wrap:anywhere; }
+  .chip.long { font-size:clamp(1rem,4.2vw,1.6rem); line-height:1.15; text-align:center; padding:0 8px; overflow-wrap:break-word; hyphens:auto; -webkit-hyphens:auto; }
   #note { margin:0 0 10px; padding:8px 14px; background:var(--coral-soft); border-radius:16px; color:var(--ink); font-size:.95rem; font-weight:600; }
   #note[hidden], #abbr:empty { display:none; }
+  #part { display:inline-block; margin-top:3px; font-size:.85rem; font-weight:700; color:var(--ink); background:var(--paper-alt); border:1px solid var(--line); border-radius:999px; padding:1px 10px; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #part[hidden], body.setup #part { display:none; }
   #abbr { display:flex; flex-wrap:wrap; justify-content:center; gap:4px 14px; padding-top:10px; font-size:.85rem; color:var(--ink-soft); }
   #abbr a, #abbr span { color:inherit; text-decoration:none; min-height:24px; display:inline-flex; align-items:center; gap:4px; }
   #abbr b { color:var(--ink); }
   body.setup #setup { display:flex; } body.setup #chips, body.setup #nav, body.setup #note, body.setup #abbr, body.setup #tip { display:none; }
 </style>
+<script src="../shared/offline.js"></script>
+<script src="../shared/wach.js"></script>
 </head>
 <body>
 <header>
-  <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><div id="row">Häkelhelfer</div><div id="pos"></div></div></div>
+  <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><div id="row">Häkelhelfer</div><div id="pos"></div><div id="part" hidden></div></div></div>
   <div class="actions"><div class="tools"><a class="home" href="../">‹ Alle Apps</a><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div><button class="small" id="menu">Projekte</button></div>
 </header>
 <p id="note" hidden></p>
@@ -348,7 +352,7 @@ const rowOf = l => {
 function parse(text) {
   const rows = [], ctx = { color: '' }, skipped = [];
   const lines = text.split(/\r?\n/), numbered = lines.some(l => rowOf(l));
-  let pending = [];
+  let pending = [], parts = [];
   for (const line of lines) {
     if (!line.trim()) continue;
     const m = rowOf(line);
@@ -382,6 +386,11 @@ function parse(text) {
     // Ohne Reihennummern: Zeilen ohne bekanntes Kürzel und ohne Zahl (Titel, „Kopf“, „Füllen“) sind keine Reihe
     if (!m && !/\d/.test(body) && !best.list.some(x => known(x.s))) continue;
     ctx.color = best.color;
+    // Teile: Beginnt die Nummerierung neu (R1 nach R12), ist das ein neues Teil; Name und Anzahl aus der Überschrift davor („Arm (2x)“)
+    if (m && (!parts.length || m.a <= +rows[rows.length - 1].label)) {
+      const h = pending.filter(x => x.length <= 40).pop() || '', k = h.match(PART_N);
+      parts.push({ name: h.replace(PART_N, '').replace(/[\s:.,–-]+$/, '').trim(), head: h, times: k ? Math.min(+(k[1] || k[2] || k[3]), 20) : 1, start: rows.length });
+    }
     const notes = [...pending, ...best.notes]; pending = [];
     if (after) { const c = after.match(COLOR_RE); if (c) ctx.color = c[1].toUpperCase(); else notes.push(after); }
     const check = target != null && best.count !== target;
@@ -389,9 +398,26 @@ function parse(text) {
     for (let i = 0; i < chips.length; i += MAX_CHIPS) pages.push(chips.slice(i, i + MAX_CHIPS));
     if (!pages.length) { if (m) skipped.push(line.trim().slice(0, 40)); continue; }
     const a = m ? m.a : rows.length + 1, b = m && m.b && m.b > a && m.b - a <= 200 ? m.b : a;
-    for (let n = a; n <= b; n++) rows.push({ label: m ? String(n) : String(rows.length + 1), pages, count: best.count, target, check, notes });
+    for (let n = a; n <= b; n++) rows.push({ label: m ? String(n) : String(rows.length + 1), pages, count: best.count, target, check, notes: n === a ? notes : [] });
   }
-  return Object.assign(rows, { skipped });
+  return Object.assign(withParts(rows, parts), { skipped });
+}
+
+// „Arm (2x)“, „Ohren 2×“, „Bein x2“, „2 Stück“, „make 2“
+const PART_N = /\(?\s*(?:(\d+)\s*(?:x|×|mal|stück|stk\.?|teile|pieces|pcs)\b\.?|(?:x|×)\s*(\d+)|(?:make|häkle|häkeln)\s+(\d+))\s*\)?/i;
+// Mehrteilige Anleitung: Teile, die mehrfach gehäkelt werden, stehen mehrfach in der Liste; row.part = { name, n, of }
+function withParts(rows, parts) {
+  if (parts.length < 2 && !(parts[0] && parts[0].times > 1)) return rows;
+  const out = [];
+  parts.forEach((pt, i) => {
+    const own = rows.slice(pt.start, i + 1 < parts.length ? parts[i + 1].start : rows.length), name = pt.name || `Teil ${i + 1}`;
+    for (let n = 1; n <= pt.times; n++) own.forEach((r, j) => {
+      let notes = r.notes.filter(x => x !== pt.head);
+      if (!j && n > 1) notes = [`${name} ${n} von ${pt.times}: noch einmal von vorn`, ...notes];
+      out.push({ ...r, notes, part: { name, n, of: pt.times } });
+    });
+  });
+  return out;
 }
 
 const SEAM = '<svg class="st" aria-hidden="true"><rect/></svg>';
@@ -582,6 +608,7 @@ function render(noSave) {
   $('row').innerHTML = `Reihe ${esc(row.label)}` + used.map(k => `<span class="dot" style="background:${col(k)}" title="Farbe ${esc(k)}"></span>`).join('');
   // Maschenzahl am Reihenende: aus der Anleitung („(18)“), sonst gezählt; Warnung, wenn beides nicht passt
   const end = row.target != null ? row.target : row.count;
+  $('part').hidden = !row.part; $('part').textContent = row.part ? `${row.part.name}${row.part.of > 1 ? ` ${row.part.n} von ${row.part.of}` : ''}` : '';
   $('pos').innerHTML = `${r + 1} von ${rows.length}` + (row.pages.length > 1 ? ` · Seite ${p + 1}/${row.pages.length}` : '') + (end ? ` · <b>${end} M</b>` : '') +
     (row.check ? ` <span class="warn" title="Die Maschen dieser Reihe ergeben ${row.count}, die Anleitung nennt ${row.target}.">⚠ gezählt ${row.count}</span>` : '') + ` · ${esc(P.name)}`;
   const d = done[r] || 0;

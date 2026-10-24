@@ -1,0 +1,36 @@
+// Offline-Cache der Häkel-Apps. Mit Netz kommt jede Datei frisch aus dem Netz und wird im Cache aktualisiert;
+// ohne Netz (oder nach 4 s ohne Antwort) aus dem Cache. Beim ersten Besuch werden alle Dateien vorab geladen.
+// Neue Dateien in FILES eintragen und VERSION erhöhen (Dateien, die nur besucht werden, landen auch so im Cache).
+const VERSION = 'isadody-1';
+const FILES = [
+  './', 'manifest.webmanifest',
+  'anleitung/', 'anleitung/hilfe/', 'grid/', 'grid/hilfe/', 'lexikon/', 'lexikon/hilfe/', 'muster/', 'muster/hilfe/', 'zaehler/', 'zaehler/hilfe/',
+  'shared/isadody.css', 'shared/hilfe.css', 'shared/fonts/fonts.css',
+  'shared/fonts/baloo2-latin.woff2', 'shared/fonts/baloo2-latin-ext.woff2', 'shared/fonts/nunito-latin.woff2', 'shared/fonts/nunito-latin-ext.woff2',
+  'shared/store.js', 'shared/dialog.js', 'shared/muster-db.js', 'shared/doctext.js', 'shared/projekte.js', 'shared/sicherung.js', 'shared/maschen.js',
+  'shared/wach.js', 'shared/offline.js',
+  'shared/logo.png', 'shared/icon-180.png', 'shared/icon-192.png', 'shared/icon-512.png',
+];
+
+self.addEventListener('install', e => e.waitUntil(
+  caches.open(VERSION).then(c => Promise.all(FILES.map(f => c.add(f).catch(() => {})))).then(() => self.skipWaiting())));
+self.addEventListener('activate', e => e.waitUntil(
+  caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSION).map(k => caches.delete(k)))).then(() => self.clients.claim())));
+
+self.addEventListener('fetch', e => {
+  const r = e.request, u = new URL(r.url);
+  if (r.method !== 'GET' || u.origin !== location.origin) return;
+  e.respondWith((async () => {
+    const c = await caches.open(VERSION);
+    // „anleitung/“ und „anleitung/index.html“ sind dieselbe Seite
+    const alt = u.pathname.endsWith('/') ? u.origin + u.pathname + 'index.html' : u.pathname.endsWith('/index.html') ? u.origin + u.pathname.slice(0, -10) : null;
+    const cached = async () => (await c.match(r, { ignoreSearch: true })) || (alt && await c.match(alt));
+    const net = fetch(r).then(res => { if (res.ok) c.put(r, res.clone()); return res; });
+    net.catch(() => {});
+    try { return await Promise.race([net, new Promise((_, no) => setTimeout(no, 4000))]); }
+    catch {
+      const hit = await cached(); if (hit) return hit;
+      try { return await net; } catch { return Response.error(); }
+    }
+  })());
+});
