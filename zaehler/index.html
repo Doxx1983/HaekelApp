@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="../shared/isadody.css">
 <script src="../shared/store.js"></script>
 <script src="../shared/dialog.js"></script>
+<script src="../shared/erinnerung.js"></script>
 <style>
   html,body { height:100%; }
   body { display:flex; flex-direction:column; padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom); }
@@ -311,6 +312,8 @@ addEventListener('storage', e => {
   counters = c; pick(cur); if (!document.body.classList.contains('setup')) build();
 });
 build();
+// Erinnerung an die Sicherung (shared/erinnerung.js)
+Erinnerung.hint();
 </script>
 </body>
 </html>

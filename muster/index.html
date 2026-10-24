@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="../shared/isadody.css">
 <script src="../shared/store.js"></script>
 <script src="../shared/dialog.js"></script>
+<script src="../shared/erinnerung.js"></script>
 <script src="../shared/projekte.js"></script>
 <script src="../shared/sicherung.js"></script>
 <script src="../shared/muster-db.js"></script>
@@ -240,7 +241,8 @@ function close() {
   const p = $('prev'); if (p.dataset.url) { URL.revokeObjectURL(p.dataset.url); delete p.dataset.url; } p.innerHTML = '';
   document.body.classList.remove('open'); cur = null; render();
 }
-const saveCur = () => cur && put(cur).catch(() => toast('Speicher voll: Änderung nicht gespeichert'));
+// changed: beim Einspielen einer Sicherung gewinnt die zuletzt geänderte Fassung
+const saveCur = () => cur && (cur.changed = Date.now(), put(cur)).catch(() => toast('Speicher voll: Änderung nicht gespeichert'));
 
 function addTag(raw) {
   let changed = false;
@@ -256,11 +258,11 @@ const fileName = it => it.name || (it.title.replace(/[^\wäöüÄÖÜß -]+/g, '
 const blobOf = it => it.kind === 'text' ? new Blob([it.text || ''], { type: 'text/plain;charset=utf-8' }) : new Blob([it.blob], { type: it.mime });
 
 // Sicherung: alle Apps samt Sammlung in einer Datei (shared/sicherung.js); Einspielen prüft jedes Feld
-async function exportAll() { toast('Sicherung wird erstellt …'); try { await Sicherung.save(); } catch { toast('Sicherung nicht möglich'); } }
+async function exportAll() { toast('Sicherung wird erstellt …'); try { toast(await Sicherung.save() ? 'Sicherung gespeichert' : 'Sicherung nicht gespeichert'); } catch { toast('Sicherung nicht möglich'); } }
 async function importAll(f) {
   const r = await Sicherung.restore(f);
   try { items = await all(); } catch {}
-  render(); toast(r.text);
+  render(); r.text.includes('\n') ? Dialog.alert(r.text, { title: 'Sicherung einspielen' }) : toast(r.text);
 }
 
 // Text an den Häkelhelfer übergeben: neues Projekt dort, oder das vorhandene mit derselben Anleitung
@@ -343,6 +345,8 @@ addEventListener('drop', e => { e.preventDefault(); dragN = 0; document.body.cla
 
 MusterDB.open().then(async d => { db = d; items = await all(); render(); })
   .catch(() => { $('empty').innerHTML = '<p>Dieser Browser erlaubt keinen Speicher für die Sammlung (z. B. privates Fenster).</p>'; });
+// Erinnerung an die Sicherung (shared/erinnerung.js)
+Erinnerung.hint();
 </script>
 </body>
 </html>
