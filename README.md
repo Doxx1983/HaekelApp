@@ -1,6 +1,6 @@
 # Isadody Häkel-Apps
 
-Sammlung kleiner Web-Apps fürs Häkeln. Die Startseite (`/index.html`) verlinkt alle Apps; jede App läuft auch für sich unter ihrer eigenen Adresse.
+Sammlung kleiner Web-Apps fürs Häkeln. Die Startseite (`/index.html`) verlinkt alle Apps; jede App läuft auch für sich unter ihrer eigenen Adresse. Oben zeigt sie „Weitermachen“ mit dem zuletzt benutzten Häkelhelfer-Projekt; die App-Karten tragen Strich-Icons (Inline-SVG, Schwarzbraun auf Coral).
 
 | Ordner | App |
 |---|---|
@@ -12,7 +12,7 @@ Sammlung kleiner Web-Apps fürs Häkeln. Die Startseite (`/index.html`) verlinkt
 
 Hilfe: jede App hat `hilfe/index.html` (bindet `../../shared/isadody.css` und `../../shared/hilfe.css` ein, Link „‹ Zur App“) und im Kopf einen runden Knopf `<a class="help" href="hilfe/">?</a>` (in `.tools` neben dem Kopfknopf). Neue Funktion = Hilfeseite mitpflegen.
 
-Neue App: eigener Ordner mit `index.html`, bindet `../shared/isadody.css` und `../shared/store.js` ein, Logo `../shared/logo.png`, Link `<a class="home" href="../">‹ Alle Apps</a>`, Karte auf der Startseite eintragen, Hilfeseite anlegen. Kein Build.
+Neue App: eigener Ordner mit `index.html`, bindet `../shared/isadody.css` und `../shared/store.js` ein, Logo `../shared/logo.png`, Link `<a class="home" href="../">‹ Alle Apps</a>`, Karte auf der Startseite eintragen (mit Strich-Icon wie die anderen), Hilfeseite anlegen. Kein Build.
 
 ## Mustersammlung (`muster/`)
 
