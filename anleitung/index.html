@@ -13,6 +13,7 @@
 <script src="../shared/muster-db.js"></script>
 <script src="../shared/doctext.js"></script>
 <script src="../shared/projekte.js"></script>
+<script src="../shared/maschen.js"></script>
 <style>
   html,body { height:100%; }
   body { display:flex; flex-direction:column; padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom); }
@@ -89,7 +90,14 @@
   #setup #plist .del { flex:none; width:44px; padding:0; color:var(--ink-soft); font-size:1.2rem; }
   #edhead { font-family:var(--display); font-size:1.15rem; font-weight:700; margin:4px 0 -2px; }
   #pname { font:inherit; padding:10px 14px; border-radius:999px; border:var(--field-border); background:#fff; color:var(--ink); min-width:0; }
-  body.setup #setup { display:flex; } body.setup #chips, body.setup #nav { display:none; }
+  /* Lange Kürzel („2 hStb in 1 M“) kleiner, Hinweise aus der Anleitung und Kürzel-Leiste */
+  .chip.long { font-size:clamp(1rem,4.2vw,1.6rem); line-height:1.15; text-align:center; padding:0 10px; overflow-wrap:anywhere; }
+  #note { margin:0 0 10px; padding:8px 14px; background:var(--coral-soft); border-radius:16px; color:var(--ink); font-size:.95rem; font-weight:600; }
+  #note[hidden], #abbr:empty { display:none; }
+  #abbr { display:flex; flex-wrap:wrap; justify-content:center; gap:4px 14px; padding-top:10px; font-size:.85rem; color:var(--ink-soft); }
+  #abbr a, #abbr span { color:inherit; text-decoration:none; min-height:24px; display:inline-flex; align-items:center; gap:4px; }
+  #abbr b { color:var(--ink); }
+  body.setup #setup { display:flex; } body.setup #chips, body.setup #nav, body.setup #note, body.setup #abbr { display:none; }
 </style>
 </head>
 <body>
@@ -97,7 +105,9 @@
   <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><div id="row">Häkelhelfer</div><div id="pos"></div></div></div>
   <div class="actions"><div class="tools"><a class="home" href="../">‹ Alle Apps</a><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div><button class="small" id="menu">Projekte</button></div>
 </header>
+<p id="note" hidden></p>
 <main id="chips"></main>
+<div id="abbr"></div>
 <div id="nav"><button id="back">‹ Zurück</button><button id="next">Weiter ›</button></div>
 <section id="setup">
   <div id="projs">
@@ -127,45 +137,65 @@ function splitTop(s) {
   const out = []; let d = 0, cur = '';
   for (const c of s) {
     if (c === '(') d++; if (c === ')') d--;
-    if (c === ',' && d === 0) { out.push(cur); cur = ''; } else cur += c;
+    if ((c === ',' || c === ';') && d === 0) { out.push(cur); cur = ''; } else cur += c;
   }
   out.push(cur); return out.map(x => x.trim()).filter(Boolean);
 }
 
 const COLOR_RE = /^(?:(?:use|wechsel\w*|nimm|change)\s+)?(?:(?:to|zu)\s+)?(?:farbe|colou?r)\s+([\p{L}\d]+)/iu;
+// „change to color B in last st“: Ortsangabe nach dem Farbwechsel ist keine Masche
+const COLOR_AT = /^(?:in|im|into|beim|bei|at|during|on)\s+(?:the\s+|der\s+|dem\s+|den\s+)?(?:last|letzte\w*|final)\b.*$/i;
+// Materialliste vor der ersten Reihe: „Farbe A: weiß“, „Color B = pink“ (kein Farbwechsel)
+const MATERIAL = /^\s*[-•*]?\s*(?:farbe|colou?r|garn|yarn)\s+[\p{L}\d]+\s*[:=–]\s*\S/iu;
 // Maschenglied: BLO/FLO bzw. hMg/vMg, vor oder hinter dem Kürzel
 const MOD = String.raw`(?:BLO|FLO|BL|FL|hMg|vMg|hinter\w*\s+Maschenglied\w*|vorder\w*\s+Maschenglied\w*)`;
 const MOD_RE = new RegExp(String.raw`^(?:(?:in|im|ins|into|nur|only|the)\s+)*(${MOD})(?:\s+(?:only|nur))?(?![\p{L}\d])[\s:]*`, 'iu');
 const MOD_AFTER = new RegExp(String.raw`^\s*(?:(?:in|ins|into|nur|only|the)\s+)*(${MOD})(?![\p{L}\d])`, 'iu');
 const modName = m => /^(BLO?|hint|hMg)/i.test(m) ? (/^[hH]/.test(m) ? 'hMg' : 'BLO') : (/^[vV]/.test(m) ? 'vMg' : 'FLO');
 // Kürzel aus zwei Wörtern, sonst ein Wort wie fM, sc2tog, Stb-Büschel
-const PHRASE = /^(?:sl\.?\s*st|inv(?:isible)?\.?\s*dec|inv\.?\s*abn\w*|unsichtbare?\s+abn\w*|magic\s+(?:ring|circle)|magischer\s+ring)\b/i;
-const WORD = /^[A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß\d]*(?:-[A-Za-zÄÖÜäöüß]+)*/;
+const PHRASE = /^(?:sl\.?\s*st|inv(?:isible)?\.?\s*dec|inv\.?\s*abn\w*|unsichtbare?\s+abn\w*|magic\s+(?:ring|circle)|magischer\s+ring|puff\s+st)\b/i;
+const WORD = /^[A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß\d]*(?:-[A-Za-zÄÖÜäöüß\d]+)*/;
 const FILL = /\b(?:each|every|all|around|across|jede\w*|alle\w*|rundherum|ringsum)\b/i;
+// Einstich in eine Stelle: „in 1 M“, „in next st“, „in dieselbe M“
+const ONE = /^\s*(?:in|into)\s+(?:(?:the|a|die|der|den|dieselbe|derselben|eine|einer|einen)\s+)?(?:(?:1|same|next|nächste\w*|selbe\w*|gleiche\w*|folgende\w*)\s+)?(?:M|Masche|st|stitch)\b\.?/i;
+// Mehrere Maschen in eine: 2 fM/sc = Zunahme, sonst „2 hStb in 1 M“
+const incOf = (n, s) => n === 1 ? s : n === 2 && /^(sc|fm)$/i.test(s) ? (/^sc$/i.test(s) ? 'inc' : 'Zun') : `${n} ${s} in 1 M`;
+// „3 Lm (zählt als 1. Stb)“, „ch 3 (counts as dc)“
+const COUNTS = /^(?:(\d+)\s*(Lm|ch|WLm|Wende-?Lm)|(Lm|ch)\s*(\d+))\s*\(\s*(?:z[äa]hl\w*\s+als|counts?\s+as|gilt\s+als|=)\s*(?:(?:1\.?|1st|erste\w*|first|ein\w*)\s+)?([A-Za-zÄÖÜäöüß]+)\.?\s*\)/i;
+// Arbeitsschritte ohne Masche
+const NOTE_WORD = /^(?:FO|fasten\s+off|faden\b|füllen|ausstopfen|stopfen|stuff|vernähen|weave|abketten|sicherheitsaugen|augen|safety)/i;
+// Kürzel aus dem Lexikon (shared/maschen.js), damit unbekannte Wörter von Notizen unterschieden werden
+const LEX_AB = new Set(typeof MASCHEN === 'undefined' ? [] : MASCHEN.flatMap(m => [...m.de, ...m.us.ab, ...m.uk.ab, ...(m.alias || [])]).map(a => a.toLowerCase()));
+const base = s => s.toLowerCase().replace(/ (blo|flo|hmg|vmg)$/, '');
 
-// Eine Masche (ohne Klammern): {s, n, fill}
+// Eine Masche (ohne Klammern): {s, n, fill, w?, rest}
 function stitchOf(part) {
   let p = part, n = 1, m;
+  if ((m = p.match(COUNTS))) return { s: `${m[1] || m[4]} ${m[2] || m[3]} = ${m[5]}`, n: 1, w: 1, rest: p.slice(m[0].length) };
   const num = () => { if ((m = p.match(/^(\d+)\s*(?:[x×*]\s*)?/))) { n = +m[1]; p = p.slice(m[0].length); } };
   // „jede M verdoppeln“ / „in jede M 2 fM“ / „2 sc in each st“: Zunahme in jeder Masche
-  if (/^(?:in\s+)?(?:jede|alle)\w*\s+M\w*\s+verdoppeln/i.test(p)) return { s: 'Zun', n: 1, fill: true };
+  if (/^(?:in\s+)?(?:jede|alle)\w*\s+M\w*\s+verdoppeln/i.test(p)) return { s: 'Zun', n: 1, fill: true, rest: '' };
   if ((m = p.match(/^(?:in\s+)?(?:jede|each|every)\w*\s+(?:M|Masche|st|stitch)\w*\s*:?\s+(\d+)\s*([A-Za-zÄÖÜäöüß]+)/i))) p = `${m[1]} ${m[2]} in jede M`;
   num();
   if (n > 1 && (m = p.match(/^([A-Za-zÄÖÜäöüß]+)\s+(?:in|into)\s+(?:jede|each|every)\w*\s+(?:M|Masche|st|stitch)\b/i)))
-    return { s: n === 2 ? (/^(sc|hdc|dc|tr)$/i.test(m[1]) ? 'inc' : 'Zun') : `${n} ${m[1]} in 1 M`, n: 1, fill: true };
+    return { s: incOf(n, m[1]), n: 1, fill: true, rest: p.slice(m[0].length) };
   let mod = ''; if ((m = p.match(MOD_RE))) { mod = modName(m[1]); p = p.slice(m[0].length); num(); }
   if (!p && mod) return { mod };
   let s;
-  if ((m = p.match(/^(fM|Stb|hStb|DStb|M)\s+zus\w*\.?(?:\s+abm\w*\.?)?/i)) && n > 1) { s = `${n} ${m[1]} zus.`; n = 1; }
+  if ((m = p.match(/^(fM|Stb|hStb|DStb|M)\s+zus\w*\.?(?:\s+abm\w*\.?)?/i)) && n > 1) { s = n === 2 && /^(fM|M)$/i.test(m[1]) ? 'Abn' : `${n} ${m[1]} zus.`; n = 1; }
   else if ((m = p.match(PHRASE) || p.match(WORD))) s = m[0].replace(/\s+/g, ' ');
   else return null;
   let rest = p.slice(m[0].length), k;
   if ((k = rest.match(MOD_AFTER))) { mod = mod || modName(k[1]); rest = rest.slice(k[0].length); }
   let explicit = n > 1;
+  if ((k = rest.match(ONE))) { s = incOf(n, s); n = 1; explicit = true; rest = rest.slice(k[0].length); }
   if ((k = rest.match(/^\s*(?:[x×*]\s*(\d+)|(\d+)\s*(?:[x×]|mal\b|times?\b)?)(?![\d.,]*\d)/i))) { n *= +(k[1] || k[2]); explicit = true; }
   else if ((k = rest.match(/\b(?:next|nächsten|folgenden)\s+(\d+)\b/i))) { n *= +k[1]; explicit = true; }
-  return { s: mod ? `${s} ${mod}` : s, n, fill: !explicit && FILL.test(rest) };
+  return { s: mod ? `${s} ${mod}` : s, n, fill: !explicit && FILL.test(rest), rest };
 }
+
+// Keine Masche, sondern ein Arbeitsschritt („Kopf ausstopfen“, „fasten off“, „dabei Augen einsetzen“)
+const isNote = (part, st) => NOTE_WORD.test(part) || (!known(st.s) && !LEX_AB.has(base(st.s)) && /\p{L}{2,}/u.test(st.rest.replace(/\b(?:in|into|the|to|of|from|hook|ch|st|sts|M|von|der|die|den|Nadel|Lm)\b/gi, '')));
 
 // Text einer Reihe vereinheitlichen: [..], {..}, *..* → (..); „6x wiederholen“, „repeat 6 times“ → x 6; „rep from * 5 more times“
 function normalize(s) {
@@ -174,17 +204,54 @@ function normalize(s) {
   s = s.replace(/\*([^*]+)\*/g, '($1)').replace(/[\[{]/g, '(').replace(/[\]}]/g, ')');
   s = s.replace(/\)\s*(?:(?:wiederhol\w*|wdh\.?|repeat|rep)\s+)?(?:[x×*]\s*(\d+)|(\d+)\s*(?:[x×*]|-?mal\b|times?\b))(?:\s*(?:times?|mal)\b)?(?:\s*(?:wiederhol\w*|wdh\.?|repeat|insgesamt|total)\b)*/gi,
     (a, n1, n2) => `) x ${n1 || n2}`);
-  s = s.replace(/\)\s*(?:(?:rep(?:eat)?|wiederhol\w*)\s+)?(?:around|across|to\s+(?:the\s+)?end|rundherum|ringsum|bis\s+(?:zum\s+)?\w*ende)(?:\s*wiederhol\w*)?/gi, ') x 0');
+  s = s.replace(/\)\s*(?:(?:rep(?:eat)?|wiederhol\w*|wdh\.?)\s+)?(?:around|across|to\s+(?:the\s+)?end|rundherum|ringsum|bis\s+(?:zum\s+)?\w*ende)(?:\s*wiederhol\w*)?/gi, ') x 0');
   return s;
 }
 
+// Schreibweisen vor dem Zerlegen glätten
+function clean(s) {
+  return s
+    .replace(new RegExp(String.raw`^\(\s*(${MOD})[^)]*\)\s*:?\s*`, 'i'), '$1, ') // „(BLO): …“ gilt für die Reihe
+    .replace(/\(\s*((?:rep(?:eat)?|wiederhol|wdh|insgesamt)[^()]*)\)/gi, ', $1') // „sc 5, inc (repeat 6 times)“
+    .replace(/\b(?:ab|beginnend\s+(?:in|bei|mit))\s+(?:der\s+)?(?:2\.|zweite[nr]?)\s+(?:M|Masche|Lm|Luftmasche)\w*(?:\s+(?:von|ab)\s+der\s+Nadel)?/gi, '')
+    .replace(/(?:in\s+)?jede\s+(\d+)\.\s*M\w*\s+(?:verdoppeln|2\s*fM)/gi, (a, k) => `(${+k > 2 ? k - 1 + ' ' : ''}fM, Zun) rundherum`)
+    .replace(/^\s*(MR|Fadenring|magic\s+(?:ring|circle))\s+(?=\d)/i, '$1, ')
+    .replace(/^(.*?\d+\s*[A-Za-zÄÖÜäöüß]+)\s+in\s+(?:(?:den|einen|einem|dem|the|a|an)\s+)?(magic\s+(?:ring|circle|loop)|MR|Fadenring|magischen\s+Ring|adjustable\s+ring)\b\.?/i,
+      (a, x, r) => `${/^magischen/i.test(r) ? 'Fadenring' : r}, ${x}`);
+}
+
+// Varianten einer Reihe, bevorzugte zuerst; parse() nimmt die erste, die zur Maschenzahl passt
+function variants(s) {
+  const n = normalize(clean(s)), out = [], parts = splitTop(n);
+  if (!/[()]/.test(n)) {
+    // Wiederholung ohne Klammer: „sc 2, inc; repeat 6 times“, „3 fM, Zun, 6x wiederholen“, „sc, inc rep around“, „wdh. bis Rundenende“
+    let m = n.match(/^(.*?)[\s,;.]*\b(?:rep(?:eat)?|wiederhol\w*|wdh)\.?\s+(?:(?:from\s+(?:the\s+)?beg\w*\s+)?(\d+)\s*(more\s+)?(?:times?|mal|x|×)|around|across|to\s+(?:the\s+)?end|rundherum|ringsum|bis\s+(?:zum\s+)?\w*ende)\s*\.?$/i)
+      || n.match(/^(.*?)[\s,;.]*\b(?:insgesamt\s+)?(\d+)\s*(?:x|×|-?mal)\s*(?:wiederhol\w*|wdh)\.?\s*$/i);
+    if (m && m[1].trim()) out.push(`(${m[1]}) x ${m[2] ? +m[2] + (m[3] ? 1 : 0) : 0}`);
+    // „fM, Abn rundherum“, „2 sc, inc around“: gilt für die ganze Folge (Lm und Wenden davor bleiben draußen)
+    const last = parts.length > 1 && parts[parts.length - 1].match(/^(.*\S)\s+(?:around|rundherum|ringsum)\s*$/i);
+    if (last && !FILL.test(last[1])) {
+      let i = parts.length - 1;
+      while (i > 0) { const st = stitchOf(parts[i - 1]); if (!st || !st.s || FILL.test(parts[i - 1]) || !weight(st.s)) break; i--; }
+      if (i < parts.length - 1) out.push([...parts.slice(0, i), `(${[...parts.slice(i, -1), last[1]].join(', ')}) x 0`].join(', '));
+    }
+  }
+  out.push(n);
+  // „2sc, inc x 6“: x 6 kann nur das letzte Kürzel oder die ganze Folge meinen
+  // „2sc, inc *6“ meint die Folge, „inc x 6“ eher das Kürzel
+  const t = parts.length > 1 && !/[()]/.test(n) && n.match(/^(.*\S)\s*([x×*])\s*(\d+)\s*$/);
+  if (t) out.splice(t[2] === '*' ? out.length - 1 : out.length, 0, `(${t[1]}) x ${t[3]}`);
+  return out;
+}
+
 // ctx.color = aktuelle Garnfarbe; Farbwechsel mitten in der Reihe wirken ab dieser Stelle.
-// Ergebnis: Maschen {s, c} und höchstens eine Füllgruppe {fill: [...]} („rundherum“, „in jede M“), die parse() auf die Maschenzahl auffüllt
+// Ergebnis: Maschen {s, c, w?}, Notizen {note} und höchstens eine Füllgruppe {fill: [...]} („rundherum“, „in jede M“), die parse() auf die Maschenzahl auffüllt
 function expand(s, ctx) {
   const res = [];
   for (let part of splitTop(s)) {
     let c = part.match(COLOR_RE);
-    if (c) { ctx.color = c[1].toUpperCase(); part = part.slice(c[0].length).replace(/^[\s:;–-]+/, ''); if (!part) continue; }
+    if (c) { ctx.color = c[1].toUpperCase(); part = part.slice(c[0].length).replace(/^[\s:;–-]+/, '').replace(COLOR_AT, ''); if (!part) continue; }
+    part = part.replace(/^(?:dann|danach|anschließend|then|and|und|je)\s+/i, '');
     let m = part.match(/^\((.*)\)\s*x\s*(\d+)/i) || part.match(/^(\d+)\s*[x×]\s*\((.*)\)/i);
     if (m) {
       const [body, n] = /^\(/.test(part) ? [m[1], +m[2]] : [m[2], +m[1]];
@@ -193,29 +260,40 @@ function expand(s, ctx) {
       for (let i = 0; i < n; i++) res.push(...inner.list);
       continue;
     }
+    // Gruppe in eine Einstichstelle: „(sc, hdc, dc, hdc, sc) in next st“, „(2 Stb, 2 Lm, 2 Stb) in den Lm-Bogen“
+    if ((m = part.match(/^\((.*)\)\s*(?:in|into)\s+(.+)$/i))) {
+      const inner = expand(m[1], { ...ctx, mod: '' }).list.filter(x => x.s);
+      const where = m[2].trim(), each = FILL.test(where);
+      const at = ONE.test(' in ' + where) || (each && /\b(?:st|sts|M|Masche|stitch)\b/i.test(where)) ? '1 M' : where.replace(/^(?:the|den|die|der)\s+/i, '');
+      const g = { s: `${m[1].replace(/\s+/g, ' ').trim()} in ${at}`, c: ctx.color, w: inner.reduce((a, x) => a + wt(x), 0), k: inner.every(x => known(x.s)) };
+      res.push(each ? { fill: [g] } : g);
+      continue;
+    }
     if ((m = part.match(/^\((.*)\)$/))) { const inner = expand(m[1], ctx); ctx.color = inner.color; res.push(...inner.list); continue; }
     const st = stitchOf(part);
-    if (!st) continue;
+    if (!st) { if (/\p{L}{2,}/u.test(part)) res.push({ note: part }); continue; }
     if (!st.s) { ctx.mod = st.mod; continue; } // „BLO:“ gilt für den Rest der Reihe
+    if (isNote(part, st)) { res.push({ note: part }); continue; }
     const name = ctx.mod && !/ (BLO|FLO|hMg|vMg)$/.test(st.s) && weight(st.s) ? `${st.s} ${ctx.mod}` : st.s;
-    const one = () => ({ s: name, c: ctx.color });
+    const one = () => st.w != null ? { s: name, c: ctx.color, w: st.w } : { s: name, c: ctx.color };
     if (st.fill) res.push({ fill: [one()] });
     else for (let i = 0; i < st.n; i++) res.push(one());
   }
   return Object.assign(res, { list: res, color: ctx.color });
 }
 
-// Maschen, die eine Masche ergibt: Zunahme 2, Lm/Km/Wenden 0, sonst 1. known = sicher gezählt (für die Kontrolle)
+// Maschen, die eine Masche ergibt: Zunahme 2, Lm/Km/Wenden/Überspringen 0, sonst 1. known = sicher gezählt
 function weight(s) {
-  let m; const t = s.toLowerCase().replace(/ (blo|flo|hmg|vmg)$/, '');
+  let m; const t = base(s);
   if (/^(inc|zun\w*|zu)$/.test(t)) return 2;
   if ((m = t.match(/^(\d+) \S+ in 1 m$/))) return +m[1];
   if (/^(wende-?lm|wendeluftm\w*|t-?ch)$/.test(t)) return 0;
-  if (/^(ch|lm|luftm\w*|sl st|ss|km|kettm\w*|turn|wenden?|mr|magic \w+|magischer ring|fadenring|fr)$/.test(t)) return 0;
+  if (/^(ch|lm|luftm\w*|sl st|ss|km|kettm\w*|turn|wenden?|mr|magic \w+|magischer ring|fadenring|fr|sk|skip|miss|übersp\w*|überg\w*)$/.test(t)) return 0;
   return 1;
 }
-const known = s => /^(\d+ \S+ in 1 m|wende-?lm|sc|fm|hdc|hstb|dc|stb|tr|dstb|dtr|inc|zun\w*|zu|dec|abn\w*|\w+tog|\d \w+ zus\.|inv dec|inv abn\w*|unsichtbare? abn\w*|turn|wenden?|mr|magic \w+|magischer ring|fadenring)$/
-  .test(s.toLowerCase().replace(/ (blo|flo|hmg|vmg)$/, ''));
+const wt = x => x.w != null ? x.w : weight(x.s);
+const known = s => /^(\d+ \S+ in 1 m|wende-?lm|sc|fm|hdc|hstb|dc|stb|tr|dstb|dtr|inc|zun\w*|zu|dec|abn\w*|\w+tog|\d \w+ zus\.|inv dec|inv abn\w*|unsichtbare? abn\w*|turn|wenden?|mr|magic \w+|magischer ring|fadenring|ch|lm|sl st|km|sk|skip|übersp\w*|\d+ (lm|ch|wlm|wende-?lm) = \S+)$/
+  .test(base(s));
 
 function chipsOf(stitches) {
   const chips = [], same = (a, b) => a.s === b.s && a.c === b.c;
@@ -229,43 +307,89 @@ function chipsOf(stitches) {
   return chips;
 }
 
-// Reihe: {label, pages, count (Maschen am Ende), target (Zahl aus der Anleitung, z. B. „(18)“), check (gezählt ≠ Anleitung)}
-const ROW = /^\s*(?:Reihen|Reihe|Runden|Runde|Rounds|Round|Rows|Row|Rnds|Rnd|Rds|Rd|R)\.?\s*(\d+)(?:\s*(?:-|–|—|bis|to)\s*(?:Reihe|Runde|Round|Row|Rnd|Rd|R)?\.?\s*(\d+)(?=\s*(?:[:.)(]|$)))?\s*[:.\-–)]?\s*(.*)$/i;
-const TARGET = /\s*(?:[(\[{]\s*(\d+)\s*(?:M|Maschen|Masche|st|sts|stitches|fM|sc)?\.?\s*[)\]}]|(?:=|–|—|\s-)\s*(\d+)\s*(?:M|Maschen|st|sts|stitches)?\.?)\s*\.?\s*$/i;
-// Zahl vorn: „1. Rd:“, „3.-5. Runde:“ → wie ROW [_, von, bis, Rest]
-const ROW_DE = /^\s*(\d+)\.?(?:\s*(?:-|–|—|bis)\s*(\d+)\.?)?\s*(?:Reihen|Reihe|Runden|Runde|Rnd|Rd|R)\b\.?\s*[:.\-–)]?\s*(.*)$/i;
-const rowOf = l => l.match(ROW) || l.match(ROW_DE);
+// Füllgruppe auf die Maschenzahl auffüllen (ohne Angabe einmal), dann zählen
+function fillRow(list, target) {
+  const fills = list.filter(x => x.fill);
+  if (fills.length) {
+    const rest = list.filter(x => !x.fill).reduce((a, x) => a + wt(x), 0), g = fills[0].fill, gw = g.reduce((a, x) => a + wt(x), 0);
+    const k = target && gw && (target - rest) % gw === 0 && target > rest ? (target - rest) / gw : 1;
+    list = list.flatMap(x => x === fills[0] ? Array.from({ length: k }, () => g).flat() : x.fill ? x.fill : [x]);
+  }
+  const allCh = list.length && list.every(x => /^(ch|lm)$/i.test(x.s));
+  return { list, count: allCh ? list.length : list.reduce((a, x) => a + wt(x), 0) };
+}
+
+// Kandidaten einer Reihe: Lm am Anfang zählen nicht; passt es dann nicht zur Maschenzahl, zählen 3–4 Lm vor Stäbchen als 1 M
+function rowLists(list, target) {
+  const out = [fillRow(list, target)];
+  if (target == null || out[0].count === target) return out;
+  let i = 0; while (i < list.length && list[i].s && /^(ch|lm)$/i.test(list[i].s) && list[i].s === list[0].s) i++;
+  const next = list[i] && (list[i].s || (list[i].fill && list[i].fill[0].s)) || '';
+  if (i >= 2 && i <= 4 && /^(dc|stb|hdc|hstb|tr|dstb|\d+ (dc|stb|hdc|hstb|tr|dstb) in 1 m)$/i.test(base(next)))
+    out.push(fillRow([{ s: `${i} ${list[0].s} = ${next.replace(/^\d+ (\S+) in 1 M$/, '$1')}`, c: list[0].c, w: 1 }, ...list.slice(i)], target));
+  return out;
+}
+
+// Reihe: {label, pages, count (Maschen am Ende), target (Zahl aus der Anleitung, z. B. „(18)“), check (gezählt ≠ Anleitung), notes}
+// rows.skipped: nummerierte Zeilen, aus denen keine Maschen wurden
+const ROWWORD = '(?:Reihen|Reihe|Runden|Runde|Rounds|Round|Rows|Row|Rnds|Rnd|Rds|Rd|R)';
+// Klammer nach der Nummer: „Rd 7 (18 M):“ = Maschenzahl, „Runde 12-15 (4 Rd.):“ = Anzahl Runden
+const PAREN = String.raw`(?:\s*\(\s*(\d+)\s*(?:(M|Maschen|Masche|st|sts|stitches|fM|sc)|(Rd|Rds|Rnds?|Runden|Reihen|Rows?|Rounds?|R))?\.?\s*\))?`;
+const ROW = new RegExp(String.raw`^\s*${ROWWORD}\.?\s*(\d+)(?:\s*(?:-|–|—|bis|to)\s*${ROWWORD}?\.?\s*(\d+)(?=\s*(?:[:.)(]|$)))?${PAREN}\s*[:.\-–)]?\s*(.*)$`, 'i');
+// Zahl vorn: „1. Rd:“, „3.-5. Runde:“
+const ROW_DE = new RegExp(String.raw`^\s*(\d+)\.?(?:\s*(?:-|–|—|bis)\s*(\d+)\.?)?\s*${ROWWORD}\b\.?${PAREN}\s*[:.\-–)]?\s*(.*)$`, 'i');
+const TARGET = /\s*(?:[(\[{]\s*(\d+)\s*(?:M|Maschen|Masche|st|sts|stitches|fM|sc)?\.?\s*[)\]}]|(?:=|–|—|\s-)\s*(\d+)\s*(?:M|Maschen|st|sts|stitches)?\.?)\s*\.?\s*(?:[–—-]\s*(\S.*?))?\s*$/i;
+const rowOf = l => {
+  const m = l.match(ROW) || l.match(ROW_DE);
+  return m && { a: +m[1], b: m[2] ? +m[2] : null, target: m[3] && !m[5] ? +m[3] : null, body: m[6] };
+};
 function parse(text) {
-  const rows = [], ctx = { color: '' };
+  const rows = [], ctx = { color: '' }, skipped = [];
   const lines = text.split(/\r?\n/), numbered = lines.some(l => rowOf(l));
+  let pending = [];
   for (const line of lines) {
     if (!line.trim()) continue;
     const m = rowOf(line);
-    // Gibt es nummerierte Reihen, sind andere Zeilen Überschriften oder Notizen: keine Maschen, nur Farbwechsel zählen
-    if (!m && numbered) { expand(line, ctx); continue; }
-    let body = m ? m[3] : line, target = null, t;
-    if ((t = body.match(TARGET))) { target = +(t[1] || t[2]); body = body.slice(0, t.index); }
-    body = normalize(body.replace(new RegExp(String.raw`^\(\s*(${MOD})[^)]*\)\s*:?\s*`, 'i'), '$1, '));
-    ctx.mod = '';
-    let list = expand(body, ctx).list;
-    // Ohne Reihennummern: Zeilen ohne bekanntes Kürzel und ohne Zahl (Titel, „Kopf“, „Füllen“) sind keine Reihe
-    if (!m && !/\d/.test(body) && !list.some(x => known(x.s) || (x.fill && x.fill.some(y => known(y.s))))) continue;
-    const fills = list.filter(x => x.fill);
-    if (fills.length) { // auffüllen bis zur Maschenzahl, ohne Angabe einmal
-      const rest = list.filter(x => !x.fill).reduce((a, x) => a + weight(x.s), 0), g = fills[0].fill, gw = g.reduce((a, x) => a + weight(x.s), 0);
-      const k = target && gw && (target - rest) % gw === 0 && target > rest ? (target - rest) / gw : 1;
-      list = list.flatMap(x => x === fills[0] ? Array.from({ length: k }, () => g).flat() : x.fill ? x.fill : [x]);
+    // Gibt es nummerierte Reihen, sind andere Zeilen Überschriften oder Notizen: keine Maschen, nur Farbwechsel zählen.
+    // Sie erscheinen als Hinweis bei der nächsten Reihe (vor Reihe 1 nur die letzte kurze Zeile, z. B. „Kopf“).
+    if (!m && numbered) {
+      if (!rows.length && MATERIAL.test(line)) continue;
+      expand(line, ctx);
+      const c = line.trim().match(COLOR_RE); // reine Farbzeile („Farbe B“) ist kein Hinweis
+      if (!c || line.trim().slice(c[0].length).replace(/^[\s:.]+/, '')) pending.push(line.trim().slice(0, 140));
+      if (!rows.length) pending = pending.slice(-1).filter(x => x.length <= 40);
+      continue;
     }
-    const allCh = list.length && list.every(x => /^(ch|lm)$/i.test(x.s));
-    const count = allCh ? list.length : list.reduce((a, x) => a + weight(x.s), 0);
-    const check = target != null && !fills.length && list.every(x => known(x.s)) && count !== target;
-    const chips = chipsOf(list), pages = [];
+    let body = m ? m.body : line, target = m ? m.target : null, after = '', t;
+    if ((t = body.match(TARGET))) { if (target == null) target = +(t[1] || t[2]); body = body.slice(0, t.index); after = t[3] || ''; }
+    // Varianten durchprobieren; Farbe erst nach der Wahl übernehmen
+    let best = null;
+    for (const v of variants(body)) {
+      const c = { color: ctx.color, mod: '' }, all = expand(v, c).list;
+      const list = all.filter(x => !x.note), notes = all.filter(x => x.note).map(x => x.note);
+      for (const r of rowLists(list, target)) {
+        const cand = { ...r, notes, color: c.color };
+        if (!best) best = cand;
+        if (target != null && r.count === target) { best = cand; break; }
+      }
+      if (target != null && best.count === target) break;
+    }
+    // Bloßes „fM (30)“: eine Masche ohne Anzahl gilt für jede Masche
+    if (target > 1 && best.list.length === 1 && !/\d/.test(body) && /^(fm|sc|hstb|hdc|stb|dc|tr|dstb|dtr)$/.test(base(best.list[0].s)))
+      Object.assign(best, fillRow([{ fill: best.list }], target));
+    // Ohne Reihennummern: Zeilen ohne bekanntes Kürzel und ohne Zahl (Titel, „Kopf“, „Füllen“) sind keine Reihe
+    if (!m && !/\d/.test(body) && !best.list.some(x => known(x.s))) continue;
+    ctx.color = best.color;
+    const notes = [...pending, ...best.notes]; pending = [];
+    if (after) { const c = after.match(COLOR_RE); if (c) ctx.color = c[1].toUpperCase(); else notes.push(after); }
+    const check = target != null && best.count !== target;
+    const chips = chipsOf(best.list), pages = [];
     for (let i = 0; i < chips.length; i += MAX_CHIPS) pages.push(chips.slice(i, i + MAX_CHIPS));
-    if (!pages.length) continue;
-    const a = m ? +m[1] : rows.length + 1, b = m && m[2] && +m[2] > a && +m[2] - a <= 200 ? +m[2] : a;
-    for (let n = a; n <= b; n++) rows.push({ label: m ? String(n) : String(rows.length + 1), pages, count, target, check });
+    if (!pages.length) { if (m) skipped.push(line.trim().slice(0, 40)); continue; }
+    const a = m ? m.a : rows.length + 1, b = m && m.b && m.b > a && m.b - a <= 200 ? m.b : a;
+    for (let n = a; n <= b; n++) rows.push({ label: m ? String(n) : String(rows.length + 1), pages, count: best.count, target, check, notes });
   }
-  return rows;
+  return Object.assign(rows, { skipped });
 }
 
 const SEAM = '<svg class="st" aria-hidden="true"><rect/></svg>';
@@ -418,6 +542,34 @@ $('newp').onclick = () => {
   openSetup(null); $('text').focus();
 };
 
+// Kürzel-Leiste unter den Kacheln: Bedeutung aus dem Lexikon, Link dorthin. US oder UK nach der Anleitung (sc → US, htr/ss/tension → UK)
+const LEX = new Map();
+for (const m of MASCHEN) if (m.kat !== 'begriff' || ['wlm', 'wenden', 'zus'].includes(m.id))
+  for (const [sys, list] of [['de', m.de], ['us', m.us.ab], ['uk', m.uk.ab], ['de', m.alias || []]])
+    for (const a of list) { const k = a.toLowerCase(); if (!LEX.has(k)) LEX.set(k, []); LEX.get(k).push({ m, sys }); }
+const short = m => m.de[0] || m.name;
+function legend(page, pattern) {
+  const sys = /\bsc\b/i.test(pattern) ? 'us' : /\b(htr|ss|tension)\b/i.test(pattern) ? 'uk' : '';
+  const seen = new Set(), out = [];
+  for (const c of page) {
+    const w = c.s.replace(/\b\d+\b|[=(),]/g, ' ').split(/\s+/).filter(x => x && !/^(in|1|M|x)$/.test(x));
+    for (let i = 0; i < w.length; i++) {
+      let ab = w[i];
+      if (i + 1 < w.length && LEX.has(`${w[i]} ${w[i + 1]}`.toLowerCase())) ab = `${w[i]} ${w[++i]}`;
+      if (seen.has(ab.toLowerCase())) continue; seen.add(ab.toLowerCase());
+      const hits = LEX.get(ab.toLowerCase());
+      if (!hits) { out.push(`<span title="Nicht im Lexikon, siehe Anleitung"><b>${esc(ab)}</b> ?</span>`); continue; }
+      const de = hits.find(h => h.sys === 'de'), us = hits.find(h => h.sys === 'us'), uk = hits.find(h => h.sys === 'uk');
+      let hit = de || us || uk, text;
+      if (de) text = de.m.name;
+      else if (us && uk && us.m !== uk.m) { hit = sys === 'uk' ? uk : us; text = sys ? short(hit.m) : `${short(us.m)} (US) / ${short(uk.m)} (UK)`; }
+      else text = short(hit.m);
+      out.push(`<a href="../lexikon/#${hit.m.id}"><b>${esc(ab)}</b> ${esc(text)}</a>`);
+    }
+  }
+  return out.join('');
+}
+
 function render(noSave) {
   if (!rows.length) { openSetup(P); return; }
   document.body.classList.remove('setup'); colors = P.colors;
@@ -433,8 +585,11 @@ function render(noSave) {
   const d = done[r] || 0;
   $('chips').innerHTML = page.map((c, i) => {
     const cl = col(c.c), fade = p * MAX_CHIPS + i < d ? ' fade' : '', st = cl ? ` style="background:${cl};color:${textOn(cl)}"` : '';
-    return c.n > 1 ? `<div class="chip count${fade}" data-i="${i}"${st}><span${cl ? ' style="color:inherit"' : ''}>${c.n}×</span>${esc(c.s)}${SEAM}</div>` : `<div class="chip${fade}" data-i="${i}"${st}>${esc(c.s)}${SEAM}</div>`;
+    const long = c.s.length > 7 ? ' long' : '';
+    return c.n > 1 ? `<div class="chip count${fade}${long}" data-i="${i}"${st}><span${cl ? ' style="color:inherit"' : ''}>${c.n}×</span>${esc(c.s)}${SEAM}</div>` : `<div class="chip${fade}${long}" data-i="${i}"${st}>${esc(c.s)}${SEAM}</div>`;
   }).join('');
+  $('note').hidden = !row.notes.length; $('note').textContent = row.notes.join(' · ');
+  $('abbr').innerHTML = legend(page, P.pattern);
   fitSeams();
   $('back').disabled = r === 0 && p === 0;
   const last = r === rows.length - 1 && p === row.pages.length - 1;
@@ -512,7 +667,8 @@ function keepProgress(x, t) {
 }
 $('ok').onclick = () => {
   const t = $('text').value, name = $('pname').value.trim();
-  if (!parse(t).length) return Dialog.alert('In diesem Text sind keine Maschen zu finden.');
+  const parsed = parse(t);
+  if (!parsed.length) return Dialog.alert('In diesem Text sind keine Maschen zu finden.');
   if (!E.id) {
     const x = Projekte.create(t, name, E.colors);
     if (!x) return Dialog.alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`);
@@ -522,6 +678,8 @@ $('ok').onclick = () => {
     E.pattern = t; E.name = name || Projekte.nameOf(t); E.used = Date.now(); Projekte.put(E); load(E);
   }
   render();
+  const sk = parsed.skipped;
+  if (sk.length) Dialog.alert(`${sk.length === 1 ? 'Diese Zeile hat' : `Diese ${sk.length} Zeilen haben`} keine Maschen ergeben und ${sk.length === 1 ? 'fehlt' : 'fehlen'} beim Häkeln:\n\n${sk.slice(0, 6).join('\n')}${sk.length > 6 ? '\n…' : ''}\n\nBitte in der Anleitung prüfen.`);
 };
 
 // Andere Tabs oder Apps haben Projekte geändert: frisch laden, damit hier kein alter Stand zurückgeschrieben wird
