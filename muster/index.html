@@ -5,25 +5,28 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Isadody Mustersammlung</title>
 <meta name="theme-color" content="#FBF6EC">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../shared/icon-180.png">
 <link rel="stylesheet" href="../shared/isadody.css">
 <script src="../shared/store.js"></script>
 <script src="../shared/projekte.js"></script>
+<script src="../shared/sicherung.js"></script>
 <script src="../shared/muster-db.js"></script>
 <script src="../shared/doctext.js"></script>
 <style>
   body { padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom); max-width:960px; margin:0 auto; }
   header { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 0 4px; }
   .title { display:flex; align-items:center; gap:12px; min-width:0; }
-  h1 { font-family:var(--display); font-size:1.8rem; font-weight:700; margin:0; line-height:1.1; }
+  h1 { font-family:var(--display); font-size:1.6rem; font-weight:700; margin:0; line-height:1.1; }
   #count { color:var(--ink-soft); font-size:.9rem; }
-  .actions { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
-  input, textarea { font:inherit; padding:10px 14px; border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--ink); min-width:0; }
+  .actions { display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex:none; }
+  input, textarea { font:inherit; padding:10px 14px; border-radius:999px; border:var(--field-border); background:#fff; color:var(--ink); min-width:0; }
   textarea { border-radius:16px; resize:vertical; }
   #bar { display:flex; gap:10px; padding:12px 0 8px; }
   #q { flex:1; }
   #add { padding:10px 18px; box-shadow:var(--shadow-card); white-space:nowrap; }
   #filters { display:flex; flex-wrap:wrap; gap:6px; padding-bottom:6px; }
-  .pill { background:var(--paper-alt); border:1px solid var(--line); border-radius:999px; padding:5px 12px; font-size:.85rem; font-weight:700; color:var(--ink); }
+  .pill { min-height:40px; background:var(--paper-alt); border:1px solid var(--line); border-radius:999px; padding:5px 12px; font-size:.85rem; font-weight:700; color:var(--ink); }
   .pill.on { background:var(--coral-soft); border-color:var(--ink); }
   .pill.sort { margin-left:auto; color:var(--ink-soft); }
   #grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; padding:8px 0 24px; }
@@ -80,15 +83,15 @@
 </head>
 <body>
 <header>
-  <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><h1>Muster</h1><div id="count"></div></div></div>
+  <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><h1>Muster&shy;sammlung</h1><div id="count"></div></div></div>
   <div class="actions"><div class="tools"><a class="home" href="../">‹ Alle Apps</a><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div><button class="small" id="more">Sichern</button></div>
 </header>
 <div class="wrap">
-  <div id="bar"><input id="q" type="search" placeholder="Suchen: Name, Tag, Notiz, Text"><button class="btn" id="add">+ Muster</button></div>
+  <div id="bar"><input id="q" type="search" placeholder="Suchen …" aria-label="Suchen: Name, Tag, Notiz, Text"><button class="btn" id="add">+ Muster</button></div>
   <div id="menu">
     <button class="m-add" data-a="file">Datei hinzufügen (Bild, PDF, Word, Text)</button>
     <button class="m-add" data-a="paste">Text einfügen</button>
-    <button class="m-save" data-a="export">Sicherung herunterladen</button>
+    <button class="m-save" data-a="export">Alles sichern (alle Apps)</button>
     <button class="m-save" data-a="import">Sicherung einspielen</button>
   </div>
 </div>
@@ -154,7 +157,8 @@ async function addFiles(files) {
     const kind = fileKind(f); if (!kind) { skip++; continue; }
     const it = { id: uid(), kind, title: baseName(f.name) || 'Muster', name: f.name, mime: f.type || (kind === 'pdf' ? 'application/pdf' : 'text/plain'), size: f.size, tags: [], fav: false, notes: '', added: Date.now() };
     if (kind === 'text') it.text = await f.text(); else { it.blob = f; if (kind === 'image') it.thumb = await thumbOf(f); if (kind === 'word') it.text = await docText(f); }
-    await put(it); items.push(it); n++;
+    try { await put(it); } catch { render(); return toast(n ? `Speicher voll: nur ${n} Muster hinzugefügt` : 'Speicher voll: Muster nicht gespeichert'); }
+    items.push(it); n++;
   }
   persist(); render();
   toast(n ? `${n} Muster hinzugefügt` + (skip ? `, ${skip} übersprungen` : '') : 'Nur Bilder, PDFs, Word-, ODT- und Textdateien möglich');
@@ -198,7 +202,7 @@ function render() {
   $('alltags').innerHTML = tags.map(x => `<option value="${esc(x.t)}">`).join('');
   const vis = visible();
   $('count').textContent = items.length ? (vis.length === items.length ? `${items.length} Muster` : `${vis.length} von ${items.length} Mustern`) : '';
-  $('grid').innerHTML = vis.map(it => `<button class="card" data-id="${it.id}">
+  $('grid').innerHTML = vis.map(it => `<button class="card" data-id="${esc(it.id)}">
     <div class="thumb">${thumbHtml(it)}</div>${it.fav ? '<span class="star">★</span>' : ''}
     <h3>${esc(it.title)}</h3>${it.tags.length ? `<div class="tags">${it.tags.map(t => `<span class="tg">${esc(t)}</span>`).join('')}</div>` : ''}</button>`).join('');
   $('empty').innerHTML = !items.length ? `<p>Noch keine Muster. Lege Bilder, PDFs, Word-, ODT- oder Textdateien ab und ordne sie mit Tags.</p><p class="note">Die Muster bleiben nur auf diesem Gerät. Gekaufte Anleitungen bitte nicht weitergeben.</p><button class="btn" data-a="file">+ Datei</button> <button class="btn" data-a="paste">+ Text einfügen</button>`
@@ -235,7 +239,7 @@ function close() {
   const p = $('prev'); if (p.dataset.url) { URL.revokeObjectURL(p.dataset.url); delete p.dataset.url; } p.innerHTML = '';
   document.body.classList.remove('open'); cur = null; render();
 }
-const saveCur = () => cur && put(cur);
+const saveCur = () => cur && put(cur).catch(() => toast('Speicher voll: Änderung nicht gespeichert'));
 
 function addTag(raw) {
   let changed = false;
@@ -250,29 +254,12 @@ function download(blob, name) {
 const fileName = it => it.name || (it.title.replace(/[^\wäöüÄÖÜß -]+/g, '').trim() || 'muster') + '.txt';
 const blobOf = it => it.kind === 'text' ? new Blob([it.text || ''], { type: 'text/plain;charset=utf-8' }) : new Blob([it.blob], { type: it.mime });
 
-// Sicherung: eine JSON-Datei mit allen Mustern, Dateien als Base64
-const b64 = blob => new Promise(ok => { const r = new FileReader(); r.onload = () => ok(r.result.split(',')[1]); r.readAsDataURL(blob); });
-const unb64 = (s, type) => { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return new Blob([u], { type }); };
-async function exportAll() {
-  if (!items.length) return toast('Noch nichts zu sichern');
-  toast('Sicherung wird erstellt …');
-  const out = [];
-  for (const it of items) { const o = { ...it }; delete o.thumb; if (it.blob) o.blob = await b64(it.blob); out.push(o); }
-  const d = new Date().toISOString().slice(0, 10);
-  download(new Blob([JSON.stringify({ app: 'isadody-muster', v: 1, items: out })], { type: 'application/json' }), `muster-sicherung-${d}.json`);
-}
+// Sicherung: alle Apps samt Sammlung in einer Datei (shared/sicherung.js); Einspielen prüft jedes Feld
+async function exportAll() { toast('Sicherung wird erstellt …'); try { await Sicherung.save(); } catch { toast('Sicherung nicht möglich'); } }
 async function importAll(f) {
-  let data; try { data = JSON.parse(await f.text()); } catch { return toast('Datei ist keine Sicherung'); }
-  if (!data || data.app !== 'isadody-muster' || !Array.isArray(data.items)) return toast('Datei ist keine Muster-Sicherung');
-  let n = 0, same = 0;
-  for (const o of data.items) {
-    if (!o || !o.id || !o.kind) continue;
-    if (items.some(it => it.id === o.id)) { same++; continue; }
-    const it = { tags: [], fav: false, notes: '', title: 'Muster', added: Date.now(), ...o };
-    if (typeof o.blob === 'string') { it.blob = unb64(o.blob, o.mime); if (it.kind === 'image') it.thumb = await thumbOf(it.blob); }
-    await put(it); items.push(it); n++;
-  }
-  persist(); render(); toast(`${n} Muster eingespielt` + (same ? `, ${same} schon vorhanden` : ''));
+  const r = await Sicherung.restore(f);
+  try { items = await all(); } catch {}
+  render(); toast(r.text);
 }
 
 // Text an den Häkelhelfer übergeben: neues Projekt dort, oder das vorhandene mit derselben Anleitung
@@ -301,7 +288,7 @@ function act(a) {
   else if (a === 'openfile') window.open($('prev').dataset.url, '_blank');
   else if (a === 'download') download(blobOf(cur), fileName(cur));
   else if (a === 'delete' && confirm(`„${cur.title}“ wirklich löschen?`)) {
-    const id = cur.id; del(id); items = items.filter(it => it.id !== id);
+    const id = cur.id; del(id).catch(() => toast('Löschen nicht möglich')); items = items.filter(it => it.id !== id);
     if (urls.has(id)) { URL.revokeObjectURL(urls.get(id)); urls.delete(id); }
     history.back(); toast('Gelöscht');
   }
@@ -342,7 +329,8 @@ $('psave').onclick = async () => {
   const text = $('ptext').value; if (!text.trim()) return toast('Bitte Text einfügen');
   const title = $('ptitle').value.trim() || text.trim().split('\n')[0].slice(0, 40);
   const it = { id: uid(), kind: 'text', title, name: '', mime: 'text/plain', size: text.length, text, tags: [], fav: false, notes: '', added: Date.now() };
-  await put(it); items.push(it); persist(); document.body.classList.remove('paste'); render(); show(it.id);
+  try { await put(it); } catch { return toast('Speicher voll: Text nicht gespeichert'); }
+  items.push(it); persist(); document.body.classList.remove('paste'); render(); show(it.id);
 };
 // Dateien auf die Seite ziehen (Computer)
 let dragN = 0;

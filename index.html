@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Isadody Häkel-Apps</title>
 <meta name="theme-color" content="#FBF6EC">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="shared/icon-180.png">
 <link rel="stylesheet" href="shared/isadody.css">
 <style>
   body { padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom); max-width:720px; margin:0 auto; }
@@ -13,13 +15,30 @@
   header p { margin:0; color:var(--ink-soft); font-size:.95rem; }
   #apps { display:grid; gap:14px; padding:16px 0 24px; }
   /* Karte mit angedeuteter Naht wie die Kacheln im Häkelhelfer */
-  .app { position:relative; display:flex; align-items:center; gap:16px; padding:20px 22px; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-card); color:var(--ink); text-decoration:none; }
-  .app::after { content:''; position:absolute; inset:6px; border:3px dashed var(--ink); border-radius:11px; opacity:.18; pointer-events:none; }
-  .app .ic { flex:none; width:56px; height:56px; border-radius:50%; background:var(--coral); display:grid; place-items:center; font-size:1.7rem; }
+  .app { position:relative; display:flex; align-items:center; gap:16px; padding:20px 22px; background:var(--paper-alt); border-radius:16px; box-shadow:var(--shadow-card); color:var(--ink); text-decoration:none; }
+  .app::after { content:''; position:absolute; inset:6px; border:2px dashed var(--ink); border-radius:11px; opacity:.28; pointer-events:none; }
+  .app .ic { flex:none; width:56px; height:56px; border-radius:50%; background:var(--coral); display:grid; place-items:center; }
+  /* Strich-Icons im Stil des Logos: Schwarzbraun, runde Enden */
+  .app .ic svg { width:32px; height:32px; fill:none; stroke:var(--ink); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .app .ic svg .f { fill:var(--ink); stroke:none; }
+  /* Weitermachen: zuletzt benutztes Projekt im Häkelhelfer */
+  #resume { display:none; background:var(--coral-soft); }
+  #resume.on { display:flex; }
+  #resume .k { display:block; font-size:.75rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); }
+  #resume h2 { overflow-wrap:anywhere; }
   .app h2 { font-family:var(--display); font-size:1.35rem; font-weight:700; margin:0; line-height:1.15; }
   .app p { margin:2px 0 0; color:var(--ink-soft); font-size:.95rem; }
   .app.soon { opacity:.55; pointer-events:none; }
   .app.soon .ic { background:var(--coral-soft); }
+  /* Daten sichern */
+  #daten { display:flex; flex-direction:column; gap:10px; padding:16px 18px; margin-bottom:24px; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; }
+  #daten.warn { background:var(--coral-soft); border-color:var(--coral); }
+  #daten h2 { font-family:var(--display); font-size:1.15rem; margin:0; }
+  #daten p { margin:0; color:var(--ink-soft); font-size:.9rem; }
+  #daten #stand { color:var(--ink); font-weight:700; }
+  #daten .row { display:flex; flex-wrap:wrap; gap:8px; }
+  #daten .small { background:var(--paper); border:1px solid var(--line); }
+  #daten .ios[hidden] { display:none; }
   .tag { display:inline-block; margin-left:6px; padding:1px 8px; border-radius:999px; background:var(--paper); border:1px solid var(--line); font-family:var(--body); font-size:.75rem; font-weight:700; color:var(--ink-soft); vertical-align:middle; }
 </style>
 </head>
@@ -30,22 +49,57 @@
 </header>
 <!-- Neue App: Karte hier eintragen; solange sie fehlt, Klasse "soon" und Markierung "bald" -->
 <main id="apps">
+  <a class="app" id="resume" href="anleitung/">
+    <span class="ic" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M12 8l9 8-9 8"/></svg></span>
+    <div><span class="k">Weitermachen</span><h2 id="rname"></h2><p id="rpos"></p></div>
+  </a>
   <a class="app" href="anleitung/">
-    <span class="ic" aria-hidden="true">🧶</span>
+    <span class="ic" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="15" cy="15" r="10"/><path d="M8 8c5 1 10 5 13 12M5.5 12.5c5 1 9.5 5 11.5 11.5M12 5.2c4 1.5 8.5 5.5 11 10.5"/><path d="M8 22c3-6 8-10 14-12"/><path d="M22.5 22c2.5 2.5 5 3.5 7 2.5"/></svg></span>
     <div><h2>Häkelhelfer</h2><p>Anleitung laden, Masche für Masche weiterhäkeln.</p></div>
   </a>
   <a class="app" href="zaehler/">
-    <span class="ic" aria-hidden="true">🔘</span>
+    <span class="ic" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="4" y="4" width="24" height="24" rx="7"/><circle cx="11.5" cy="11.5" r="3.5"/><circle cx="20.5" cy="11.5" r="3.5"/><circle cx="11.5" cy="20.5" r="3.5"/><circle class="f" cx="20.5" cy="20.5" r="3.5"/></svg></span>
     <div><h2>Reihenzähler</h2><p>Reihen zählen zum Draufdrücken, wie ein Pop-it.</p></div>
   </a>
   <a class="app" href="grid/">
-    <span class="ic" aria-hidden="true">🖼️</span>
+    <span class="ic" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="5" y="5" width="22" height="22" rx="3"/><path d="M5 12.3h22M5 19.7h22M12.3 5v22M19.7 5v22"/><path class="f" d="M12.3 12.3h7.4v7.4h-7.4zM5 19.7h7.3V27H8a3 3 0 0 1-3-3zM19.7 5H24a3 3 0 0 1 3 3v4.3h-7.3z"/></svg></span>
     <div><h2>Grid-Ersteller</h2><p>Bild hochladen, Muster für Tapestry-Häkeln erhalten.</p></div>
   </a>
   <a class="app" href="muster/">
-    <span class="ic" aria-hidden="true">📚</span>
+    <span class="ic" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M4 9a2 2 0 0 1 2-2h6l3 3h11a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M4 14h24"/><path d="M11 19h10M11 22.5h6"/></svg></span>
     <div><h2>Mustersammlung</h2><p>Muster als Bild, PDF oder Text ablegen, taggen und finden.</p></div>
   </a>
 </main>
+<section id="daten">
+  <h2>Deine Daten sichern</h2>
+  <p>Projekte, Zähler, Grid und Sammlung liegen nur in diesem Browser. Eine Sicherungsdatei schützt vor Verlust und bringt alles auf ein neues Gerät.</p>
+  <p id="stand"></p>
+  <div class="row"><button class="btn" id="save">Sicherung herunterladen</button><button class="small" id="load">Sicherung einspielen</button></div>
+  <p class="ios" id="ios" hidden>iPhone/iPad: Safari löscht die Daten nach 7 Tagen ohne Nutzung. Füge die Seite über „Teilen“ → „Zum Home-Bildschirm“ hinzu und öffne sie nur noch dort. Die Home-Bildschirm-App startet leer: vorher hier sichern und dort einspielen.</p>
+  <input type="file" id="file" accept=".json,application/json" hidden>
+</section>
+<script src="shared/store.js"></script>
+<script src="shared/projekte.js"></script>
+<script src="shared/muster-db.js"></script>
+<script src="shared/sicherung.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+async function stand() { const s = await Sicherung.status(); $('stand').textContent = s.text; $('daten').classList.toggle('warn', s.warn); }
+$('save').onclick = async () => { $('save').disabled = true; try { await Sicherung.save(); } catch { alert('Sicherung nicht möglich.'); } $('save').disabled = false; stand(); };
+$('load').onclick = () => $('file').click();
+$('file').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; const r = await Sicherung.restore(f); alert(r.text); stand(); };
+// Hinweis nur in Safari auf iPhone/iPad, nicht in der Home-Bildschirm-App
+const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+$('ios').hidden = !ios || navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+stand();
+// Zuletzt benutztes Projekt des Häkelhelfers oben anbieten
+const last = Projekte.all().sort((a, b) => b.used - a.used)[0];
+if (last) {
+  document.getElementById('rname').textContent = last.name;
+  document.getElementById('rpos').textContent = `Häkelhelfer · Reihe ${((last.pos && last.pos.r) || 0) + 1}`;
+  const r = document.getElementById('resume'); r.classList.add('on');
+  r.onclick = () => Projekte.setCurrent(last.id);
+}
+</script>
 </body>
 </html>

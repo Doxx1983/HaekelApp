@@ -5,8 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Isadody Reihenzähler</title>
 <meta name="theme-color" content="#FBF6EC">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../shared/icon-180.png">
 <link rel="stylesheet" href="../shared/isadody.css">
 <script src="../shared/store.js"></script>
+<script src="../shared/projekte.js"></script>
 <style>
   html,body { height:100%; }
   body { display:flex; flex-direction:column; padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom); }
@@ -51,7 +54,7 @@
   .opts { display:flex; flex-wrap:wrap; gap:8px; }
   .opts button { background:var(--paper); border:1px solid var(--line); border-radius:999px; padding:8px 14px; font-weight:700; min-width:48px; }
   .opts button.on { border-color:var(--ink); background:var(--coral-soft); }
-  .card input { font:inherit; padding:10px 12px; border-radius:12px; border:1px solid var(--line); background:#fff; color:var(--ink); width:100%; }
+  .card input { font:inherit; padding:10px 12px; border-radius:12px; border:var(--field-border); background:#fff; color:var(--ink); width:100%; }
   .card label { display:flex; align-items:center; gap:10px; font-weight:700; }
   .card label input { width:auto; }
   .ghost { padding:12px; border-radius:999px; background:var(--paper); border:1px solid var(--line); font-weight:700; }
@@ -66,6 +69,11 @@
 <main id="wrap"><div id="board"></div></main>
 <div id="nav"><button id="minus">− 1</button><button id="plus">Reihe fertig</button></div>
 <section id="setup">
+  <div class="card">
+    <h2>Zähler für</h2>
+    <p>Jedes Projekt aus dem Häkelhelfer hat einen eigenen Zähler. Der freie Zähler gehört zu keinem Projekt.</p>
+    <div class="opts" id="whom"></div>
+  </div>
   <div class="card">
     <h2>Blasen pro Platte</h2>
     <p>Jede Blase ist eine Reihe. Ist die Platte voll, dreht sie sich um und es geht von vorn los.</p>
@@ -88,20 +96,42 @@
 </section>
 <script>
 const SIZES = [6, 8, 10, 12, 16, 20, 24, 30];
-const TONES = ['#F2896B', '#F6A488', '#F8BBA3', '#FBD9CB', '#EFC9A6', '#E3B98F']; // Coral-Verlauf statt Regenbogen (CD)
+const TONES = ['#F2896B', '#F6A488', '#F8BBA3', '#F3B48F', '#EFC9A6', '#E3B98F']; // Coral-Verlauf statt Regenbogen (CD)
 const store = Store('zaehler');
 const $ = id => document.getElementById(id);
 
-// Zustand: n Blasen pro Platte, flips = volle Platten, popped = gedrückte Blasen in Reihenfolge
-let s = { n:10, flips:0, popped:[], target:0, sound:true, buzz:true };
-s = { ...s, ...store.get('state', {}) };
-const save = () => store.set('state', s);
+// Zähler: „frei“ plus je einer pro Projekt des Häkelhelfers (Schlüssel = Projekt-id), gespeichert unter zaehler.counters.
+// Je Zähler: n Blasen pro Platte, flips = volle Platten, popped = gedrückte Blasen in Reihenfolge, target, used.
+// Ton und Vibration gelten für alle (zaehler.prefs).
+const FRESH = () => ({ n:10, flips:0, popped:[], target:0, used:0 });
+let counters = store.get('counters', null), cur = store.get('current', 'frei');
+let prefs = { sound:true, buzz:true, ...store.get('prefs', {}) };
+if (!counters) { // einmalig: der bisherige einzelne Zähler wird der freie Zähler
+  const old = store.get('state', null);
+  counters = { frei: old ? { ...FRESH(), n: old.n, flips: old.flips, popped: old.popped, target: old.target } : FRESH() };
+  if (old) prefs = { sound: old.sound !== false, buzz: old.buzz !== false };
+  store.set('counters', counters); store.set('prefs', prefs);
+}
+const projects = () => Projekte.all().sort((a, b) => b.used - a.used);
+const nameOf = id => id === 'frei' ? 'Freier Zähler' : (Projekte.all().find(p => p.id === id) || {}).name || 'Projekt';
+// Zähler gelöschter Projekte aufräumen; ?p=<id> aus dem Häkelhelfer wählt den Zähler des Projekts
+function pick(id) {
+  const ids = new Set(Projekte.all().map(p => p.id));
+  for (const k of Object.keys(counters)) if (k !== 'frei' && !ids.has(k)) delete counters[k];
+  if (!counters.frei) counters.frei = FRESH();
+  cur = id === 'frei' || ids.has(id) ? id : 'frei';
+  if (!counters[cur]) counters[cur] = FRESH();
+  s = counters[cur]; store.set('current', cur); store.set('counters', counters);
+}
+let s;
+{ const q = new URLSearchParams(location.search).get('p'); pick(q || cur); if (q) history.replaceState(null, '', location.pathname); }
+const save = () => { s.used = Date.now(); counters[cur] = s; store.set('counters', counters); };
 const total = () => s.flips * s.n + s.popped.length;
 
 let ac;
 function feedback(down) {
-  if (s.buzz && navigator.vibrate) navigator.vibrate(down ? 12 : [6, 30, 6]);
-  if (!s.sound) return;
+  if (prefs.buzz && navigator.vibrate) navigator.vibrate(down ? 12 : [6, 30, 6]);
+  if (!prefs.sound) return;
   try {
     ac = ac || new (window.AudioContext || window.webkitAudioContext)();
     const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
@@ -151,7 +181,7 @@ function render() {
   });
   const t = total();
   $('count').textContent = 'Reihe ' + t;
-  const parts = [`Platte ${s.flips + 1} · ${s.popped.length}/${s.n}`];
+  const parts = [nameOf(cur), `Platte ${s.flips + 1} · ${s.popped.length}/${s.n}`];
   if (s.target) parts.push(t >= s.target ? 'Ziel erreicht' : `noch ${s.target - t}`);
   $('sub').textContent = parts.join(' · ');
   document.body.classList.toggle('target', !!s.target);
@@ -194,8 +224,8 @@ function flip() {
 
 // Tipp auf Blase i: Stand = Nummer dieser Blase (alle davor gedrückt); Tipp auf gedrückte Blase: Stand = Blase davor
 function jump(k) {
-  if (flipping || k === s.popped.length) return;
-  const down = k > s.popped.length;
+  if (flipping || (s.popped.length === k && s.popped.every(x => x < k))) return;
+  const down = k > Math.max(-1, ...s.popped);
   s.popped = [...Array(k).keys()]; save(); feedback(down);
   const d = $('board').children[down ? k - 1 : k];
   if (down) { d.classList.remove('pop'); void d.offsetWidth; d.classList.add('pop'); }
@@ -212,12 +242,19 @@ $('minus').onclick = () => unpop();
 
 // Einstellungen
 function setTotal(t) { t = Math.max(0, Math.floor(t) || 0); s.flips = Math.floor(t / s.n); s.popped = [...Array(t % s.n).keys()]; }
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 function openSetup() {
+  $('whom').innerHTML = ['frei', ...projects().map(p => p.id)].map(id => `<button data-id="${esc(id)}" class="${id === cur ? 'on' : ''}">${esc(nameOf(id))}</button>`).join('');
   $('sizes').innerHTML = SIZES.map(n => `<button data-n="${n}" class="${n === s.n ? 'on' : ''}">${n}</button>`).join('');
   $('target').value = s.target || ''; $('set').value = total(); zeroOk = false;
-  $('sound').checked = s.sound; $('buzz').checked = s.buzz;
+  $('sound').checked = prefs.sound; $('buzz').checked = prefs.buzz;
   document.body.classList.add('setup');
 }
+// Anderen Zähler wählen: sofort wechseln, die Felder zeigen dann dessen Stand
+$('whom').onclick = e => {
+  const b = e.target.closest('[data-id]'); if (!b || b.dataset.id === cur) return;
+  pick(b.dataset.id); openSetup(); build();
+};
 $('sizes').onclick = e => {
   const b = e.target.closest('button'); if (!b) return;
   [...$('sizes').children].forEach(x => x.classList.toggle('on', x === b));
@@ -229,7 +266,7 @@ $('ok').onclick = () => {
   const on = $('sizes').querySelector('.on');
   s.n = on ? +on.dataset.n : s.n;
   s.target = Math.max(0, parseInt($('target').value) || 0);
-  s.sound = $('sound').checked; s.buzz = $('buzz').checked;
+  prefs = { sound: $('sound').checked, buzz: $('buzz').checked }; store.set('prefs', prefs);
   // Leeres Feld = Stand bleibt; 0 nur nach Rückfrage (oder über „Auf 0 zurücksetzen“)
   const v = $('set').value.trim(), t = total();
   if (v !== '' && +v !== t) {
@@ -241,6 +278,12 @@ $('ok').onclick = () => {
 };
 
 addEventListener('resize', () => { layout(); render(); });
+// Stand aus einem anderen Tab übernehmen
+addEventListener('storage', e => {
+  if (e.key !== 'zaehler.counters' || flipping) return;
+  const c = store.get('counters', null); if (!c) return;
+  counters = c; pick(cur); if (!document.body.classList.contains('setup')) build();
+});
 build();
 </script>
 </body>
