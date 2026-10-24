@@ -27,6 +27,9 @@
     background:radial-gradient(circle at 35% 30%, #FFF4EE 0 8%, var(--tone) 38%, color-mix(in srgb, var(--tone), var(--ink) 18%) 100%);
     box-shadow:0 4px 0 color-mix(in srgb, var(--tone), var(--ink) 30%), 0 6px 10px rgba(34,32,27,.18);
     transform:translateY(-2px); transition:transform .09s, box-shadow .09s, background .09s; }
+  /* Reihennummer auf der Blase */
+  .b { display:flex; align-items:center; justify-content:center; font-family:var(--display); font-weight:700; font-size:calc(var(--size) * .36); line-height:1; color:var(--ink); }
+  .b.on { color:var(--ink-soft); }
   .b:active { transform:translateY(1px) scale(.96); }
   /* Gedrückt: Blase nach innen gewölbt */
   .b.on { transform:translateY(2px) scale(.94);
@@ -131,7 +134,7 @@ function build() {
   const b = $('board'); b.innerHTML = '';
   for (let i = 0; i < s.n; i++) {
     const d = document.createElement('button');
-    d.className = 'b'; d.dataset.i = i; d.setAttribute('aria-label', 'Blase ' + (i + 1));
+    d.className = 'b'; d.dataset.i = i;
     b.appendChild(d);
   }
   layout(); render();
@@ -142,6 +145,8 @@ function render() {
   [...$('board').children].forEach((d, i) => {
     d.style.setProperty('--tone', TONES[Math.floor(i / cols) % TONES.length]);
     d.classList.toggle('on', s.popped.includes(i));
+    const nr = s.flips * s.n + i + 1;
+    d.textContent = nr; d.setAttribute('aria-label', 'Reihe ' + nr);
   });
   const t = total();
   $('count').textContent = 'Reihe ' + t;
