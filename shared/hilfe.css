@@ -1,0 +1,17 @@
+/* Hilfeseiten der Apps (<app>/hilfe/), zusätzlich zu isadody.css */
+body { padding:env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 32px); max-width:720px; margin:0 auto; line-height:1.5; }
+header { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 0 4px; }
+header .title { display:flex; align-items:center; gap:12px; min-width:0; }
+h1 { font-family:var(--display); font-size:1.6rem; font-weight:700; margin:0; line-height:1.1; }
+header p { margin:0; color:var(--ink-soft); font-size:.9rem; }
+nav.toc { display:flex; flex-wrap:wrap; gap:6px; padding:12px 0 4px; }
+nav.toc a { background:var(--paper-alt); border:1px solid var(--line); border-radius:999px; padding:4px 12px; font-size:.85rem; font-weight:700; color:var(--ink); text-decoration:none; }
+section { background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-card); padding:14px 16px; margin:14px 0; scroll-margin-top:12px; }
+h2 { font-family:var(--display); font-size:1.25rem; font-weight:700; margin:0 0 6px; line-height:1.2; }
+h3 { font-family:var(--display); font-size:1.05rem; font-weight:700; margin:12px 0 2px; }
+p, ul, ol { margin:6px 0; } ul, ol { padding-left:1.3em; } li { margin:3px 0; }
+code { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.9em; background:var(--paper); border:1px solid var(--line); border-radius:6px; padding:0 4px; white-space:nowrap; }
+pre { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.9rem; background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin:8px 0; white-space:pre-wrap; overflow-wrap:anywhere; }
+.k { display:inline-block; background:var(--paper); border:1px solid var(--line); border-radius:999px; padding:0 10px; font-weight:700; font-size:.9em; white-space:nowrap; }
+.note { color:var(--ink-soft); font-size:.9rem; }
+.back { display:block; text-align:center; text-decoration:none; margin-top:18px; }

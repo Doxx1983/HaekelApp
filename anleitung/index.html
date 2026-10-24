@@ -67,15 +67,11 @@
 <body>
 <header>
   <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><div id="row">–</div><div id="pos"></div></div></div>
-  <div class="actions"><a class="home" href="../">‹ Alle Apps</a><button class="small" id="menu">Anleitung laden</button></div>
+  <div class="actions"><a class="home" href="../">‹ Alle Apps</a><div class="tools"><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a><button class="small" id="menu">Anleitung laden</button></div></div>
 </header>
 <main id="chips"></main>
 <div id="nav"><button id="back">‹ Zurück</button><button id="next">Weiter ›</button></div>
 <section id="setup">
-  <p>Häkelanleitung aus der Sammlung wählen, als Datei laden (Text, Word, ODT) oder hier einfügen. Beispiel:<br>
-  <code>R1: 6 fM in Fadenring<br>R2: 6 Zun<br>R3: (fM, Zun) x 6</code><br>
-  Englisch: <code>Row 1: Use color A, bs, 254sc, bs</code><br>
-  Farben (A, B, …) unten festlegen – die Maschen erscheinen dann in dieser Farbe.</p>
   <div id="lib" hidden>
     <div class="head">Aus der Sammlung<a href="../muster/">Sammlung öffnen ›</a></div>
     <input id="libq" type="search" placeholder="Suchen: Name, Tag, Text">
@@ -86,7 +82,7 @@
   <button id="pick" type="button">Externe Datei laden</button>
   <input type="file" id="file" hidden>
   <div id="colors"></div>
-  <textarea id="text" placeholder="R1: 6 fM in Fadenring"></textarea>
+  <textarea id="text" placeholder="Anleitung hier einfügen"></textarea>
   <div class="row"><button id="ok">Starten</button></div>
 </section>
 <script>

@@ -16,3 +16,7 @@ button { font:inherit; border:0; cursor:pointer; color:var(--ink); }
 /* Link zurück zur Startseite der Sammlung */
 .home { color:var(--ink-soft); font-size:.85rem; font-weight:700; text-decoration:none; white-space:nowrap; }
 .home:hover { color:var(--ink); }
+/* Hilfeknopf im Kopf jeder App, führt zu hilfe/ im App-Ordner */
+.help { display:inline-grid; place-items:center; width:34px; height:34px; padding:0; border-radius:50%; background:var(--paper-alt); border:1px solid var(--line); color:var(--ink); font-family:var(--display); font-size:1.1rem; font-weight:700; text-decoration:none; flex:none; }
+.help:hover { border-color:var(--ink); }
+.tools { display:flex; align-items:center; gap:8px; }

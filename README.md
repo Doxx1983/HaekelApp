@@ -8,9 +8,11 @@ Sammlung kleiner Web-Apps fürs Häkeln. Die Startseite (`/index.html`) verlinkt
 | `zaehler/` | Reihenzähler im Pop-it-Stil |
 | `grid/` | Grid-Ersteller: Bild → Tapestry-Muster |
 | `muster/` | Mustersammlung: Bilder, PDFs, Word, Texte ablegen, taggen, suchen |
-| `shared/` | gemeinsam: `isadody.css` (CD-Tokens, Schriften, Grundstil, `.logo`, `.small`, `.btn`, `.home`), `store.js` (`Store('<app>')` speichert unter `<app>.<key>`), `muster-db.js` (Zugriff auf die Sammlung), `doctext.js` (Dateiformate, Text aus .docx/.odt), `logo.png` |
+| `shared/` | gemeinsam: `isadody.css` (CD-Tokens, Schriften, Grundstil, `.logo`, `.small`, `.btn`, `.home`), `store.js` (`Store('<app>')` speichert unter `<app>.<key>`), `muster-db.js` (Zugriff auf die Sammlung), `doctext.js` (Dateiformate, Text aus .docx/.odt), `hilfe.css` (Hilfeseiten), `logo.png` |
 
-Neue App: eigener Ordner mit `index.html`, bindet `../shared/isadody.css` und `../shared/store.js` ein, Logo `../shared/logo.png`, Link `<a class="home" href="../">‹ Alle Apps</a>`, Karte auf der Startseite eintragen. Kein Build.
+Hilfe: jede App hat `hilfe/index.html` (bindet `../../shared/isadody.css` und `../../shared/hilfe.css` ein, Link „‹ Zur App“) und im Kopf einen runden Knopf `<a class="help" href="hilfe/">?</a>` (in `.tools` neben dem Kopfknopf). Neue Funktion = Hilfeseite mitpflegen.
+
+Neue App: eigener Ordner mit `index.html`, bindet `../shared/isadody.css` und `../shared/store.js` ein, Logo `../shared/logo.png`, Link `<a class="home" href="../">‹ Alle Apps</a>`, Karte auf der Startseite eintragen, Hilfeseite anlegen. Kein Build.
 
 ## Mustersammlung (`muster/`)
 
