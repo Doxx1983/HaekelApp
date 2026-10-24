@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Isadody Häkelhelfer</title>
+<meta name="theme-color" content="#FBF6EC">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="../shared/isadody.css">
+<script src="../shared/store.js"></script>
+<style>
+  html,body { height:100%; }
+  body { display:flex; flex-direction:column; padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom); }
+  header { display:flex; justify-content:space-between; align-items:center; padding:10px 0; }
+  .title { display:flex; align-items:center; gap:12px; }
+  #row { font-family:var(--display); font-size:1.6rem; font-weight:700; color:var(--ink); }
+  #pos { font-size:.9rem; color:var(--ink-soft); }
+  .actions { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+  #chips { flex:1; display:flex; flex-wrap:wrap; justify-content:center; align-content:center; gap:10px; min-height:0; }
+  .chip { flex:0 0 calc(25% - 8px); height:calc(50% - 5px); max-height:220px; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-card); display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--display); font-size:clamp(1.6rem,7vw,3.2rem); font-weight:700; }
+  /* Angedeutete Naht: gestrichelte Maschenreihe innen am Rand */
+  .chip { position:relative; }
+  .st { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+  .st rect { x:6px; y:6px; width:calc(100% - 12px); height:calc(100% - 12px); rx:11px; fill:none; stroke:currentColor; stroke-width:3; stroke-linecap:round; opacity:.8; }
+  .chip.fade { opacity:.3; }
+  .chip { cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; }
+  .chip.count span { color:var(--coral); }
+  #nav { display:flex; gap:10px; padding:12px 0; align-items:stretch; }
+  #back { flex:0 0 22%; background:var(--paper-alt); border:1px solid var(--line); color:var(--ink); border-radius:999px; font-size:1.1rem; font-weight:700; }
+  #next { flex:1; background:var(--coral); color:var(--ink); border-radius:999px; box-shadow:var(--shadow-soft); font-family:var(--display); font-size:1.9rem; font-weight:700; padding:22px 0; }
+  #setup { display:none; flex:1; flex-direction:column; gap:10px; }
+  #setup textarea { flex:1; font:inherit; padding:10px; border-radius:10px; border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:16px; }
+  #setup .row { display:flex; gap:10px; }
+  #setup button { flex:1; padding:14px; border-radius:999px; background:var(--coral); color:var(--ink); font-weight:800; }
+  #colors { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  #colors button { flex:0 0 auto; padding:8px 14px; white-space:nowrap; background:var(--paper-alt); color:var(--ink); border:1px solid var(--line); border-radius:999px; font-weight:700; display:flex; align-items:center; gap:6px; }
+  #colors button.on { border-color:var(--ink); }
+  #colors .sw i { width:18px; height:18px; border-radius:50%; border:1px solid var(--ink-soft); display:inline-block; }
+  #colors .ed { flex:1 0 100%; display:flex; flex-direction:column; gap:8px; background:var(--paper-alt); padding:12px; border-radius:16px; }
+  #colors .pal { display:flex; flex-wrap:wrap; gap:8px; }
+  #colors .pal button { width:34px; height:34px; padding:0; border-radius:50%; border:1px solid var(--ink-soft); }
+  #colors .ed label { display:flex; align-items:center; gap:8px; font-size:.85rem; } #colors .ed label input { flex:1; }
+  #colors .hexrow { display:flex; gap:8px; align-items:center; } #colors .prev { width:34px; height:34px; border-radius:50%; border:1px solid var(--ink-soft); }
+  #colors input:not([type=range]) { font:inherit; padding:8px 10px; border-radius:12px; border:1px solid var(--line); background:#fff; color:var(--ink); min-width:0; flex:1; }
+  #row .dot { display:inline-block; width:.9em; height:.9em; border-radius:50%; vertical-align:middle; margin-left:6px; border:1px solid var(--ink-soft); }
+  body.setup #setup { display:flex; } body.setup #chips, body.setup #nav { display:none; }
+</style>
+</head>
+<body>
+<header>
+  <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><div id="row">–</div><div id="pos"></div></div></div>
+  <div class="actions"><a class="home" href="../">‹ Alle Apps</a><button class="small" id="menu">Anleitung laden</button></div>
+</header>
+<main id="chips"></main>
+<div id="nav"><button id="back">‹ Zurück</button><button id="next">Weiter ›</button></div>
+<section id="setup">
+  <p>Häkelanleitung als Textdatei laden oder hier einfügen. Beispiel:<br>
+  <code>R1: 6 fM in Fadenring<br>R2: 6 Zun<br>R3: (fM, Zun) x 6</code><br>
+  Englisch: <code>Row 1: Use color A, bs, 254sc, bs</code><br>
+  Farben (A, B, …) unten festlegen – die Maschen erscheinen dann in dieser Farbe.</p>
+  <div id="colors"></div>
+  <textarea id="text" placeholder="R1: 6 fM in Fadenring"></textarea>
+  <div class="row"><input type="file" id="file" accept=".txt,text/plain"><button id="ok">Starten</button></div>
+</section>
+<script>
+const MAX_CHIPS = 8, SINGLE_MAX = 3; // Folgen bis 3 Maschen einzeln, ab 4 als ein Kürzel mit Anzahl
+
+function splitTop(s) {
+  const out = []; let d = 0, cur = '';
+  for (const c of s) {
+    if (c === '(') d++; if (c === ')') d--;
+    if (c === ',' && d === 0) { out.push(cur); cur = ''; } else cur += c;
+  }
+  out.push(cur); return out.map(x => x.trim()).filter(Boolean);
+}
+
+const COLOR_RE = /^(?:(?:use|wechsel\w*|nimm|change)\s+)?(?:(?:to|zu)\s+)?(?:farbe|colou?r)\s+([\p{L}\d]+)/iu;
+
+// ctx.color = aktuelle Garnfarbe; Farbwechsel mitten in der Reihe wirken ab dieser Stelle
+function expand(s, ctx) {
+  const res = [];
+  for (let part of splitTop(s)) {
+    let c = part.match(COLOR_RE);
+    if (c) { ctx.color = c[1].toUpperCase(); part = part.slice(c[0].length).replace(/^[\s:;–-]+/, ''); if (!part) continue; }
+    let m = part.match(/^\((.*)\)\s*(?:[x×*]\s*(\d+)|(\d+)\s*[x×*])$/i);
+    if (m) { const n = +(m[2] || m[3]); for (let i = 0; i < n; i++) res.push(...expand(m[1], ctx)); continue; }
+    m = part.match(/^(?:(\d+)\s*)?([A-Za-zÄÖÜäöüß]+)/);
+    if (!m) continue;
+    for (let i = 0; i < (+m[1] || 1); i++) res.push({ s: m[2], c: ctx.color });
+  }
+  return res;
+}
+
+function chipsOf(stitches) {
+  const chips = [], same = (a, b) => a.s === b.s && a.c === b.c;
+  for (let i = 0; i < stitches.length;) {
+    let j = i; while (j < stitches.length && same(stitches[j], stitches[i])) j++;
+    const n = j - i;
+    if (n <= SINGLE_MAX) for (let k = 0; k < n; k++) chips.push({ ...stitches[i], n: 1 });
+    else chips.push({ ...stitches[i], n });
+    i = j;
+  }
+  return chips;
+}
+
+function parse(text) {
+  const rows = [], ctx = { color: '' };
+  for (const line of text.split(/\r?\n/)) {
+    if (!line.trim()) continue;
+    const m = line.match(/^\s*(?:R|Row|Reihe|Runde|Round|Rnd|Rd)\.?\s*(\d+)\s*[:.\-–]?\s*(.*)$/i);
+    const label = m ? m[1] : String(rows.length + 1);
+    const chips = chipsOf(expand(m ? m[2] : line, ctx)), pages = [];
+    for (let i = 0; i < chips.length; i += MAX_CHIPS) pages.push(chips.slice(i, i + MAX_CHIPS));
+    if (pages.length) rows.push({ label, pages });
+  }
+  return rows;
+}
+
+const SEAM = '<svg class="st" aria-hidden="true"><rect/></svg>';
+// Nahtstriche: ganze Anzahl Striche pro Umfang, damit Ecken und Anschluss gleichmäßig sind
+function fitSeams() {
+  document.querySelectorAll('.st rect').forEach(r => {
+    try {
+      const L = r.getTotalLength(); if (!L) return;
+      const u = L / Math.max(8, Math.round(L / 15));
+      r.style.strokeDasharray = `${u * 0.5} ${u * 0.5}`;
+      r.style.strokeDashoffset = u * 0.25;
+    } catch {}
+  });
+}
+addEventListener('resize', fitSeams);
+
+const store = Store('anleitung');
+store.migrate(['pattern', 'pos', 'done', 'colors']); // Daten aus der Zeit vor der App-Sammlung
+
+const DEFAULT_COLORS = { A: '#e53935', B: '#1e88e5' };
+let colors = DEFAULT_COLORS;
+colors = { ...DEFAULT_COLORS, ...store.get('colors', {}) };
+const saveColors = () => store.set('colors', colors);
+const textOn = hex => { const n = parseInt(hex.slice(1), 16);
+  return (0.299 * (n >> 16) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) > 150 ? '#222' : '#fff'; };
+const colorKeysIn = t => [...t.matchAll(/(?:farbe|colou?r)\s+([\p{L}\d]+)/giu)].map(m => m[1].toUpperCase());
+
+const PRESETS = ['#E53935','#F2896B','#F5C84C','#FFEB3B','#8FC9A9','#43A047','#1B5E20','#8CB4D9','#1E88E5','#0D47A1','#8E24AA','#F48FB1','#D81B60','#795548','#BCAAA4','#FFFFFF','#BDBDBD','#616161','#22201B'];
+const hexOk = h => /^#[0-9a-f]{6}$/i.test(h);
+function hexToHsl(hex) {
+  const n = parseInt(hex.slice(1), 16), r = (n >> 16) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+  let h = 0, s = 0;
+  if (d) { s = d / (1 - Math.abs(2 * l - 1)); h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h = (h * 60 + 360) % 360; }
+  return [Math.round(h), Math.round(s * 100), Math.round(l * 100)];
+}
+function hslToHex(h, s, l) {
+  s /= 100; l /= 100;
+  const f = n => { const k = (n + h / 30) % 12, a = s * Math.min(l, 1 - l); return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))); };
+  return '#' + [f(0), f(8), f(4)].map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
+// Eigene Farbauswahl (Paletten, Regler, Hex) – <input type=color> geht in installierten Apps nicht überall
+let editing = null;
+function renderColorPickers() {
+  const keys = [...new Set([...Object.keys(colors), ...colorKeysIn($('text').value)])].sort();
+  const box = $('colors'); box.innerHTML = '';
+  const setColor = (k, hex) => { colors[k] = hex.toUpperCase(); saveColors(); };
+  for (const k of keys) {
+    const b = document.createElement('button');
+    b.className = 'sw' + (k === editing ? ' on' : '');
+    b.innerHTML = `<i style="background:${colors[k] || 'transparent'}"></i>${k}`;
+    b.onclick = () => { editing = editing === k ? null : k; renderColorPickers(); };
+    box.append(b);
+  }
+  const add = document.createElement('button'); add.textContent = '+ Farbe';
+  add.onclick = () => { editing = '+'; renderColorPickers(); };
+  box.append(add);
+  if (!editing) return;
+
+  const ed = document.createElement('div'); ed.className = 'ed';
+  let key = editing;
+  if (editing === '+') {
+    const n = document.createElement('input'); n.placeholder = 'Name, z. B. C'; n.maxLength = 12;
+    const ok = document.createElement('button'); ok.textContent = 'Anlegen';
+    ok.onclick = () => { const v = n.value.trim().toUpperCase(); if (v) { colors[v] = colors[v] || '#888888'; saveColors(); editing = v; renderColorPickers(); } };
+    ed.append(n, ok); box.append(ed); return;
+  }
+  const cur = colors[key] || '#888888';
+  const pal = document.createElement('div'); pal.className = 'pal';
+  for (const p of PRESETS) {
+    const c = document.createElement('button'); c.style.background = p; c.setAttribute('aria-label', p);
+    c.onclick = () => { setColor(key, p); renderColorPickers(); };
+    pal.append(c);
+  }
+  const [h, s, l] = hexToHsl(cur);
+  const hex = document.createElement('input'); hex.value = cur.toUpperCase(); hex.maxLength = 7; hex.className = 'hex';
+  const sliders = [['Farbton', 360, h, v => hslToHex(v, S.value, L.value)], ['Sättigung', 100, s, v => hslToHex(H.value, v, L.value)], ['Helligkeit', 100, l, v => hslToHex(H.value, S.value, v)]]
+    .map(([name, max, val, f], i) => {
+      const w = document.createElement('label'), r = document.createElement('input');
+      r.type = 'range'; r.min = 0; r.max = max; r.value = val;
+      r.oninput = () => { const x = hslToHex(+H.value, +S.value, +L.value); setColor(key, x); hex.value = x; prev.style.background = x; box.querySelector('.sw.on i').style.background = x; };
+      w.append(name, r); return [w, r];
+    });
+  const [H, S, L] = sliders.map(x => x[1]);
+  const prev = document.createElement('i'); prev.className = 'prev'; prev.style.background = cur;
+  hex.oninput = () => {
+    let v = hex.value.trim(); if (v && v[0] !== '#') v = '#' + v;
+    if (!hexOk(v)) return;
+    setColor(key, v); prev.style.background = v; box.querySelector('.sw.on i').style.background = v;
+    [H.value, S.value, L.value] = hexToHsl(v);
+  };
+  const row = document.createElement('div'); row.className = 'hexrow'; row.append(prev, hex);
+  ed.append(pal, ...sliders.map(x => x[0]), row);
+  box.append(ed);
+}
+
+const $ = id => document.getElementById(id);
+let rows = [], r = 0, p = 0;
+let done = {}; // Reihe -> Anzahl abgeschlossener Kacheln
+const save = () => { store.set('pos', { r, p }); store.set('done', done); };
+
+function render() {
+  if (!rows.length) { document.body.classList.add('setup'); return; }
+  document.body.classList.remove('setup');
+  const row = rows[r], page = row.pages[p];
+  const used = [...new Set(page.map(c => c.c).filter(k => colors[k]))];
+  $('row').innerHTML = `Reihe ${row.label}` + used.map(k => `<span class="dot" style="background:${colors[k]}" title="Farbe ${k}"></span>`).join('');
+  $('pos').textContent = `Seite ${p + 1}/${row.pages.length} · ${r + 1}/${rows.length}`;
+  const d = done[r] || 0;
+  $('chips').innerHTML = page.map((c, i) => {
+    const col = colors[c.c], fade = p * MAX_CHIPS + i < d ? ' fade' : '', st = col ? ` style="background:${col};color:${textOn(col)}"` : '';
+    return c.n > 1 ? `<div class="chip count${fade}" data-i="${i}"${st}><span${col ? ' style="color:inherit"' : ''}>${c.n}×</span>${c.s}${SEAM}</div>` : `<div class="chip${fade}" data-i="${i}"${st}>${c.s}${SEAM}</div>`;
+  }).join('');
+  fitSeams();
+  $('back').disabled = r === 0 && p === 0;
+  const last = r === rows.length - 1 && p === row.pages.length - 1;
+  $('next').textContent = last ? 'Fertig ✓' : 'Weiter ›';
+  $('next').disabled = last;
+  save();
+}
+
+$('chips').onclick = e => {
+  const el = e.target.closest('.chip'); if (!el) return;
+  const g = p * MAX_CHIPS + +el.dataset.i;
+  if (g < (done[r] || 0)) { if (!confirm('Fortschritt hier zurücksetzen? Dieser und alle folgenden Schritte werden wieder aktiv.')) return; done[r] = g; }
+  else done[r] = g + 1;
+  render();
+};
+$('next').onclick = () => { if (p < rows[r].pages.length - 1) p++; else if (r < rows.length - 1) { r++; p = 0; } render(); };
+$('back').onclick = () => { if (p > 0) p--; else if (r > 0) { r--; p = rows[r].pages.length - 1; } render(); };
+$('menu').onclick = () => { renderColorPickers(); document.body.classList.add('setup'); };
+$('text').oninput = renderColorPickers;
+$('file').onchange = async e => { const f = e.target.files[0]; if (f) { $('text').value = await f.text(); renderColorPickers(); } };
+$('ok').onclick = () => {
+  const old = store.get('pattern', '');
+  rows = parse($('text').value);
+  if (old !== $('text').value) { r = p = 0; done = {}; }
+  store.set('pattern', $('text').value);
+  render();
+};
+
+{
+  const t = store.get('pattern', '');
+  if (t) { $('text').value = t; rows = parse(t); done = store.get('done', {});
+    const s = store.get('pos', {});
+    if (rows[s.r] && rows[s.r].pages[s.p]) { r = s.r; p = s.p; } }
+}
+renderColorPickers();
+render();
+</script>
+</body>
+</html>
