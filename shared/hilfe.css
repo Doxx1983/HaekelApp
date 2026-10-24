@@ -10,7 +10,7 @@ section { background:var(--paper-alt); border:1px solid var(--line); border-radi
 h2 { font-family:var(--display); font-size:1.25rem; font-weight:700; margin:0 0 6px; line-height:1.2; }
 h3 { font-family:var(--display); font-size:1.05rem; font-weight:700; margin:12px 0 2px; }
 p, ul, ol { margin:6px 0; } ul, ol { padding-left:1.3em; } li { margin:3px 0; }
-code { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.9em; background:var(--paper); border:1px solid var(--line); border-radius:6px; padding:0 4px; white-space:nowrap; }
+code { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.9em; background:var(--paper); border:1px solid var(--line); border-radius:6px; padding:0 4px; overflow-wrap:anywhere; }
 pre { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.9rem; background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin:8px 0; white-space:pre-wrap; overflow-wrap:anywhere; }
 .k { display:inline-block; background:var(--paper); border:1px solid var(--line); border-radius:999px; padding:0 10px; font-weight:700; font-size:.9em; white-space:nowrap; }
 .note { color:var(--ink-soft); font-size:.9rem; }

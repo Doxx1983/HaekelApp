@@ -35,6 +35,7 @@
   .chip.fade { opacity:.3; }
   .chip { cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; }
   .chip.count span { color:var(--coral); }
+  #tip { margin:0; text-align:center; color:var(--ink-soft); font-size:.95rem; }
   #nav { display:flex; gap:10px; padding:12px 0; align-items:stretch; }
   #back { flex:0 0 22%; background:var(--paper-alt); border:1px solid var(--line); color:var(--ink); border-radius:999px; font-size:1.1rem; font-weight:700; }
   #next { flex:1; background:var(--coral); color:var(--ink); border-radius:999px; box-shadow:var(--shadow-soft); font-family:var(--display); font-size:1.9rem; font-weight:700; padding:22px 0; }
@@ -97,7 +98,7 @@
   #abbr { display:flex; flex-wrap:wrap; justify-content:center; gap:4px 14px; padding-top:10px; font-size:.85rem; color:var(--ink-soft); }
   #abbr a, #abbr span { color:inherit; text-decoration:none; min-height:24px; display:inline-flex; align-items:center; gap:4px; }
   #abbr b { color:var(--ink); }
-  body.setup #setup { display:flex; } body.setup #chips, body.setup #nav, body.setup #note, body.setup #abbr { display:none; }
+  body.setup #setup { display:flex; } body.setup #chips, body.setup #nav, body.setup #note, body.setup #abbr, body.setup #tip { display:none; }
 </style>
 </head>
 <body>
@@ -107,6 +108,7 @@
 </header>
 <p id="note" hidden></p>
 <main id="chips"></main>
+<p id="tip" hidden>Tippe auf eine Kachel, sobald die Masche gehäkelt ist.</p>
 <div id="abbr"></div>
 <div id="nav"><button id="back">‹ Zurück</button><button id="next">Weiter ›</button></div>
 <section id="setup">
@@ -591,6 +593,7 @@ function render(noSave) {
   $('note').hidden = !row.notes.length; $('note').textContent = row.notes.join(' · ');
   $('abbr').innerHTML = legend(page, P.pattern);
   fitSeams();
+  $('tip').hidden = !!store.get('tipped', false); // nur bis zum ersten Tipp auf eine Kachel
   $('back').disabled = r === 0 && p === 0;
   const last = r === rows.length - 1 && p === row.pages.length - 1;
   $('next').textContent = last ? 'Fertig ✓' : 'Weiter ›';
@@ -600,6 +603,7 @@ function render(noSave) {
 
 $('chips').onclick = async e => {
   const el = e.target.closest('.chip'); if (!el) return;
+  store.set('tipped', true);
   const g = p * MAX_CHIPS + +el.dataset.i;
   if (g < (done[r] || 0)) { if (!(await Dialog.confirm('Fortschritt hier zurücksetzen? Dieser und alle folgenden Schritte werden wieder aktiv.', { ok: 'Zurücksetzen' }))) return; done[r] = g; }
   else done[r] = g + 1;
