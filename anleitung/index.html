@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Isadody Häkelhelfer</title>
 <meta name="theme-color" content="#FBF6EC">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../shared/icon-180.png">
 <link rel="stylesheet" href="../shared/isadody.css">
 <script src="../shared/store.js"></script>
 <script src="../shared/muster-db.js"></script>
@@ -18,6 +20,7 @@
   #row { font-family:var(--display); font-size:1.6rem; font-weight:700; color:var(--ink); }
   #pos { font-size:.9rem; color:var(--ink-soft); }
   #pos b { color:var(--ink); } #pos .warn { white-space:nowrap; color:var(--ink); background:var(--coral-soft); border-radius:999px; padding:0 8px; font-weight:700; }
+  #zlink { text-decoration:none; }
   .actions { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
   #chips { flex:1; display:flex; flex-wrap:wrap; justify-content:center; align-content:center; gap:10px; min-height:0; }
   .chip { flex:0 0 calc(25% - 8px); height:calc(50% - 5px); max-height:220px; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-card); display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--display); font-size:clamp(1.6rem,7vw,3.2rem); font-weight:700; }
@@ -84,7 +87,7 @@
 <body>
 <header>
   <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><div id="row">–</div><div id="pos"></div></div></div>
-  <div class="actions"><div class="tools"><a class="home" href="../">‹ Alle Apps</a><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div><button class="small" id="menu">Projekte</button></div>
+  <div class="actions"><div class="tools"><a class="home" href="../">‹ Alle Apps</a><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div><div class="tools"><a class="small" id="zlink" href="../zaehler/">Zähler</a><button class="small" id="menu">Projekte</button></div></div>
 </header>
 <main id="chips"></main>
 <div id="nav"><button id="back">‹ Zurück</button><button id="next">Weiter ›</button></div>
@@ -293,7 +296,7 @@ function renderColorPickers() {
   for (const k of keys) {
     const b = document.createElement('button');
     b.className = 'sw' + (k === editing ? ' on' : '');
-    b.innerHTML = `<i style="background:${colors[k] || 'transparent'}"></i>${k}`;
+    b.innerHTML = `<i style="background:${hexOk(colors[k] || '') ? colors[k] : 'transparent'}"></i>${esc(k)}`;
     b.onclick = () => { editing = editing === k ? null : k; renderColorPickers(); };
     box.append(b);
   }
@@ -307,10 +310,10 @@ function renderColorPickers() {
   if (editing === '+') {
     const n = document.createElement('input'); n.placeholder = 'Name, z. B. C'; n.maxLength = 12;
     const ok = document.createElement('button'); ok.textContent = 'Anlegen';
-    ok.onclick = () => { const v = n.value.trim().toUpperCase(); if (v) { colors[v] = colors[v] || '#888888'; saveColors(); editing = v; renderColorPickers(); } };
+    ok.onclick = () => { const v = n.value.trim().toUpperCase(); if (/^[\p{L}\d]{1,12}$/u.test(v)) { colors[v] = colors[v] || '#888888'; saveColors(); editing = v; renderColorPickers(); } };
     ed.append(n, ok); box.append(ed); return;
   }
-  const cur = colors[key] || '#888888';
+  const cur = hexOk(colors[key] || '') ? colors[key] : '#888888';
   const pal = document.createElement('div'); pal.className = 'pal';
   for (const p of PRESETS) {
     const c = document.createElement('button'); c.style.background = p; c.setAttribute('aria-label', p);
@@ -383,27 +386,29 @@ $('newp').onclick = () => {
   openSetup(null); $('text').focus();
 };
 
-function render() {
+function render(noSave) {
   if (!rows.length) { openSetup(P); return; }
   document.body.classList.remove('setup'); colors = P.colors;
+  const col = k => hexOk(colors[k] || '') ? colors[k] : ''; // nur #RRGGBB kommt in style
   const row = rows[r], page = row.pages[p];
-  const used = [...new Set(page.map(c => c.c).filter(k => colors[k]))];
-  $('row').innerHTML = `Reihe ${row.label}` + used.map(k => `<span class="dot" style="background:${colors[k]}" title="Farbe ${k}"></span>`).join('');
+  const used = [...new Set(page.map(c => c.c).filter(col))];
+  $('row').innerHTML = `Reihe ${esc(row.label)}` + used.map(k => `<span class="dot" style="background:${col(k)}" title="Farbe ${esc(k)}"></span>`).join('');
   // Maschenzahl am Reihenende: aus der Anleitung („(18)“), sonst gezählt; Warnung, wenn beides nicht passt
   const end = row.target != null ? row.target : row.count;
   $('pos').innerHTML = `Seite ${p + 1}/${row.pages.length} · ${r + 1}/${rows.length}` + (end ? ` · <b>${end} M</b>` : '') +
     (row.check ? ` <span class="warn" title="Die Maschen dieser Reihe ergeben ${row.count}, die Anleitung nennt ${row.target}.">⚠ gezählt ${row.count}</span>` : '');
   const d = done[r] || 0;
   $('chips').innerHTML = page.map((c, i) => {
-    const col = colors[c.c], fade = p * MAX_CHIPS + i < d ? ' fade' : '', st = col ? ` style="background:${col};color:${textOn(col)}"` : '';
-    return c.n > 1 ? `<div class="chip count${fade}" data-i="${i}"${st}><span${col ? ' style="color:inherit"' : ''}>${c.n}×</span>${c.s}${SEAM}</div>` : `<div class="chip${fade}" data-i="${i}"${st}>${c.s}${SEAM}</div>`;
+    const cl = col(c.c), fade = p * MAX_CHIPS + i < d ? ' fade' : '', st = cl ? ` style="background:${cl};color:${textOn(cl)}"` : '';
+    return c.n > 1 ? `<div class="chip count${fade}" data-i="${i}"${st}><span${cl ? ' style="color:inherit"' : ''}>${c.n}×</span>${esc(c.s)}${SEAM}</div>` : `<div class="chip${fade}" data-i="${i}"${st}>${esc(c.s)}${SEAM}</div>`;
   }).join('');
   fitSeams();
   $('back').disabled = r === 0 && p === 0;
   const last = r === rows.length - 1 && p === row.pages.length - 1;
   $('next').textContent = last ? 'Fertig ✓' : 'Weiter ›';
   $('next').disabled = last;
-  save();
+  zLink();
+  if (!noSave) save();
 }
 
 $('chips').onclick = e => {
@@ -466,6 +471,13 @@ $('liblist').onclick = e => {
   if (!Projekte.open(it.text, it.title, it.colors)) return alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`);
   load(Projekte.current()); render();
 };
+// Geänderte Anleitung (z. B. Tippfehler korrigiert): Häkchen gleich gebliebener Reihen und die Position bleiben
+function keepProgress(x, t) {
+  const before = parse(x.pattern), after = parse(t), sig = row => row && JSON.stringify([row.label, row.pages]), done = {};
+  for (const [i, n] of Object.entries(x.done || {})) if (after[i] && sig(before[i]) === sig(after[i])) done[i] = n;
+  const s = x.pos || {}, r = Math.max(0, Math.min(s.r || 0, after.length - 1));
+  x.done = done; x.pos = { r, p: after[r] ? Math.min(s.p || 0, after[r].pages.length - 1) : 0 };
+}
 $('ok').onclick = () => {
   const t = $('text').value, name = $('pname').value.trim();
   if (!parse(t).length) return alert('In diesem Text sind keine Maschen zu finden.');
@@ -474,12 +486,31 @@ $('ok').onclick = () => {
     if (!x) return alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`);
     load(x);
   } else {
-    if (E.pattern !== t) { E.pos = { r: 0, p: 0 }; E.done = {}; } // andere Anleitung: Fortschritt von vorn
+    if (E.pattern !== t) keepProgress(E, t);
     E.pattern = t; E.name = name || Projekte.nameOf(t); E.used = Date.now(); Projekte.put(E); load(E);
   }
   render();
 };
 
+// Reihenzähler dieses Projekts (zaehler/?p=id), mit aktuellem Stand im Knopf
+function zLink() {
+  const c = P && (Store('zaehler').get('counters', {}) || {})[P.id], n = c ? (c.flips || 0) * (c.n || 10) + (c.popped || []).length : 0;
+  $('zlink').href = P ? `../zaehler/?p=${encodeURIComponent(P.id)}` : '../zaehler/';
+  $('zlink').textContent = c ? `Zähler ${n}` : 'Zähler';
+}
+// Andere Tabs oder Apps haben Projekte geändert: frisch laden, damit hier kein alter Stand zurückgeschrieben wird
+addEventListener('storage', e => {
+  if (e.key === 'zaehler.counters') return zLink();
+  if (e.key !== 'anleitung.projects') return;
+  const list = Projekte.all(), fresh = id => list.find(q => q.id === id);
+  if (document.body.classList.contains('setup')) {
+    if (E && E.id && fresh(E.id)) { const y = fresh(E.id); E.pos = y.pos; E.done = y.done; E.used = y.used; }
+    if (P && fresh(P.id)) { const y = fresh(P.id); P.pos = y.pos; P.done = y.done; P.used = y.used; }
+    return renderProjects();
+  }
+  load((P && fresh(P.id)) || Projekte.current() || list.sort((a, b) => b.used - a.used)[0] || null);
+  if (P) render(true); else openSetup(null);
+});
 load(Projekte.current() || Projekte.all().sort((a, b) => b.used - a.used)[0] || null);
 if (P) render(); else openSetup(null);
 </script>
