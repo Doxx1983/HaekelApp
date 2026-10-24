@@ -329,7 +329,7 @@ $('dtags').onclick = e => { const b = e.target.closest('[data-rm]'); if (b) { e.
 $('pcancel').onclick = () => document.body.classList.remove('paste');
 $('psave').onclick = async () => {
   const text = $('ptext').value; if (!text.trim()) return toast('Bitte Text einfügen');
-  const title = $('ptitle').value.trim() || text.trim().split('\n')[0].slice(0, 40);
+  const title = $('ptitle').value.trim() || Projekte.nameOf(text, 'Muster');
   const it = { id: uid(), kind: 'text', title, name: '', mime: 'text/plain', size: text.length, text, tags: [], fav: false, notes: '', added: Date.now() };
   try { await put(it); } catch { return toast('Speicher voll: Text nicht gespeichert'); }
   items.push(it); persist(); document.body.classList.remove('paste'); render(); show(it.id);

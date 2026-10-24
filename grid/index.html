@@ -56,6 +56,7 @@
   #rows .s i { width:12px; height:12px; border-radius:3px; border:1px solid var(--ink-soft); display:inline-block; }
   .hint { font-size:.85rem; color:var(--ink-soft); margin:8px 0 0; }
   #empty { text-align:center; color:var(--ink-soft); padding:20px 0; }
+  #empty small { display:block; max-width:34em; margin:8px auto 0; } #empty a { color:var(--ink); }
   .hidden { display:none !important; }
 </style>
 </head>
@@ -125,7 +126,7 @@
     <ul id="rows"></ul>
   </section>
 </div>
-<p id="empty">Noch kein Bild geladen.</p>
+<p id="empty">Noch kein Bild geladen.<br><small>Tapestry heißt: mit mehreren Farben häkeln, die gerade nicht gebrauchten Fäden laufen in den Maschen mit. <a href="../lexikon/#tapestry">Mehr im Lexikon</a></small></p>
 
 <script>
 // ---- Kern (ohne DOM, auch mit node testbar) ----
@@ -388,6 +389,9 @@ $('cols').oninput = () => { if ($('keep').checked && img) fitRows(); later(); };
 $('rowsN').oninput = () => { if ($('keep').checked && img) fitCols(); later(); };
 const LIMITS = [['cols', 5, 200, 'Breite', 'Maschen'], ['rowsN', 5, 200, 'Höhe', 'Reihen'], ['ncol', 2, 10, 'Farben', 'Farben']];
 const LIMIT_TEXT = $('limits').textContent;
+// Sehr große Muster (versehentlich 500 getippt) nicht still übernehmen
+const BIG = 10000, big = () => +$('cols').value * +$('rowsN').value > BIG;
+const bigText = () => big() ? `Großes Muster: ${(+$('cols').value * +$('rowsN').value).toLocaleString('de-DE')} Maschen.` : '';
 $('cols').onchange = $('rowsN').onchange = $('ncol').onchange = () => {
   const msg = [];
   for (const [id, a, b, name, unit] of LIMITS) {
@@ -395,8 +399,9 @@ $('cols').onchange = $('rowsN').onchange = $('ncol').onchange = () => {
     if (c !== v) msg.push(`${name}: ${v > b ? 'höchstens' : 'mindestens'} ${c} ${unit}`);
     $(id).value = c;
   }
-  $('limits').textContent = msg.length ? msg.join(' · ') + ', Wert angepasst.' : LIMIT_TEXT;
-  $('limits').classList.toggle('warn', !!msg.length);
+  const big = bigText();
+  $('limits').textContent = msg.length ? msg.join(' · ') + ', Wert angepasst.' + (big ? ' ' + big : '') : big || LIMIT_TEXT;
+  $('limits').classList.toggle('warn', !!(msg.length || big));
   build();
 };
 $('ncol').oninput = later; $('smooth').onchange = build;
@@ -447,8 +452,10 @@ $('toLib').onclick = async () => {
 };
 $('txt').onclick = () => download(new Blob([curText()], { type: 'text/plain' }), 'tapestry-anleitung.txt');
 $('copy').onclick = async () => { try { await navigator.clipboard.writeText(curText()); $('copy').textContent = 'Kopiert ✓'; } catch { $('copy').textContent = 'Nicht möglich'; } setTimeout(() => $('copy').textContent = 'Text kopieren', 1500); };
-$('toHelper').onclick = e => {
+const bigOk = () => !big() || Dialog.confirm(`Das Muster hat ${G.w} × ${G.h} = ${(G.w * G.h).toLocaleString('de-DE')} Maschen. Wirklich so groß übernehmen?`, { ok: 'Übernehmen' });
+$('toHelper').onclick = async e => {
   e.preventDefault();
+  if (!await bigOk()) return;
   // als eigenes Projekt im Häkelhelfer; gleiche Anleitung öffnet das vorhandene Projekt
   const o = opts(), cols = {};
   G.palette.forEach((p, i) => cols[LETTERS[i]] = p);

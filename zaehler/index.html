@@ -268,6 +268,9 @@ $('whom').onclick = e => {
 // Eigene Projekte anlegen, umbenennen, löschen
 $('padd').onclick = () => {
   const name = $('pnew').value.trim(); if (!name) return $('pnew').focus();
+  // Gleicher Name (z. B. doppelt getippt): vorhandenes Projekt wählen statt ein zweites anzulegen
+  const same = projects().find(id => nameOf(id).toLowerCase() === name.toLowerCase());
+  if (same) { $('pnew').value = ''; pick(same); openSetup(); build(); return; }
   if (projects().length >= MAX) return Dialog.alert(`Es gibt schon ${MAX} Projekte. Bitte erst eins löschen.`);
   const id = uid(); counters[id] = { ...FRESH(name), used: Date.now() }; $('pnew').value = '';
   pick(id); openSetup(); build();

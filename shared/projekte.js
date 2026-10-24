@@ -7,11 +7,11 @@ const Projekte = (() => {
   // Farben nur als #RRGGBB mit kurzem Namen übernehmen (sie landen in style-Attributen)
   const cleanColors = c => { const o = {}; if (c && typeof c === 'object') for (const [k, v] of Object.entries(c)) if (/^[\p{L}\d]{1,12}$/u.test(k) && /^#[0-9a-f]{6}$/i.test(v)) o[k.toUpperCase()] = v.toUpperCase(); return o; };
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  // Name aus der ersten Zeile, die keine Reihe ist (Titel), sonst aus der ersten Zeile
-  const nameOf = text => {
+  // Name aus der ersten Zeile, die keine Reihe ist (Titel), sonst „Projekt vom 24.10.“
+  const nameOf = (text, what = 'Projekt') => {
     const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    const t = lines.find(l => !/^(?:R|Row|Reihe|Runde|Round|Rnd|Rd)\.?\s*\d/i.test(l)) || lines[0] || '';
-    return t.replace(/\s+/g, ' ').slice(0, 40) || 'Projekt';
+    const t = lines.find(l => !/^(?:(?:R|Row|Rows|Reihen?|Runden?|Rounds?|Rnds?|Rds?)\.?\s*\d|\d+\.?\s*(?:-\s*\d+\.?\s*)?(?:Reihen?|Runden?|Rnd|Rd|R)\b)/i.test(l)) || '';
+    return t.replace(/\s+/g, ' ').slice(0, 40) || `${what} vom ${new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}`;
   };
   // Einmalig: die eine Anleitung aus der Zeit vor den Projekten wird Projekt 1
   function all() {
