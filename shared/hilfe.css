@@ -15,3 +15,5 @@ pre { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.9rem; backgr
 .k { display:inline-block; background:var(--paper); border:1px solid var(--line); border-radius:999px; padding:0 10px; font-weight:700; font-size:.9em; white-space:nowrap; }
 .note { color:var(--ink-soft); font-size:.9rem; }
 .back { display:block; text-align:center; text-decoration:none; margin-top:18px; }
+.zurueck { display:inline-flex; align-items:center; min-height:44px; padding:0 6px; color:var(--ink-soft); font-size:.85rem; font-weight:700; text-decoration:none; white-space:nowrap; }
+.zurueck:hover { color:var(--ink); }

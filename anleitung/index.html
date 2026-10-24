@@ -17,20 +17,20 @@
   html,body { height:100%; }
   body { display:flex; flex-direction:column; padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom); }
   header { display:flex; justify-content:space-between; align-items:center; padding:10px 0; }
-  .title { display:flex; align-items:center; gap:12px; min-width:0; }
-  .title > div { min-width:0; }
-  #row { font-family:var(--display); font-size:1.6rem; font-weight:700; color:var(--ink); }
+  #row { font-family:var(--display); font-size:clamp(1.25rem,5.6vw,1.6rem); font-weight:700; color:var(--ink); white-space:nowrap; }
   #pos { font-size:.9rem; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   #pos b { color:var(--ink); } #pos .warn { white-space:nowrap; color:var(--ink); background:var(--coral-soft); border-radius:999px; padding:0 8px; font-weight:700; }
   #menu { white-space:nowrap; }
   header { gap:10px; }
-  .actions { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
   #chips { flex:1; display:flex; flex-wrap:wrap; justify-content:center; align-content:center; gap:10px; min-height:0; }
   .chip { flex:0 0 calc(25% - 8px); height:calc(50% - 5px); max-height:220px; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-card); display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--display); font-size:clamp(1.6rem,7vw,3.2rem); font-weight:700; }
   /* Angedeutete Naht: gestrichelte Maschenreihe innen am Rand */
   .chip { position:relative; }
   .st { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
   .st rect { x:6px; y:6px; width:calc(100% - 12px); height:calc(100% - 12px); rx:11px; fill:none; stroke:currentColor; stroke-width:3; stroke-linecap:round; opacity:.8; }
+  /* Nur 1–2 Kacheln: breiter, damit sie nicht verloren im Raum stehen */
+  #chips.few .chip { flex-basis:min(calc(50% - 5px), 320px); }
+  .chip { white-space:nowrap; }
   .chip.fade { opacity:.3; }
   .chip { cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; }
   .chip.count span { color:var(--coral); }
@@ -94,8 +94,8 @@
 </head>
 <body>
 <header>
-  <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><div id="row">Häkelhelfer</div><div id="pos"></div></div></div>
-  <div class="actions"><div class="tools"><a class="home" href="../">‹ Alle Apps</a><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div><button class="small" id="menu">Projekte</button></div>
+  <div class="title"><a class="home" href="../" aria-label="Alle Apps" title="Alle Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/></svg></a><img class="logo" src="../shared/logo.png" alt="Isadody"><div><div id="row">Häkelhelfer</div><div id="pos"></div></div></div>
+  <div class="tools"><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a><button class="small" id="menu">Projekte</button></div>
 </header>
 <main id="chips"></main>
 <div id="nav"><button id="back">‹ Zurück</button><button id="next">Weiter ›</button></div>
@@ -366,7 +366,8 @@ function renderColorPickers() {
 const $ = id => document.getElementById(id);
 let rows = [], r = 0, p = 0;
 let done = {}; // Reihe -> Anzahl abgeschlossener Kacheln
-const save = () => { if (!P) return; P.pos = { r, p }; P.done = done; P.used = Date.now(); Projekte.put(P); };
+// label: Reihen-Bezeichnung aus der Anleitung (z. B. „0“ bei Row 0), für die Startseite
+const save = () => { if (!P) return; P.pos = { r, p, label: rows[r] ? rows[r].label : String(r + 1) }; P.done = done; P.used = Date.now(); Projekte.put(P); };
 function load(proj) {
   P = proj; rows = []; r = p = 0; done = {};
   if (!P) return;
@@ -394,10 +395,10 @@ function renderProjects() {
   $('pcount').textContent = list.length ? `${list.length} von ${Projekte.MAX}` : '';
   $('pempty').hidden = !!list.length;
   $('plist').innerHTML = list.map(x => {
-    const n = parse(x.pattern).length, at = Math.min(n, ((x.pos && x.pos.r) || 0) + 1), act = P && x.id === P.id;
+    const pr = parse(x.pattern), n = pr.length, at = Math.min(n, ((x.pos && x.pos.r) || 0) + 1), act = P && x.id === P.id, lab = pr[at - 1] ? pr[at - 1].label : at;
     const pct = n ? Math.round((at - 1) / n * 100) : 0, keys = colorKeysIn(x.pattern).filter((k, i, a) => a.indexOf(k) === i && x.colors[k]);
     return `<div class="it"><button class="open${act ? ' cur' : ''}" data-id="${esc(x.id)}"><b>${esc(x.name)}</b>` +
-      `<small>${act ? '<span class="tag">Aktiv</span>' : ''}Reihe ${at} von ${n} · ${ago(x.used)}` +
+      `<small>${act ? '<span class="tag">Aktiv</span>' : ''}Reihe ${esc(lab)} · ${at} von ${n} · ${ago(x.used)}` +
       (keys.length ? `<span class="dots">${keys.map(k => `<i style="background:${esc(x.colors[k])}" title="Farbe ${esc(k)}"></i>`).join('')}</span>` : '') + `</small>` +
       `<span class="prog" aria-label="${pct} % geschafft"><i style="width:${pct}%"></i></span></button>` +
       `<button class="del" data-del="${esc(x.id)}" aria-label="Projekt ${esc(x.name)} löschen" title="Löschen">×</button></div>`;
@@ -435,6 +436,7 @@ function render(noSave) {
     const cl = col(c.c), fade = p * MAX_CHIPS + i < d ? ' fade' : '', st = cl ? ` style="background:${cl};color:${textOn(cl)}"` : '';
     return c.n > 1 ? `<div class="chip count${fade}" data-i="${i}"${st}><span${cl ? ' style="color:inherit"' : ''}>${c.n}×</span>${esc(c.s)}${SEAM}</div>` : `<div class="chip${fade}" data-i="${i}"${st}>${esc(c.s)}${SEAM}</div>`;
   }).join('');
+  $('chips').classList.toggle('few', page.length <= 2);
   fitSeams();
   $('back').disabled = r === 0 && p === 0;
   const last = r === rows.length - 1 && p === row.pages.length - 1;
@@ -508,7 +510,7 @@ function keepProgress(x, t) {
   const before = parse(x.pattern), after = parse(t), sig = row => row && JSON.stringify([row.label, row.pages]), done = {};
   for (const [i, n] of Object.entries(x.done || {})) if (after[i] && sig(before[i]) === sig(after[i])) done[i] = n;
   const s = x.pos || {}, r = Math.max(0, Math.min(s.r || 0, after.length - 1));
-  x.done = done; x.pos = { r, p: after[r] ? Math.min(s.p || 0, after[r].pages.length - 1) : 0 };
+  x.done = done; x.pos = { r, p: after[r] ? Math.min(s.p || 0, after[r].pages.length - 1) : 0, label: after[r] ? after[r].label : String(r + 1) };
 }
 $('ok').onclick = () => {
   const t = $('text').value, name = $('pname').value.trim();

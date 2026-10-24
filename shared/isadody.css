@@ -17,15 +17,34 @@ input { accent-color:var(--coral); }
 .small { display:inline-flex; align-items:center; justify-content:center; text-decoration:none; background:var(--paper-alt); color:var(--ink); font-size:.85rem; font-weight:700; padding:8px 14px; border-radius:999px; min-height:44px; }
 /* Hauptknopf: Coral mit Schwarzbraun als Text */
 .btn { background:var(--coral); color:var(--ink); font-weight:800; padding:14px 22px; border-radius:999px; box-shadow:var(--shadow-soft); }
-/* Link zurück zur Startseite der Sammlung */
-.home { display:inline-flex; align-items:center; min-height:44px; padding:0 6px; color:var(--ink-soft); font-size:.85rem; font-weight:700; text-decoration:none; white-space:nowrap; }
-.home:hover { color:var(--ink); }
+/* hidden gilt auch für Knöpfe mit eigenem display */
+[hidden] { display:none !important; }
+/* Fokus im CD statt Browser-Schwarz/-Blau */
+:focus-visible { outline:3px solid var(--coral); outline-offset:2px; }
+input:focus, textarea:focus, select:focus { border-color:var(--ink-soft) !important; }
+/* Kopf: Haus-Knopf links vor dem Logo, rechts nur „?“ und ein App-Knopf in einer Zeile */
+header .title { display:flex; align-items:center; gap:8px; min-width:0; }
+header .title > div { min-width:0; }
+.apptitle { font-family:var(--display); font-size:clamp(1.15rem,5.4vw,1.6rem); font-weight:700; margin:0; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+/* Link zurück zur Startseite der Sammlung (Haus-Symbol) */
+.home { position:relative; display:inline-grid; place-items:center; width:32px; height:32px; border-radius:50%; background:var(--paper-alt); color:var(--ink); text-decoration:none; flex:none; }
+.home svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.home:hover { background:var(--coral-soft); }
+.home::after { content:''; position:absolute; inset:-6px; }
+/* App-Knopf im Kopf: Symbol + Text; auf schmalen Bildschirmen nur das Symbol (.icon-m) */
+.small svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+.small:has(svg) { gap:6px; }
+@media (max-width:480px) {
+  .small.icon-m { position:relative; width:32px; height:32px; min-height:32px; padding:0; }
+  .small.icon-m::after { content:''; position:absolute; inset:-6px; }
+  .small.icon-m .lbl { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+}
 /* Hilfeknopf im Kopf jeder App, führt zu hilfe/ im App-Ordner */
 .help { position:relative; display:inline-grid; place-items:center; width:32px; height:32px; padding:0; border-radius:50%; background:var(--paper-alt); color:var(--ink); font-family:var(--display); font-size:1.05rem; font-weight:700; line-height:1; text-decoration:none; flex:none; }
 .help:hover { background:var(--coral-soft); }
 /* Tippfläche 44 px, sichtbar bleibt der kleine Kreis */
 .help::after { content:''; position:absolute; inset:-6px; }
-.tools { display:flex; align-items:center; gap:4px; }
+.tools { display:flex; align-items:center; gap:6px; flex:none; }
 /* Rückfragen und Hinweise (shared/dialog.js) */
 .idlg { border:0; padding:0; border-radius:20px; background:var(--paper); color:var(--ink); box-shadow:var(--shadow-soft); width:min(420px, calc(100vw - 32px)); max-height:calc(100vh - 32px); overflow:auto; }
 .idlg::backdrop { background:rgba(34,32,27,.45); }
@@ -37,5 +56,6 @@ input { accent-color:var(--coral); }
 .idlg-btns button { min-height:44px; min-width:44px; font-size:1rem; }
 .idlg-btns .small { padding:10px 18px; font-size:1rem; }
 .idlg-btns .btn { padding:10px 22px; box-shadow:none; }
-.idlg button:focus-visible, .idlg input:focus-visible { outline:3px solid var(--ink); outline-offset:2px; }
+/* Löschen u. Ä. (danger): dunkler Knopf, hebt sich von normalen Bestätigungen ab */
+.idlg-btns .btn.danger { background:var(--ink); color:var(--paper); }
 .idlg input::selection { background:var(--coral-soft); color:var(--ink); }

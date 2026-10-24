@@ -15,7 +15,7 @@ Daten: alles liegt im Browser. `Store.set` meldet einen vollen Speicher einmal p
 
 Hilfe: jede App hat `hilfe/index.html` (bindet `../../shared/isadody.css` und `../../shared/hilfe.css` ein, Link „‹ Zur App“) und im Kopf einen runden Knopf `<a class="help" href="hilfe/">?</a>` (in `.tools` neben dem Kopfknopf). Neue Funktion = Hilfeseite mitpflegen.
 
-Neue App: eigener Ordner mit `index.html`, bindet `../shared/isadody.css` und `../shared/store.js` ein, Logo `../shared/logo.png`, Link `<a class="home" href="../">‹ Alle Apps</a>`, Karte auf der Startseite eintragen (mit Strich-Icon wie die anderen), Hilfeseite anlegen. Kein Build.
+Neue App: eigener Ordner mit `index.html`, bindet `../shared/isadody.css` und `../shared/store.js` ein, Logo `../shared/logo.png`, im Kopf links der Haus-Link `.home` (wie in den anderen Apps, `aria-label="Alle Apps"`), rechts `.tools` mit „?“ und höchstens einem App-Knopf, Karte auf der Startseite eintragen (mit Strich-Icon wie die anderen), Hilfeseite anlegen. Kein Build.
 
 ## Mustersammlung (`muster/`)
 

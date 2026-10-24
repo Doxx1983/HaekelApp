@@ -14,11 +14,10 @@
   html,body { height:100%; }
   body { display:flex; flex-direction:column; padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom); }
   header { display:flex; justify-content:space-between; align-items:center; padding:10px 0; gap:10px; }
-  .title { display:flex; align-items:center; gap:12px; min-width:0; }
-  #count { font-family:var(--display); font-size:1.6rem; font-weight:700; line-height:1.1; }
+  #count { font-family:var(--display); font-size:clamp(1.25rem,5.6vw,1.6rem); font-weight:700; line-height:1.1; white-space:nowrap; }
+  #sub .nw { white-space:nowrap; }
   #sub { font-size:.9rem; color:var(--ink-soft); }
   button { -webkit-tap-highlight-color:transparent; }
-  .actions { display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex:none; }
   #bar { height:8px; border-radius:999px; background:var(--paper-alt); border:1px solid var(--line); overflow:hidden; margin-bottom:10px; display:none; }
   #bar i { display:block; height:100%; width:0; background:var(--coral); transition:width .3s; }
   body.target #bar { display:block; }
@@ -64,8 +63,8 @@
 </head>
 <body>
 <header>
-  <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><div id="count">Reihe 0</div><div id="sub"></div></div></div>
-  <div class="actions"><div class="tools"><a class="home" href="../">‹ Alle Apps</a><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div><button class="small" id="menu">Einstellungen</button></div>
+  <div class="title"><a class="home" href="../" aria-label="Alle Apps" title="Alle Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/></svg></a><img class="logo" src="../shared/logo.png" alt="Isadody"><div><div id="count">Reihe 0</div><div id="sub"></div></div></div>
+  <div class="tools"><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a><button class="small icon-m" id="menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span class="lbl">Einstellungen</span></button></div>
 </header>
 <div id="bar"><i></i></div>
 <main id="wrap"><div id="board"></div></main>
@@ -191,7 +190,8 @@ function render() {
   $('count').textContent = 'Reihe ' + t;
   const parts = [nameOf(cur), `Platte ${s.flips + 1} · ${s.popped.length}/${s.n}`];
   if (s.target) parts.push(t >= s.target ? 'Ziel erreicht' : `noch ${s.target - t}`);
-  $('sub').textContent = parts.join(' · ');
+  // Platte/Stand und Ziel bleiben je beisammen, damit z. B. „0/10“ nicht allein umbricht
+  $('sub').replaceChildren(...parts.flatMap((x, i) => { const e = document.createElement('span'); e.textContent = x; if (i) e.className = 'nw'; return i ? [' · ', e] : [e]; }));
   document.body.classList.toggle('target', !!s.target);
   $('bar').firstChild.style.width = s.target ? Math.min(100, t / s.target * 100) + '%' : 0;
 }
