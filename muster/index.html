@@ -9,6 +9,7 @@
 <link rel="apple-touch-icon" href="../shared/icon-180.png">
 <link rel="stylesheet" href="../shared/isadody.css">
 <script src="../shared/store.js"></script>
+<script src="../shared/dialog.js"></script>
 <script src="../shared/projekte.js"></script>
 <script src="../shared/sicherung.js"></script>
 <script src="../shared/muster-db.js"></script>
@@ -265,18 +266,18 @@ async function importAll(f) {
 // Text an den Häkelhelfer übergeben: neues Projekt dort, oder das vorhandene mit derselben Anleitung
 function openInHelper(it) {
   // Garnfarben aus dem Grid-Ersteller gehen mit
-  if (!Projekte.open(it.text, it.title, it.colors)) return alert(Projekte.FULL_MSG);
+  if (!Projekte.open(it.text, it.title, it.colors)) return Dialog.alert(Projekte.FULL_MSG);
   location.href = '../anleitung/';
 }
 // Muster aus dem Grid-Ersteller dort weiterbearbeiten; erneutes Speichern aktualisiert dieses Muster
-function openInGrid(it) {
+async function openInGrid(it) {
   const g = Store('grid');
-  if (g.get('state', null) && g.get('mid', null) !== it.id && !confirm('Der aktuelle Stand im Grid-Ersteller wird ersetzt. Weiter?')) return;
+  if (g.get('state', null) && g.get('mid', null) !== it.id && !(await Dialog.confirm('Der aktuelle Stand im Grid-Ersteller wird ersetzt. Weiter?', { ok: 'Ersetzen' }))) return;
   g.set('state', { G: it.grid.G, o: it.grid.o, keep: it.grid.keep !== false }); g.set('src', it.grid.src || ''); g.set('mid', it.id);
   location.href = '../grid/';
 }
 
-function act(a) {
+async function act(a) {
   $('menu').classList.remove('on');
   if (a === 'file') $('file').click();
   else if (a === 'paste') { $('ptitle').value = ''; $('ptext').value = ''; document.body.classList.add('paste'); $('ptext').focus(); }
@@ -287,7 +288,8 @@ function act(a) {
   else if (a === 'grid') openInGrid(cur);
   else if (a === 'openfile') window.open($('prev').dataset.url, '_blank');
   else if (a === 'download') download(blobOf(cur), fileName(cur));
-  else if (a === 'delete' && confirm(`„${cur.title}“ wirklich löschen?`)) {
+  else if (a === 'delete') {
+    if (!(await Dialog.confirm(`„${cur.title}“ wirklich löschen?`, { ok: 'Löschen', danger: true }))) return;
     const id = cur.id; del(id).catch(() => toast('Löschen nicht möglich')); items = items.filter(it => it.id !== id);
     if (urls.has(id)) { URL.revokeObjectURL(urls.get(id)); urls.delete(id); }
     history.back(); toast('Gelöscht');

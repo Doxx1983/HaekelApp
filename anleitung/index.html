@@ -9,6 +9,7 @@
 <link rel="apple-touch-icon" href="../shared/icon-180.png">
 <link rel="stylesheet" href="../shared/isadody.css">
 <script src="../shared/store.js"></script>
+<script src="../shared/dialog.js"></script>
 <script src="../shared/muster-db.js"></script>
 <script src="../shared/doctext.js"></script>
 <script src="../shared/projekte.js"></script>
@@ -402,18 +403,18 @@ function renderProjects() {
       `<button class="del" data-del="${esc(x.id)}" aria-label="Projekt ${esc(x.name)} löschen" title="Löschen">×</button></div>`;
   }).join('');
 }
-$('plist').onclick = e => {
+$('plist').onclick = async e => {
   const o = e.target.closest('[data-id]'), d = e.target.closest('[data-del]');
   if (o) { const x = Projekte.all().find(q => q.id === o.dataset.id); if (x) { x.used = Date.now(); Projekte.put(x); load(x); render(); } return; }
   if (!d) return;
   const x = Projekte.all().find(q => q.id === d.dataset.del);
-  if (!x || !confirm(`Projekt „${x.name}“ löschen? Anleitung und Fortschritt gehen verloren.`)) return;
+  if (!x || !(await Dialog.confirm(`Projekt „${x.name}“ löschen? Anleitung und Fortschritt gehen verloren.`, { ok: 'Löschen', danger: true }))) return;
   Projekte.remove(x.id);
   if (P && P.id === x.id) load(Projekte.all().sort((a, b) => b.used - a.used)[0] || null);
   if (E && E.id === x.id) openSetup(P); else renderProjects();
 };
 $('newp').onclick = () => {
-  if (Projekte.full()) return alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`);
+  if (Projekte.full()) return Dialog.alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`);
   openSetup(null); $('text').focus();
 };
 
@@ -442,10 +443,10 @@ function render(noSave) {
   if (!noSave) save();
 }
 
-$('chips').onclick = e => {
+$('chips').onclick = async e => {
   const el = e.target.closest('.chip'); if (!el) return;
   const g = p * MAX_CHIPS + +el.dataset.i;
-  if (g < (done[r] || 0)) { if (!confirm('Fortschritt hier zurücksetzen? Dieser und alle folgenden Schritte werden wieder aktiv.')) return; done[r] = g; }
+  if (g < (done[r] || 0)) { if (!(await Dialog.confirm('Fortschritt hier zurücksetzen? Dieser und alle folgenden Schritte werden wieder aktiv.', { ok: 'Zurücksetzen' }))) return; done[r] = g; }
   else done[r] = g + 1;
   render();
 };
@@ -460,11 +461,11 @@ $('file').onchange = async e => {
   const t = await fileText(f);
   if (t.trim()) {
     // Datei wird ein neues Projekt, außer der Bereich ist gerade leer
-    if (E.id && $('text').value.trim()) { if (Projekte.full()) { alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`); e.target.value = ''; return; } openSetup(null); }
+    if (E.id && $('text').value.trim()) { if (Projekte.full()) { Dialog.alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`); e.target.value = ''; return; } openSetup(null); }
     if (!$('pname').value.trim()) $('pname').value = f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
     $('text').value = t; renderColorPickers();
   }
-  else alert(fileKind(f) ? 'Aus dieser Datei kann der Häkelhelfer keinen Text lesen (Bild, PDF oder alte .doc). Bitte den Text einfügen.' : 'Dieses Dateiformat wird nicht unterstützt.');
+  else Dialog.alert(fileKind(f) ? 'Aus dieser Datei kann der Häkelhelfer keinen Text lesen (Bild, PDF oder alte .doc). Bitte den Text einfügen.' : 'Dieses Dateiformat wird nicht unterstützt.');
   e.target.value = '';
 };
 // Textmuster aus der Mustersammlung (IndexedDB von muster/); Bilder, PDFs und .doc ohne Text sind nicht wählbar
@@ -499,7 +500,7 @@ $('libq').oninput = renderLib;
 $('libtags').onclick = e => { const b = e.target.closest('[data-tag]'); if (!b) return; const k = b.dataset.tag; libSel.has(k) ? libSel.delete(k) : libSel.add(k); renderLib(); };
 $('liblist').onclick = e => {
   const b = e.target.closest('[data-id]'), it = b && lib.find(x => x.id === b.dataset.id); if (!it) return;
-  if (!Projekte.open(it.text, it.title, it.colors)) return alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`);
+  if (!Projekte.open(it.text, it.title, it.colors)) return Dialog.alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`);
   load(Projekte.current()); render();
 };
 // Geänderte Anleitung (z. B. Tippfehler korrigiert): Häkchen gleich gebliebener Reihen und die Position bleiben
@@ -511,10 +512,10 @@ function keepProgress(x, t) {
 }
 $('ok').onclick = () => {
   const t = $('text').value, name = $('pname').value.trim();
-  if (!parse(t).length) return alert('In diesem Text sind keine Maschen zu finden.');
+  if (!parse(t).length) return Dialog.alert('In diesem Text sind keine Maschen zu finden.');
   if (!E.id) {
     const x = Projekte.create(t, name, E.colors);
-    if (!x) return alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`);
+    if (!x) return Dialog.alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`);
     load(x);
   } else {
     if (E.pattern !== t) keepProgress(E, t);

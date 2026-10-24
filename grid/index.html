@@ -9,6 +9,7 @@
 <link rel="apple-touch-icon" href="../shared/icon-180.png">
 <link rel="stylesheet" href="../shared/isadody.css">
 <script src="../shared/store.js"></script>
+<script src="../shared/dialog.js"></script>
 <script src="../shared/projekte.js"></script>
 <script src="../shared/muster-db.js"></script>
 <style>
@@ -372,7 +373,7 @@ $('file').onchange = e => {
     setMid(null); // neues Bild = neues Muster in der Sammlung
     loadSrc(cv.toDataURL('image/jpeg', 0.9), () => { if ($('keep').checked) fitRows(); build(); });
   };
-  im.onerror = () => alert('Dieses Bild lässt sich nicht öffnen.');
+  im.onerror = () => Dialog.alert('Dieses Bild lässt sich nicht öffnen.');
   im.src = u;
 };
 function loadSrc(data, then) {
@@ -430,7 +431,7 @@ $('toLib').onclick = async () => {
   try {
     let it = mid ? await MusterDB.get(mid) : null; // in der Sammlung gelöscht → neu anlegen
     if (!it) {
-      const title = prompt('Name des Musters', `Tapestry ${G.w} × ${G.h}`); if (title === null) return;
+      const title = await Dialog.prompt('Name des Musters', `Tapestry ${G.w} × ${G.h}`, { ok: 'Speichern' }); if (title === null) return;
       it = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), kind: 'image', title: title.trim() || 'Tapestry', tags: ['Tapestry'], fav: false, notes: '', added: Date.now() };
     }
     const o = opts(), png = await chartBlob(), colors = {};
@@ -451,7 +452,7 @@ $('toHelper').onclick = e => {
   // als eigenes Projekt im Häkelhelfer; gleiche Anleitung öffnet das vorhandene Projekt
   const o = opts(), cols = {};
   G.palette.forEach((p, i) => cols[LETTERS[i]] = p);
-  if (!Projekte.open(toHelper(instructions(G.cells, G.w, G.h, o.mode, o.left)), `Tapestry ${G.w} × ${G.h}`, cols)) return alert(Projekte.FULL_MSG);
+  if (!Projekte.open(toHelper(instructions(G.cells, G.w, G.h, o.mode, o.left)), `Tapestry ${G.w} × ${G.h}`, cols)) return Dialog.alert(Projekte.FULL_MSG);
   location.href = '../anleitung/';
 };
 

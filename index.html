@@ -83,15 +83,16 @@
   <input type="file" id="file" accept=".json,application/json" hidden>
 </section>
 <script src="shared/store.js"></script>
+<script src="shared/dialog.js"></script>
 <script src="shared/projekte.js"></script>
 <script src="shared/muster-db.js"></script>
 <script src="shared/sicherung.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 async function stand() { const s = await Sicherung.status(); $('stand').textContent = s.text; $('daten').classList.toggle('warn', s.warn); }
-$('save').onclick = async () => { $('save').disabled = true; try { await Sicherung.save(); } catch { alert('Sicherung nicht möglich.'); } $('save').disabled = false; stand(); };
+$('save').onclick = async () => { $('save').disabled = true; try { await Sicherung.save(); } catch { Dialog.alert('Sicherung nicht möglich.'); } $('save').disabled = false; stand(); };
 $('load').onclick = () => $('file').click();
-$('file').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; const r = await Sicherung.restore(f); alert(r.text); stand(); };
+$('file').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; const r = await Sicherung.restore(f); Dialog.alert(r.text, { title: 'Sicherung einspielen' }); stand(); };
 // Hinweis nur in Safari auf iPhone/iPad, nicht in der Home-Bildschirm-App
 const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 $('ios').hidden = !ios || navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;

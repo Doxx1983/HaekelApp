@@ -5,7 +5,8 @@ try { navigator.storage && navigator.storage.persist && navigator.storage.persis
 // Speicher voll: einmal pro Seitenaufruf deutlich melden, statt still nichts mehr zu speichern
 function storeFull() {
   if (storeFull.shown) return; storeFull.shown = true;
-  setTimeout(() => alert('Der Speicher im Browser ist voll. Neue Änderungen werden nicht gespeichert. Bitte auf der Startseite eine Sicherung herunterladen und alte Projekte oder Muster löschen.'));
+  const msg = 'Der Speicher im Browser ist voll. Neue Änderungen werden nicht gespeichert. Bitte auf der Startseite eine Sicherung herunterladen und alte Projekte oder Muster löschen.';
+  setTimeout(() => (typeof Dialog !== 'undefined' ? Dialog.alert(msg, { title: 'Speicher voll' }) : alert(msg)));
 }
 function Store(app) {
   const k = key => `${app}.${key}`;

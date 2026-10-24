@@ -9,6 +9,7 @@
 <link rel="apple-touch-icon" href="../shared/icon-180.png">
 <link rel="stylesheet" href="../shared/isadody.css">
 <script src="../shared/store.js"></script>
+<script src="../shared/dialog.js"></script>
 <style>
   html,body { height:100%; }
   body { display:flex; flex-direction:column; padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom); }
@@ -267,14 +268,14 @@ $('whom').onclick = e => {
 // Eigene Projekte anlegen, umbenennen, löschen
 $('padd').onclick = () => {
   const name = $('pnew').value.trim(); if (!name) return $('pnew').focus();
-  if (projects().length >= MAX) return alert(`Es gibt schon ${MAX} Projekte. Bitte erst eins löschen.`);
+  if (projects().length >= MAX) return Dialog.alert(`Es gibt schon ${MAX} Projekte. Bitte erst eins löschen.`);
   const id = uid(); counters[id] = { ...FRESH(name), used: Date.now() }; $('pnew').value = '';
   pick(id); openSetup(); build();
 };
 $('pnew').onkeydown = e => { if (e.key === 'Enter') $('padd').click(); };
 $('pname').onchange = () => { if (cur === 'frei') return; s.name = $('pname').value.trim() || 'Projekt'; save(); openSetup(); render(); };
-$('pdel').onclick = () => {
-  if (cur === 'frei' || !confirm(`Projekt „${nameOf(cur)}“ löschen? Der Zählerstand geht verloren.`)) return;
+$('pdel').onclick = async () => {
+  if (cur === 'frei' || !(await Dialog.confirm(`Projekt „${nameOf(cur)}“ löschen? Der Zählerstand geht verloren.`, { ok: 'Löschen', danger: true }))) return;
   delete counters[cur]; pick('frei'); openSetup(); build();
 };
 $('sizes').onclick = e => {
@@ -283,8 +284,8 @@ $('sizes').onclick = e => {
 };
 $('menu').onclick = () => document.body.classList.contains('setup') ? $('ok').click() : openSetup();
 let zeroOk = false;
-$('reset').onclick = () => { if (confirm('Zähler auf 0 zurücksetzen?')) { $('set').value = 0; zeroOk = true; } };
-$('ok').onclick = () => {
+$('reset').onclick = async () => { if (await Dialog.confirm('Zähler auf 0 zurücksetzen?', { ok: 'Zurücksetzen', danger: true })) { $('set').value = 0; zeroOk = true; } };
+$('ok').onclick = async () => {
   const on = $('sizes').querySelector('.on');
   s.n = on ? +on.dataset.n : s.n;
   s.target = Math.max(0, parseInt($('target').value) || 0);
@@ -292,7 +293,7 @@ $('ok').onclick = () => {
   // Leeres Feld = Stand bleibt; 0 nur nach Rückfrage (oder über „Auf 0 zurücksetzen“)
   const v = $('set').value.trim(), t = total();
   if (v !== '' && +v !== t) {
-    if (+v === 0 && !zeroOk && !confirm(`Zähler von Reihe ${t} auf 0 zurücksetzen?`)) return;
+    if (+v === 0 && !zeroOk && !(await Dialog.confirm(`Zähler von Reihe ${t} auf 0 zurücksetzen?`, { ok: 'Zurücksetzen', danger: true }))) return;
     setTotal(+v);
   } else setTotal(t);
   zeroOk = false;

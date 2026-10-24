@@ -26,3 +26,16 @@ input { accent-color:var(--coral); }
 /* Tippfläche 44 px, sichtbar bleibt der kleine Kreis */
 .help::after { content:''; position:absolute; inset:-6px; }
 .tools { display:flex; align-items:center; gap:4px; }
+/* Rückfragen und Hinweise (shared/dialog.js) */
+.idlg { border:0; padding:0; border-radius:20px; background:var(--paper); color:var(--ink); box-shadow:var(--shadow-soft); width:min(420px, calc(100vw - 32px)); max-height:calc(100vh - 32px); overflow:auto; }
+.idlg::backdrop { background:rgba(34,32,27,.45); }
+.idlg form { margin:0; padding:22px 20px 18px; display:flex; flex-direction:column; gap:14px; }
+.idlg h2 { margin:0; font-family:var(--display); font-size:1.3rem; font-weight:700; line-height:1.2; }
+.idlg p { margin:0; font-size:1.02rem; line-height:1.45; white-space:pre-line; overflow-wrap:anywhere; }
+.idlg input { font:inherit; padding:10px 14px; min-height:44px; border-radius:999px; border:var(--field-border); background:#fff; color:var(--ink); width:100%; }
+.idlg-btns { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:10px; margin-top:4px; }
+.idlg-btns button { min-height:44px; min-width:44px; font-size:1rem; }
+.idlg-btns .small { padding:10px 18px; font-size:1rem; }
+.idlg-btns .btn { padding:10px 22px; box-shadow:none; }
+.idlg button:focus-visible, .idlg input:focus-visible { outline:3px solid var(--ink); outline-offset:2px; }
+.idlg input::selection { background:var(--coral-soft); color:var(--ink); }
