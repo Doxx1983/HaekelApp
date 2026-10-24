@@ -1,5 +1,5 @@
 // Gesamtsicherung aller Apps in einer JSON-Datei: gespeicherte Daten (localStorage, Schlüssel <app>.*) und die Mustersammlung (IndexedDB).
-// Braucht store.js, muster-db.js und projekte.js. Format: { app: 'isadody', v: 2, date, local: { schlüssel: JSON-Text }, items: [Muster, Datei als Base64] }.
+// Braucht store.js, dialog.js, muster-db.js, projekte.js und erinnerung.js. Format: { app: 'isadody', v: 2, date, local: { schlüssel: JSON-Text }, items: [Muster, Datei als Base64] }.
 // Alte Sicherungen der Sammlung ({ app: 'isadody-muster', items }) werden auch gelesen.
 // Beim Einspielen wird alles geprüft und nur Bekanntes übernommen: Die Datei kann von jemand anderem stammen.
 const Sicherung = (() => {
@@ -58,7 +58,20 @@ const Sicherung = (() => {
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
     document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
-  // Alles herunterladen; merkt sich den Zeitpunkt für die Erinnerung
+  // Datei speichern. true nur, wenn sie sicher angekommen ist: mit Speichern-Fenster (Chrome, Edge am Rechner) nach dem Schreiben,
+  // sonst nach Rückfrage, denn ob ein Download klappt, erfährt die Seite nicht.
+  async function keep(blob, name) {
+    if (window.showSaveFilePicker && window.top === window) {
+      let h;
+      try { h = await showSaveFilePicker({ suggestedName: name, types: [{ description: 'Sicherung', accept: { 'application/json': ['.json'] } }] }); }
+      catch (e) { if (e && e.name === 'AbortError') return false; h = null; }
+      if (h) { const w = await h.createWritable(); await w.write(blob); await w.close(); return true; }
+    }
+    download(blob, name);
+    await new Promise(ok => setTimeout(ok, 800)); // Download-Hinweis des Browsers zuerst zeigen
+    return Dialog.confirm(`Ist die Datei „${name}“ angekommen? Schau in „Downloads“ bzw. „Dateien“ nach.`, { title: 'Sicherung gespeichert?', ok: 'Ja, gespeichert', cancel: 'Nein' });
+  }
+  // Alles sichern; merkt sich den Zeitpunkt für die Erinnerung nur bei Erfolg. true/false
   async function save() {
     const local = {};
     for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (APPS.some(a => k.startsWith(a + '.'))) local[k] = localStorage.getItem(k); }
@@ -67,8 +80,9 @@ const Sicherung = (() => {
     const out = [];
     for (const it of items) { const o = { ...it }; delete o.thumb; if (it.blob) o.blob = await b64(it.blob); out.push(o); }
     const d = new Date().toISOString().slice(0, 10);
-    download(new Blob([JSON.stringify({ app: 'isadody', v: 2, date: Date.now(), local, items: out })], { type: 'application/json' }), `isadody-sicherung-${d}.json`);
-    st.set('last', Date.now());
+    const ok = await keep(new Blob([JSON.stringify({ app: 'isadody', v: 2, date: Date.now(), local, items: out })], { type: 'application/json' }), `isadody-sicherung-${d}.json`);
+    if (ok) st.set('last', Date.now());
+    return ok;
   }
 
   // ---- Einspielen ----
@@ -81,26 +95,29 @@ const Sicherung = (() => {
     } catch { return null; }
   }
   const json = s => { try { return JSON.parse(s); } catch { return undefined; } };
-  // Vorhandenes bleibt; aus der Sicherung kommt, was fehlt. Projekte und Zähler: der zuletzt benutzte Stand gewinnt.
+  // Vorhandenes bleibt; aus der Sicherung kommt, was fehlt. Projekte und Zähler: der zuletzt benutzte Stand gewinnt,
+  // Muster: die zuletzt geänderte Fassung. Neue Projekte nur bis zur Grenze von Projekte.MAX (die zuletzt benutzten zuerst).
   // Ergebnis { ok, text } für eine kurze Meldung
   async function restore(file) {
     let data; try { data = JSON.parse(await file.text()); } catch { return { ok: false, text: 'Datei ist keine Sicherung' }; }
     if (!obj(data) || !['isadody', 'isadody-muster'].includes(data.app)) return { ok: false, text: 'Datei ist keine Isadody-Sicherung' };
-    const parts = [];
+    const parts = [], notes = [];
     if (data.app === 'isadody' && obj(data.local)) {
       const L = data.local, a = Store('anleitung'), z = Store('zaehler'), g = Store('grid');
       // Projekte des Häkelhelfers
       const inP = json(L['anleitung.projects']);
       if (Array.isArray(inP)) {
-        const list = Projekte.all(); let n = 0;
-        for (const p of inP.map(cleanProject).filter(Boolean)) {
+        const list = Projekte.all(); let n = 0, over = 0;
+        for (const p of inP.map(cleanProject).filter(Boolean).sort((x, y) => y.used - x.used)) {
           const i = list.findIndex(x => x.id === p.id);
-          if (i < 0) { list.push(p); n++; } else if (p.used > (list[i].used || 0)) { list[i] = p; n++; }
+          if (i >= 0) { if (p.used > (list[i].used || 0)) { list[i] = p; n++; } }
+          else if (list.length < Projekte.MAX) { list.push(p); n++; } else over++;
         }
-        a.set('projects', list);
+        if (n && !a.set('projects', list)) return { ok: false, text: 'Speicher voll: Projekte nicht eingespielt. Bitte alte Projekte oder Muster löschen.' };
         const cur = json(L['anleitung.current']);
         if (!a.get('current', '') && typeof cur === 'string' && list.some(x => x.id === cur)) a.set('current', cur);
         if (n) parts.push(`${n} ${n === 1 ? 'Projekt' : 'Projekte'}`);
+        if (over) notes.push(`${over} ${over === 1 ? 'Projekt' : 'Projekte'} nicht übernommen: Im Häkelhelfer ist Platz für ${Projekte.MAX}. Dort erst Projekte löschen, dann noch einmal einspielen.`);
       }
       // Zähler
       const inZ = json(L['zaehler.counters']);
@@ -115,7 +132,8 @@ const Sicherung = (() => {
       }
       // Grid-Ersteller: nur, wenn hier noch kein Raster liegt
       const gs = cleanGrid(json(L['grid.state']));
-      if (gs && !g.get('state', null)) {
+      if (gs && g.get('state', null)) notes.push('Grid nicht übernommen: Hier liegt schon ein Raster.');
+      else if (gs) {
         g.set('state', gs); g.set('src', cleanSrc(json(L['grid.src'])));
         const mid = json(L['grid.mid']); if (typeof mid === 'string' && ID.test(mid)) g.set('mid', mid);
         parts.push('Grid');
@@ -131,28 +149,23 @@ const Sicherung = (() => {
     }
     // Mustersammlung
     if (Array.isArray(data.items)) {
-      let n = 0, same = 0;
+      let n = 0, upd = 0, same = 0;
+      const when = x => x.changed || x.added || 0;
       for (const o of data.items) {
         const it = cleanItem(o); if (!it) continue;
         try {
-          if (await MusterDB.get(it.id)) { same++; continue; }
+          const old = await MusterDB.get(it.id);
+          if (old && when(it) <= when(old)) { same++; continue; }
           if (typeof it.blob === 'string') { it.blob = unb64(it.blob, it.mime); if (it.kind === 'image') it.thumb = await thumbOf(it.blob); }
-          await MusterDB.put(it); n++;
-        } catch { return { ok: false, text: `Speicher voll: ${n} Muster eingespielt, der Rest fehlt` }; }
+          await MusterDB.put(old ? { ...old, ...it } : it); old ? upd++ : n++;
+        } catch { return { ok: false, text: `Speicher voll: ${n + upd} Muster eingespielt, der Rest fehlt` }; }
       }
       if (n) parts.push(`${n} Muster`);
-      if (same && !n) parts.push('Muster schon vorhanden');
+      if (upd) parts.push(`${upd} Muster aktualisiert`);
+      if (same && !n && !upd) parts.push('Muster schon vorhanden');
     }
-    return { ok: true, text: parts.length ? `Eingespielt: ${parts.join(', ')}` : 'Nichts Neues in der Sicherung' };
+    const text = (parts.length ? `Eingespielt: ${parts.join(', ')}` : 'Nichts Neues in der Sicherung') + (notes.length ? '\n\n' + notes.join('\n') : '');
+    return { ok: true, text };
   }
-
-  // Erinnerung: Text zur letzten Sicherung; warn = lange her oder nie (und es gibt etwas zu sichern)
-  async function status() {
-    const last = st.get('last', 0), days = last ? Math.floor((Date.now() - last) / 864e5) : -1;
-    let has = Projekte.all().length > 0 || !!Store('zaehler').get('counters', null) || !!Store('grid').get('state', null) || Store('lexikon').get('fav', []).length > 0;
-    if (!has) try { has = (await MusterDB.all()).length > 0; } catch {}
-    const text = !last ? 'Noch keine Sicherung' : days === 0 ? 'Letzte Sicherung: heute' : days === 1 ? 'Letzte Sicherung: gestern' : `Letzte Sicherung vor ${days} Tagen`;
-    return { text, warn: has && (!last || days >= 14) };
-  }
-  return { save, restore, status, cleanItem, cleanGrid };
+  return { save, restore, status: () => Erinnerung.status(), cleanItem, cleanGrid };
 })();

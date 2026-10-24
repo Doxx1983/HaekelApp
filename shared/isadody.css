@@ -39,3 +39,8 @@ input { accent-color:var(--coral); }
 .idlg-btns .btn { padding:10px 22px; box-shadow:none; }
 .idlg button:focus-visible, .idlg input:focus-visible { outline:3px solid var(--ink); outline-offset:2px; }
 .idlg input::selection { background:var(--coral-soft); color:var(--ink); }
+/* Erinnerung an die Sicherung (shared/erinnerung.js) */
+.backup-hint { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 12px; margin:8px 0; padding:10px 14px; background:var(--coral-soft); border:1px solid var(--coral); border-radius:16px; color:var(--ink); }
+.backup-hint p { margin:0; font-size:.9rem; flex:1 1 220px; }
+.backup-hint div { display:flex; gap:8px; }
+.backup-hint .small { background:var(--paper); border:1px solid var(--line); }
