@@ -82,6 +82,7 @@
     <div class="bar">
       <button class="small" id="zoomOut" aria-label="Verkleinern">−</button>
       <button class="small" id="zoomIn" aria-label="Vergrößern">+</button>
+      <button class="small" id="zoomFit">Ganzes Bild</button>
       <button class="small" id="paint">✎ Malen</button>
       <button class="small" id="undo" disabled>↶ Rückgängig</button>
       <button class="small" id="png">Bild speichern</button>
@@ -266,7 +267,10 @@ function build() {
 
 // ---- Zeichnen ----
 const NUM = 30; // Rand für Reihen-/Maschenzahlen
-function cellSize() { return Math.max(4, Math.floor((($('wrap').clientWidth || 600) - 2 * NUM) / G.w * zoom)); }
+// zoom 1 = Fensterbreite; kleinster Wert = ganzes Raster passt ins Fenster (Breite und Höhe)
+const baseSize = () => ((($('wrap').clientWidth || 600) - 2 * NUM) / G.w);
+const fitSize = () => Math.max(1, Math.min(baseSize(), ((innerHeight * 0.75) - NUM - 2) / G.h));
+function cellSize() { const cs = Math.max(fitSize(), baseSize() * zoom); return cs >= 4 ? Math.floor(cs) : cs; }
 function drawChart(cv, cs) {
   const { w, h, palette, cells } = G, o = opts(), dpr = window.devicePixelRatio || 1;
   const W = w * cs + 2 * NUM, H = h * cs + NUM;
@@ -282,7 +286,7 @@ function drawChart(cv, cs) {
   cx.fillStyle = '#5B5347'; cx.font = `700 ${Math.min(12, Math.max(9, cs))}px Nunito, system-ui, sans-serif`; cx.textBaseline = 'middle';
   const every = cs >= 14 ? 1 : cs >= 8 ? 5 : 10;
   for (let n = 1; n <= h; n++) if (n === 1 || n % every === 0) {
-    const right = fromRight(n, o.mode, o.left), y = (h - n) * cs + cs / 2;
+    const right = fromRight(n, o.mode, o.left), y = Math.max(6, (h - n) * cs + cs / 2);
     cx.textAlign = right ? 'left' : 'right'; cx.fillText(n, right ? NUM + w * cs + 4 : NUM - 4, y);
   }
   cx.textAlign = 'center';
@@ -362,7 +366,8 @@ $('ncol').oninput = later; $('smooth').onchange = build;
 $('keep').onchange = () => { if ($('keep').checked && img) { fitRows(); build(); } };
 $('mode').onchange = $('left').onchange = () => { if (G) { draw(); save(); } };
 $('zoomIn').onclick = () => { zoom = Math.min(8, zoom * 1.4); draw(); };
-$('zoomOut').onclick = () => { zoom = Math.max(0.3, zoom / 1.4); draw(); };
+$('zoomOut').onclick = () => { zoom = Math.max(fitSize() / baseSize(), zoom / 1.4); draw(); };
+$('zoomFit').onclick = () => { zoom = fitSize() / baseSize(); draw(); };
 addEventListener('resize', () => { if (G) drawChart($('chart'), cellSize()); });
 
 // ---- Ausgabe ----
