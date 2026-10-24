@@ -26,10 +26,9 @@
   #hint { display:none; background:var(--coral-soft); border-radius:12px; padding:10px 14px; margin:6px 0; font-size:.92rem; }
   #hint.on { display:block; }
   #list { display:flex; flex-direction:column; gap:10px; padding:8px 0 24px; }
-  /* Eintrag: in der Liste schlicht, die Naht (wie die Kacheln im Häkelhelfer) nur beim geöffneten */
-  .e { position:relative; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; scroll-margin-top:12px; }
-  .e.open { box-shadow:var(--shadow-card); }
-  .e.open::after { content:''; position:absolute; inset:4px; border:2px dashed var(--ink); border-radius:13px; opacity:.15; pointer-events:none; }
+  /* Eintrag nur mit gestrichelter Naht wie die Karten der Startseite, ohne Rand und Schatten */
+  .e { position:relative; background:var(--paper-alt); border-radius:16px; scroll-margin-top:12px; }
+  .e::after { content:''; position:absolute; inset:4px; border:2px dashed var(--ink); border-radius:12px; opacity:.28; pointer-events:none; }
   .e .hd { display:flex; align-items:center; gap:10px; width:100%; background:none; text-align:left; padding:14px 56px 14px 16px; min-height:56px; }
   .e h2 { font-family:var(--display); font-size:1.15rem; font-weight:700; margin:0; line-height:1.2; }
   .e .ab { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
