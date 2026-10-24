@@ -7,18 +7,19 @@ Sammlung kleiner Web-Apps fürs Häkeln. Die Startseite (`/index.html`) verlinkt
 | `anleitung/` | Häkelhelfer (unten beschrieben) |
 | `zaehler/` | Reihenzähler im Pop-it-Stil |
 | `grid/` | Grid-Ersteller: Bild → Tapestry-Muster |
-| `muster/` | Mustersammlung: Bilder, PDFs, Texte ablegen, taggen, suchen |
+| `muster/` | Mustersammlung: Bilder, PDFs, Word, Texte ablegen, taggen, suchen |
 | `shared/` | gemeinsam: `isadody.css` (CD-Tokens, Schriften, Grundstil, `.logo`, `.small`, `.btn`, `.home`), `store.js` (`Store('<app>')` speichert unter `<app>.<key>`), `logo.png` |
 
 Neue App: eigener Ordner mit `index.html`, bindet `../shared/isadody.css` und `../shared/store.js` ein, Logo `../shared/logo.png`, Link `<a class="home" href="../">‹ Alle Apps</a>`, Karte auf der Startseite eintragen. Kein Build.
 
 ## Mustersammlung (`muster/`)
 
-- **Ablegen:** Bilder, PDFs und `.txt`-Dateien über „+ Muster“ (mehrere auf einmal, am Computer auch per Ziehen) oder Text einfügen.
+- **Ablegen:** Bilder, PDFs, Word (`.docx`, `.doc`) und `.txt`-Dateien über „+ Muster“ (mehrere auf einmal, am Computer auch per Ziehen) oder Text einfügen.
 - **Ordnen:** Name, Tags (Enter oder Komma, Vorschläge aus vorhandenen Tags), Notizen, Favorit. Übersicht mit Suche (Name, Tags, Notizen, Textinhalt), Tag-Filtern (mehrere = alle müssen passen), „★ Favoriten“, Sortierung Neueste/A–Z.
 - **Speicher:** IndexedDB `isadody-muster` (Dateien als Blob, Bilder mit kleinem Vorschaubild), Filter im Store `muster.*`. Die App bittet den Browser per `navigator.storage.persist()`, die Daten nicht automatisch zu löschen.
 - **Sicherung:** „Sicherung herunterladen“ erzeugt eine JSON-Datei mit allen Mustern (Dateien als Base64), „Sicherung einspielen“ fügt fehlende Muster hinzu (gleiche ID wird übersprungen).
 - **Häkelhelfer:** Textmuster lassen sich mit „Im Häkelhelfer öffnen“ direkt dort starten (schreibt `anleitung.pattern`; Fortschritt wird nur bei anderem Text zurückgesetzt).
+- Aus `.docx` liest die App den Text (eigener ZIP-Leser mit `DecompressionStream`, keine Bibliothek): Vorschau, Suche im Inhalt und „Im Häkelhelfer öffnen“. Alte `.doc` werden nur gespeichert und heruntergeladen.
 - PDFs werden am Computer eingebettet angezeigt, auf dem Handy per „PDF öffnen“.
 
 ## Häkelhelfer (`anleitung/`)

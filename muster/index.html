@@ -36,7 +36,7 @@
   .tg { font-size:.72rem; font-weight:700; color:var(--ink-soft); background:var(--paper); border:1px solid var(--line); border-radius:999px; padding:1px 8px; }
   .star { position:absolute; top:12px; right:12px; width:30px; height:30px; border-radius:50%; background:var(--paper); display:grid; place-items:center; font-size:1rem; box-shadow:var(--shadow-card); }
   #empty { text-align:center; color:var(--ink-soft); padding:40px 10px; }
-  #empty .btn { margin-top:12px; }
+  #empty .btn { margin-top:12px; } #empty .note { font-size:.85rem; }
   /* Detailansicht */
   #detail { position:fixed; inset:0; background:var(--paper); overflow:auto; padding:env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 24px); display:none; }
   body.open #detail { display:block; } body.open { overflow:hidden; }
@@ -48,6 +48,7 @@
   #prev iframe { display:block; width:100%; height:70vh; border:0; background:#fff; }
   #prev pre { margin:0; padding:14px; max-height:60vh; overflow:auto; white-space:pre-wrap; font:inherit; }
   #prev .pdf { padding:30px; text-align:center; font-size:3rem; }
+  #prev .note { font-size:.9rem; color:var(--ink-soft); margin:8px 0 0; }
   #title { font-family:var(--display); font-size:1.4rem; font-weight:700; border-radius:16px; }
   label.f { display:flex; flex-direction:column; gap:4px; font-size:.85rem; font-weight:700; color:var(--ink-soft); }
   #dtags { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
@@ -108,7 +109,7 @@
   <div id="dbtns"></div>
   <div id="meta"></div>
 </div></section>
-<input type="file" id="file" multiple accept="image/*,application/pdf,.pdf,.txt,text/plain" hidden>
+<input type="file" id="file" multiple accept="image/*,application/pdf,.pdf,.txt,text/plain,.docx,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword" hidden>
 <input type="file" id="imp" accept=".json,application/json" hidden>
 <div id="drop">Loslassen zum Hinzufügen</div>
 <div id="toast"></div>
@@ -137,11 +138,33 @@ const all = () => tx('readonly', s => s.getAll());
 
 function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.h); toast.h = setTimeout(() => el.classList.remove('on'), 2200); }
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-const kindOf = f => /^image\//.test(f.type) ? 'image' : (f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) ? 'pdf' : (/^text\//.test(f.type) || /\.txt$/i.test(f.name)) ? 'text' : null;
+const kindOf = f => /^image\//.test(f.type) ? 'image' : (f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) ? 'pdf' : /\.docx?$/i.test(f.name) || /msword|wordprocessingml/.test(f.type) ? 'word' : (/^text\//.test(f.type) || /\.txt$/i.test(f.name)) ? 'text' : null;
 const baseName = n => n.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
 const normTag = t => t.replace(/^#/, '').trim();
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const kb = n => n > 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+
+// Text aus einer .docx lesen (ZIP mit word/document.xml), ohne Bibliothek; alte .doc liefern ''
+async function docxText(blob) {
+  try {
+    const b = new Uint8Array(await blob.arrayBuffer()), v = new DataView(b.buffer);
+    let e = b.length - 22; while (e >= 0 && v.getUint32(e, true) !== 0x06054b50) e--;
+    if (e < 0) return '';
+    for (let o = v.getUint32(e + 16, true), n = v.getUint16(e + 10, true); n--; ) {
+      const m = v.getUint16(o + 10, true), cs = v.getUint32(o + 20, true), nl = v.getUint16(o + 28, true), lo = v.getUint32(o + 42, true);
+      const name = new TextDecoder().decode(b.subarray(o + 46, o + 46 + nl));
+      o += 46 + nl + v.getUint16(o + 30, true) + v.getUint16(o + 32, true);
+      if (name !== 'word/document.xml') continue;
+      const start = lo + 30 + v.getUint16(lo + 26, true) + v.getUint16(lo + 28, true), data = b.subarray(start, start + cs);
+      const raw = m === 0 ? data : new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
+      const xml = new DOMParser().parseFromString(new TextDecoder().decode(raw), 'application/xml');
+      const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+      return [...xml.getElementsByTagNameNS(W, 'p')].map(p => [...p.getElementsByTagNameNS(W, '*')]
+        .map(x => x.localName === 't' ? x.textContent : x.localName === 'tab' ? '\t' : x.localName === 'br' ? '\n' : '').join('')).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+    }
+  } catch {}
+  return '';
+}
 
 // kleines Vorschaubild, damit die Übersicht auch bei vielen Fotos flott bleibt
 async function thumbOf(blob) {
@@ -158,11 +181,11 @@ async function addFiles(files) {
   for (const f of files) {
     const kind = kindOf(f); if (!kind) { skip++; continue; }
     const it = { id: uid(), kind, title: baseName(f.name) || 'Muster', name: f.name, mime: f.type || (kind === 'pdf' ? 'application/pdf' : 'text/plain'), size: f.size, tags: [], fav: false, notes: '', added: Date.now() };
-    if (kind === 'text') it.text = await f.text(); else { it.blob = f; if (kind === 'image') it.thumb = await thumbOf(f); }
+    if (kind === 'text') it.text = await f.text(); else { it.blob = f; if (kind === 'image') it.thumb = await thumbOf(f); if (kind === 'word') it.text = await docxText(f); }
     await put(it); items.push(it); n++;
   }
   persist(); render();
-  toast(n ? `${n} Muster hinzugefügt` + (skip ? `, ${skip} übersprungen` : '') : 'Nur Bilder, PDFs und Textdateien möglich');
+  toast(n ? `${n} Muster hinzugefügt` + (skip ? `, ${skip} übersprungen` : '') : 'Nur Bilder, PDFs, Word- und Textdateien möglich');
   if (n === 1) show(items[items.length - 1].id);
 }
 // Browser bitten, die Sammlung nicht automatisch zu löschen, wenn der Speicher knapp wird
@@ -190,8 +213,8 @@ function thumbHtml(it) {
     if (!urls.has(it.id)) urls.set(it.id, URL.createObjectURL(it.thumb || it.blob));
     return `<img src="${urls.get(it.id)}" alt="">`;
   }
-  if (it.kind === 'text') return `<pre>${esc((it.text || '').slice(0, 400))}</pre>`;
-  return '📄';
+  if (it.text) return `<pre>${esc(it.text.slice(0, 400))}</pre>`;
+  return it.kind === 'word' ? '📝' : '📄';
 }
 function render() {
   const tags = allTags();
@@ -206,7 +229,7 @@ function render() {
   $('grid').innerHTML = vis.map(it => `<button class="card" data-id="${it.id}">
     <div class="thumb">${thumbHtml(it)}</div>${it.fav ? '<span class="star">★</span>' : ''}
     <h3>${esc(it.title)}</h3>${it.tags.length ? `<div class="tags">${it.tags.map(t => `<span class="tg">${esc(t)}</span>`).join('')}</div>` : ''}</button>`).join('');
-  $('empty').innerHTML = !items.length ? `<p>Noch keine Muster. Lege Bilder, PDFs oder Textdateien ab und ordne sie mit Tags.</p><button class="btn" data-a="file">+ Erstes Muster</button>`
+  $('empty').innerHTML = !items.length ? `<p>Noch keine Muster. Lege Bilder, PDFs, Word- oder Textdateien ab und ordne sie mit Tags.</p><p class="note">Die Muster bleiben nur auf diesem Gerät. Gekaufte Anleitungen bitte nicht weitergeben.</p><button class="btn" data-a="file">+ Erstes Muster</button>`
     : !vis.length ? '<p>Nichts gefunden. Filter oder Suche ändern.</p>' : '';
 }
 
@@ -218,7 +241,8 @@ function show(id) {
     const u = URL.createObjectURL(new Blob([cur.blob], { type: 'application/pdf' })); p.dataset.url = u;
     // eingebettete PDF-Anzeige gibt es nicht auf allen Handys, darum zusätzlich „Öffnen“
     p.innerHTML = matchMedia('(pointer:fine)').matches ? `<iframe src="${u}" title="PDF"></iframe>` : '<div class="pdf">📄</div>';
-  } else p.innerHTML = `<pre>${esc(cur.text || '')}</pre>`;
+  } else if (cur.kind === 'word' && !cur.text) p.innerHTML = '<div class="pdf">📝<p class="note">Keine Vorschau für ältere .doc-Dateien. Zum Ansehen herunterladen.</p></div>';
+  else p.innerHTML = `<pre>${esc(cur.text || '')}</pre>`;
   $('title').value = cur.title; $('notes').value = cur.notes || '';
   renderDetail();
   $('meta').textContent = `${cur.name || 'Eingefügter Text'} · ${cur.kind === 'text' ? (cur.text || '').length + ' Zeichen' : kb(cur.size || 0)} · hinzugefügt am ${new Date(cur.added).toLocaleDateString('de-DE')}`;
@@ -229,7 +253,8 @@ function renderDetail() {
   $('dfav').textContent = cur.fav ? '★ Favorit' : '☆ Favorit';
   $('dtags').querySelectorAll('.tg').forEach(e => e.remove());
   $('tagin').insertAdjacentHTML('beforebegin', cur.tags.map((t, i) => `<span class="tg">${esc(t)}<button data-rm="${i}" aria-label="Tag ${esc(t)} entfernen">×</button></span>`).join(''));
-  $('dbtns').innerHTML = (cur.kind === 'text' ? '<button class="btn" data-a="helper">Im Häkelhelfer öffnen</button>' : `<button class="btn" data-a="openfile">${cur.kind === 'pdf' ? 'PDF öffnen' : 'Bild öffnen'}</button>`) +
+  $('dbtns').innerHTML = (cur.kind === 'text' || cur.text ? '<button class="btn" data-a="helper">Im Häkelhelfer öffnen</button>' : '') +
+    (cur.kind === 'pdf' || cur.kind === 'image' ? `<button class="btn" data-a="openfile">${cur.kind === 'pdf' ? 'PDF öffnen' : 'Bild öffnen'}</button>` : '') +
     '<button class="small" data-a="download">Herunterladen</button><button class="small" id="del" data-a="delete">Löschen</button>';
 }
 function close() {
