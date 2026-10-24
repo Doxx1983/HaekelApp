@@ -108,7 +108,7 @@
   <div id="dbtns"></div>
   <div id="meta"></div>
 </div></section>
-<input type="file" id="file" multiple accept="image/*,application/pdf,.pdf,.txt,text/plain,.docx,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword" hidden>
+<input type="file" id="file" multiple accept="image/*,application/pdf,.pdf,.txt,text/plain,.docx,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,.odt,application/vnd.oasis.opendocument.text" hidden>
 <input type="file" id="imp" accept=".json,application/json" hidden>
 <div id="drop">Loslassen zum Hinzufügen</div>
 <div id="toast"></div>
@@ -137,14 +137,14 @@ const all = () => tx('readonly', s => s.getAll());
 
 function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.h); toast.h = setTimeout(() => el.classList.remove('on'), 2200); }
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-const kindOf = f => /^image\//.test(f.type) ? 'image' : (f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) ? 'pdf' : /\.docx?$/i.test(f.name) || /msword|wordprocessingml/.test(f.type) ? 'word' : (/^text\//.test(f.type) || /\.txt$/i.test(f.name)) ? 'text' : null;
+const kindOf = f => /^image\//.test(f.type) ? 'image' : (f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) ? 'pdf' : /\.(docx?|odt)$/i.test(f.name) || /msword|wordprocessingml|opendocument\.text/.test(f.type) ? 'word' : (/^text\//.test(f.type) || /\.txt$/i.test(f.name)) ? 'text' : null;
 const baseName = n => n.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
 const normTag = t => t.replace(/^#/, '').trim();
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const kb = n => n > 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
 
-// Text aus einer .docx lesen (ZIP mit word/document.xml), ohne Bibliothek; alte .doc liefern ''
-async function docxText(blob) {
+// Text aus .docx (word/document.xml) oder .odt (content.xml) lesen; beides sind ZIP-Dateien. Ohne Bibliothek; alte .doc liefern ''
+async function docText(blob) {
   try {
     const b = new Uint8Array(await blob.arrayBuffer()), v = new DataView(b.buffer);
     let e = b.length - 22; while (e >= 0 && v.getUint32(e, true) !== 0x06054b50) e--;
@@ -153,16 +153,35 @@ async function docxText(blob) {
       const m = v.getUint16(o + 10, true), cs = v.getUint32(o + 20, true), nl = v.getUint16(o + 28, true), lo = v.getUint32(o + 42, true);
       const name = new TextDecoder().decode(b.subarray(o + 46, o + 46 + nl));
       o += 46 + nl + v.getUint16(o + 30, true) + v.getUint16(o + 32, true);
-      if (name !== 'word/document.xml') continue;
+      if (name !== 'word/document.xml' && name !== 'content.xml') continue;
       const start = lo + 30 + v.getUint16(lo + 26, true) + v.getUint16(lo + 28, true), data = b.subarray(start, start + cs);
       const raw = m === 0 ? data : new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
       const xml = new DOMParser().parseFromString(new TextDecoder().decode(raw), 'application/xml');
-      const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
-      return [...xml.getElementsByTagNameNS(W, 'p')].map(p => [...p.getElementsByTagNameNS(W, '*')]
-        .map(x => x.localName === 't' ? x.textContent : x.localName === 'tab' ? '\t' : x.localName === 'br' ? '\n' : '').join('')).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+      return (name === 'content.xml' ? odtText(xml) : docxText(xml)).replace(/\n{3,}/g, '\n\n').trim();
     }
   } catch {}
   return '';
+}
+
+function docxText(xml) {
+  const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  return [...xml.getElementsByTagNameNS(W, 'p')].map(p => [...p.getElementsByTagNameNS(W, '*')]
+    .map(x => x.localName === 't' ? x.textContent : x.localName === 'tab' ? '\t' : x.localName === 'br' ? '\n' : '').join('')).join('\n');
+}
+function odtText(xml) {
+  const T = 'urn:oasis:names:tc:opendocument:xmlns:text:1.0', body = xml.getElementsByTagNameNS('urn:oasis:names:tc:opendocument:xmlns:office:1.0', 'text')[0];
+  const walk = n => [...n.childNodes].map(c => {
+    if (c.nodeType === 3) return c.nodeValue;
+    if (c.nodeType !== 1) return '';
+    if (c.namespaceURI === T) {
+      if (c.localName === 's') return ' '.repeat(+c.getAttributeNS(T, 'c') || 1);
+      if (c.localName === 'tab') return '\t';
+      if (c.localName === 'line-break') return '\n';
+      if (c.localName === 'p' || c.localName === 'h') return walk(c) + '\n';
+    }
+    return walk(c);
+  }).join('');
+  return body ? walk(body) : '';
 }
 
 // kleines Vorschaubild, damit die Übersicht auch bei vielen Fotos flott bleibt
@@ -180,11 +199,11 @@ async function addFiles(files) {
   for (const f of files) {
     const kind = kindOf(f); if (!kind) { skip++; continue; }
     const it = { id: uid(), kind, title: baseName(f.name) || 'Muster', name: f.name, mime: f.type || (kind === 'pdf' ? 'application/pdf' : 'text/plain'), size: f.size, tags: [], fav: false, notes: '', added: Date.now() };
-    if (kind === 'text') it.text = await f.text(); else { it.blob = f; if (kind === 'image') it.thumb = await thumbOf(f); if (kind === 'word') it.text = await docxText(f); }
+    if (kind === 'text') it.text = await f.text(); else { it.blob = f; if (kind === 'image') it.thumb = await thumbOf(f); if (kind === 'word') it.text = await docText(f); }
     await put(it); items.push(it); n++;
   }
   persist(); render();
-  toast(n ? `${n} Muster hinzugefügt` + (skip ? `, ${skip} übersprungen` : '') : 'Nur Bilder, PDFs, Word- und Textdateien möglich');
+  toast(n ? `${n} Muster hinzugefügt` + (skip ? `, ${skip} übersprungen` : '') : 'Nur Bilder, PDFs, Word-, ODT- und Textdateien möglich');
   if (n === 1) show(items[items.length - 1].id);
 }
 // Browser bitten, die Sammlung nicht automatisch zu löschen, wenn der Speicher knapp wird
@@ -228,7 +247,7 @@ function render() {
   $('grid').innerHTML = vis.map(it => `<button class="card" data-id="${it.id}">
     <div class="thumb">${thumbHtml(it)}</div>${it.fav ? '<span class="star">★</span>' : ''}
     <h3>${esc(it.title)}</h3>${it.tags.length ? `<div class="tags">${it.tags.map(t => `<span class="tg">${esc(t)}</span>`).join('')}</div>` : ''}</button>`).join('');
-  $('empty').innerHTML = !items.length ? `<p>Noch keine Muster. Lege Bilder, PDFs, Word- oder Textdateien ab und ordne sie mit Tags.</p><p class="note">Die Muster bleiben nur auf diesem Gerät. Gekaufte Anleitungen bitte nicht weitergeben.</p><button class="btn" data-a="file">+ Erstes Muster</button>`
+  $('empty').innerHTML = !items.length ? `<p>Noch keine Muster. Lege Bilder, PDFs, Word-, ODT- oder Textdateien ab und ordne sie mit Tags.</p><p class="note">Die Muster bleiben nur auf diesem Gerät. Gekaufte Anleitungen bitte nicht weitergeben.</p><button class="btn" data-a="file">+ Erstes Muster</button>`
     : !vis.length ? '<p>Nichts gefunden. Filter oder Suche ändern.</p>' : '';
 }
 

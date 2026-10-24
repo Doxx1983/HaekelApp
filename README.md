@@ -14,12 +14,12 @@ Neue App: eigener Ordner mit `index.html`, bindet `../shared/isadody.css` und `.
 
 ## Mustersammlung (`muster/`)
 
-- **Ablegen:** Bilder, PDFs, Word (`.docx`, `.doc`) und `.txt`-Dateien über „+ Muster“ (mehrere auf einmal, am Computer auch per Ziehen) oder Text einfügen.
+- **Ablegen:** Bilder, PDFs, Word (`.docx`, `.doc`), LibreOffice (`.odt`) und `.txt`-Dateien über „+ Muster“ (mehrere auf einmal, am Computer auch per Ziehen) oder Text einfügen.
 - **Ordnen:** Name, Tags (Enter oder Komma, Vorschläge aus vorhandenen Tags), Notizen, Favorit. Übersicht mit Suche (Name, Tags, Notizen, Textinhalt), Tag-Filtern (mehrere = alle müssen passen), „★ Favoriten“, Sortierung Neueste/A–Z.
 - **Speicher:** IndexedDB `isadody-muster` (Dateien als Blob, Bilder mit kleinem Vorschaubild), Filter im Store `muster.*`. Die App bittet den Browser per `navigator.storage.persist()`, die Daten nicht automatisch zu löschen.
 - **Sicherung:** „Sicherung herunterladen“ erzeugt eine JSON-Datei mit allen Mustern (Dateien als Base64), „Sicherung einspielen“ fügt fehlende Muster hinzu (gleiche ID wird übersprungen).
 - **Häkelhelfer:** Textmuster lassen sich mit „Im Häkelhelfer öffnen“ direkt dort starten (schreibt `anleitung.pattern`; Fortschritt wird nur bei anderem Text zurückgesetzt).
-- Aus `.docx` liest die App den Text (eigener ZIP-Leser mit `DecompressionStream`, keine Bibliothek): Vorschau, Suche im Inhalt und „Im Häkelhelfer öffnen“. Alte `.doc` werden nur gespeichert und heruntergeladen.
+- Aus `.docx` und `.odt` liest die App den Text (eigener ZIP-Leser mit `DecompressionStream`, keine Bibliothek): Vorschau, Suche im Inhalt und „Im Häkelhelfer öffnen“. Alte `.doc` werden nur gespeichert und heruntergeladen.
 - PDFs werden am Computer eingebettet angezeigt, auf dem Handy per „PDF öffnen“.
 
 ## Häkelhelfer (`anleitung/`)
