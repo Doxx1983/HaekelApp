@@ -32,7 +32,6 @@
   .app.soon .ic { background:var(--coral-soft); }
   /* Daten sichern */
   #daten { display:flex; flex-direction:column; gap:10px; padding:16px 18px; margin-bottom:24px; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; }
-  #daten.warn { background:var(--coral-soft); border-color:var(--coral); }
   #daten h2 { font-family:var(--display); font-size:1.15rem; margin:0; }
   #daten p { margin:0; color:var(--ink-soft); font-size:.9rem; }
   #daten #stand { color:var(--ink); font-weight:700; }
@@ -90,7 +89,7 @@
 <script src="shared/sicherung.js"></script>
 <script>
 const $ = id => document.getElementById(id);
-async function stand() { const s = await Sicherung.status(); $('stand').textContent = s.text; $('daten').classList.toggle('warn', s.warn); }
+async function stand() { const s = await Sicherung.status(); $('stand').textContent = s.text; Erinnerung.hint('', () => $('save').click()); }
 $('save').onclick = async () => { $('save').disabled = true; try { await Sicherung.save(); } catch { Dialog.alert('Sicherung nicht möglich.'); } $('save').disabled = false; stand(); };
 $('load').onclick = () => $('file').click();
 $('file').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; const r = await Sicherung.restore(f); Dialog.alert(r.text, { title: 'Sicherung einspielen' }); stand(); };

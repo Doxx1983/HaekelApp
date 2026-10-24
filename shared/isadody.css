@@ -39,8 +39,7 @@ input { accent-color:var(--coral); }
 .idlg-btns .btn { padding:10px 22px; box-shadow:none; }
 .idlg button:focus-visible, .idlg input:focus-visible { outline:3px solid var(--ink); outline-offset:2px; }
 .idlg input::selection { background:var(--coral-soft); color:var(--ink); }
-/* Erinnerung an die Sicherung (shared/erinnerung.js) */
-.backup-hint { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 12px; margin:8px 0; padding:10px 14px; background:var(--coral-soft); border:1px solid var(--coral); border-radius:16px; color:var(--ink); }
-.backup-hint p { margin:0; font-size:.9rem; flex:1 1 220px; }
-.backup-hint div { display:flex; gap:8px; }
-.backup-hint .small { background:var(--paper); border:1px solid var(--line); }
+/* Erinnerung an die Sicherung (shared/erinnerung.js): Zeile am unteren Rand, keine Box */
+.backup-hint { position:fixed; left:0; right:0; bottom:0; z-index:5; display:flex; align-items:center; justify-content:center; min-height:44px; padding:0 16px env(safe-area-inset-bottom); background:var(--paper); color:var(--coral); font-weight:800; font-size:1rem; text-decoration:none; }
+.backup-hint:hover { text-decoration:underline; }
+body:has(.backup-hint) { padding-bottom:calc(52px + env(safe-area-inset-bottom)); }
