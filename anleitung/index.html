@@ -7,6 +7,8 @@
 <meta name="theme-color" content="#FBF6EC">
 <link rel="stylesheet" href="../shared/isadody.css">
 <script src="../shared/store.js"></script>
+<script src="../shared/muster-db.js"></script>
+<script src="../shared/doctext.js"></script>
 <style>
   html,body { height:100%; }
   body { display:flex; flex-direction:column; padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom); }
@@ -27,8 +29,8 @@
   #nav { display:flex; gap:10px; padding:12px 0; align-items:stretch; }
   #back { flex:0 0 22%; background:var(--paper-alt); border:1px solid var(--line); color:var(--ink); border-radius:999px; font-size:1.1rem; font-weight:700; }
   #next { flex:1; background:var(--coral); color:var(--ink); border-radius:999px; box-shadow:var(--shadow-soft); font-family:var(--display); font-size:1.9rem; font-weight:700; padding:22px 0; }
-  #setup { display:none; flex:1; flex-direction:column; gap:10px; }
-  #setup textarea { flex:1; font:inherit; padding:10px; border-radius:10px; border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:16px; }
+  #setup { display:none; flex:1; flex-direction:column; gap:10px; overflow:auto; padding-bottom:12px; }
+  #setup textarea { flex:1; min-height:30vh; font:inherit; padding:10px; border-radius:10px; border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:16px; }
   #setup .row { display:flex; gap:10px; }
   #setup button { flex:1; padding:14px; border-radius:999px; background:var(--coral); color:var(--ink); font-weight:800; }
   #colors { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
@@ -42,6 +44,22 @@
   #colors .hexrow { display:flex; gap:8px; align-items:center; } #colors .prev { width:34px; height:34px; border-radius:50%; border:1px solid var(--ink-soft); }
   #colors input:not([type=range]) { font:inherit; padding:8px 10px; border-radius:12px; border:1px solid var(--line); background:#fff; color:var(--ink); min-width:0; flex:1; }
   #row .dot { display:inline-block; width:.9em; height:.9em; border-radius:50%; vertical-align:middle; margin-left:6px; border:1px solid var(--ink-soft); }
+  /* Auswahl aus der Mustersammlung */
+  #lib { display:flex; flex-direction:column; gap:8px; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; padding:12px; }
+  #lib[hidden] { display:none; }
+  #lib .head { display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-family:var(--display); font-size:1.15rem; font-weight:700; }
+  #lib .head a { font-family:var(--body); font-size:.85rem; color:var(--ink-soft); text-decoration:none; white-space:nowrap; }
+  #libq { font:inherit; padding:10px 14px; border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--ink); min-width:0; }
+  #libtags { display:flex; flex-wrap:wrap; gap:6px; } #libtags:empty { display:none; }
+  #setup #libtags button, #setup #liblist button { flex:none; padding:0; border-radius:0; background:none; font-weight:700; }
+  #setup #libtags button { background:var(--paper); border:1px solid var(--line); border-radius:999px; padding:4px 12px; font-size:.85rem; }
+  #setup #libtags button.on { background:var(--coral-soft); border-color:var(--ink); }
+  #liblist { display:flex; flex-direction:column; gap:6px; max-height:32vh; overflow:auto; }
+  #setup #liblist button { display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:10px 12px; }
+  #setup #liblist button.cur { border-color:var(--ink); }
+  #liblist b { font-family:var(--display); font-size:1.05rem; line-height:1.2; overflow-wrap:anywhere; }
+  #liblist small, #lib .note { color:var(--ink-soft); font-size:.8rem; font-weight:600; }
+  #lib .note:empty { display:none; } #lib .note { margin:0; }
   body.setup #setup { display:flex; } body.setup #chips, body.setup #nav { display:none; }
 </style>
 </head>
@@ -53,13 +71,20 @@
 <main id="chips"></main>
 <div id="nav"><button id="back">‹ Zurück</button><button id="next">Weiter ›</button></div>
 <section id="setup">
-  <p>Häkelanleitung als Textdatei laden oder hier einfügen. Beispiel:<br>
+  <p>Häkelanleitung aus der Sammlung wählen, als Datei laden (Text, Word, ODT) oder hier einfügen. Beispiel:<br>
   <code>R1: 6 fM in Fadenring<br>R2: 6 Zun<br>R3: (fM, Zun) x 6</code><br>
   Englisch: <code>Row 1: Use color A, bs, 254sc, bs</code><br>
   Farben (A, B, …) unten festlegen – die Maschen erscheinen dann in dieser Farbe.</p>
+  <div id="lib" hidden>
+    <div class="head">Aus der Sammlung<a href="../muster/">Sammlung öffnen ›</a></div>
+    <input id="libq" type="search" placeholder="Suchen: Name, Tag, Text">
+    <div id="libtags"></div>
+    <div id="liblist"></div>
+    <p class="note" id="libnote"></p>
+  </div>
   <div id="colors"></div>
   <textarea id="text" placeholder="R1: 6 fM in Fadenring"></textarea>
-  <div class="row"><input type="file" id="file" accept=".txt,text/plain"><button id="ok">Starten</button></div>
+  <div class="row"><input type="file" id="file"><button id="ok">Starten</button></div>
 </section>
 <script>
 const MAX_CHIPS = 8, SINGLE_MAX = 3; // Folgen bis 3 Maschen einzeln, ab 4 als ein Kürzel mit Anzahl
@@ -247,9 +272,50 @@ $('chips').onclick = e => {
 };
 $('next').onclick = () => { if (p < rows[r].pages.length - 1) p++; else if (r < rows.length - 1) { r++; p = 0; } render(); };
 $('back').onclick = () => { if (p > 0) p--; else if (r > 0) { r--; p = rows[r].pages.length - 1; } render(); };
-$('menu').onclick = () => { renderColorPickers(); document.body.classList.add('setup'); };
+$('menu').onclick = () => { renderColorPickers(); loadLib(); document.body.classList.add('setup'); };
 $('text').oninput = renderColorPickers;
-$('file').onchange = async e => { const f = e.target.files[0]; if (f) { $('text').value = await f.text(); renderColorPickers(); } };
+$('file').accept = FILE_ACCEPT;
+$('file').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  const t = await fileText(f);
+  if (t.trim()) { $('text').value = t; renderColorPickers(); }
+  else alert(fileKind(f) ? 'Aus dieser Datei kann der Häkelhelfer keinen Text lesen (Bild, PDF oder alte .doc). Bitte den Text einfügen.' : 'Dieses Dateiformat wird nicht unterstützt.');
+  e.target.value = '';
+};
+// Textmuster aus der Mustersammlung (IndexedDB von muster/); Bilder, PDFs und .doc ohne Text sind nicht wählbar
+let lib = [], libSel = new Set();
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+async function loadLib() {
+  let all; try { all = await MusterDB.all(); } catch { return; }
+  lib = all.filter(it => it.text && it.text.trim()).sort((a, b) => b.fav - a.fav || b.added - a.added);
+  $('lib').hidden = !all.length;
+  const skip = all.length - lib.length;
+  $('libnote').textContent = skip ? `${skip} ${skip === 1 ? 'Muster ist ein Bild oder PDF' : 'Muster sind Bilder oder PDFs'} ohne Text und ${skip === 1 ? 'fehlt' : 'fehlen'} hier.` : '';
+  renderLib();
+}
+function renderLib() {
+  const tags = new Map();
+  for (const it of lib) for (const t of it.tags || []) { const k = t.toLowerCase(); if (!tags.has(k)) tags.set(k, t); }
+  for (const k of [...libSel]) if (!tags.has(k)) libSel.delete(k);
+  $('libtags').innerHTML = [...tags].sort((a, b) => a[1].localeCompare(b[1], 'de'))
+    .map(([k, t]) => `<button data-tag="${esc(k)}"${libSel.has(k) ? ' class="on"' : ''}>${esc(t)}</button>`).join('');
+  const q = $('libq').value.trim().toLowerCase().split(/\s+/).filter(Boolean), now = store.get('pattern', '');
+  const vis = lib.filter(it => {
+    const tg = (it.tags || []).map(t => t.toLowerCase());
+    if (![...libSel].every(t => tg.includes(t))) return false;
+    const hay = [it.title, it.notes, ...(it.tags || []), it.text].join(' ').toLowerCase();
+    return q.every(w => hay.includes(w));
+  });
+  $('liblist').innerHTML = !lib.length ? '<small>Noch keine Textmuster in der Sammlung.</small>' : !vis.length ? '<small>Nichts gefunden.</small>' :
+    vis.map(it => `<button data-id="${esc(it.id)}"${it.text === now ? ' class="cur"' : ''}><b>${it.fav ? '★ ' : ''}${esc(it.title)}</b>` +
+      `<small>${it.text === now ? 'Geladen · ' : ''}${esc((it.tags || []).join(', ') || it.text.trim().split('\n')[0].slice(0, 60))}</small></button>`).join('');
+}
+$('libq').oninput = renderLib;
+$('libtags').onclick = e => { const b = e.target.closest('[data-tag]'); if (!b) return; const k = b.dataset.tag; libSel.has(k) ? libSel.delete(k) : libSel.add(k); renderLib(); };
+$('liblist').onclick = e => {
+  const b = e.target.closest('[data-id]'), it = b && lib.find(x => x.id === b.dataset.id); if (!it) return;
+  $('text').value = it.text; renderColorPickers(); $('ok').click();
+};
 $('ok').onclick = () => {
   const old = store.get('pattern', '');
   rows = parse($('text').value);
@@ -265,6 +331,7 @@ $('ok').onclick = () => {
     if (rows[s.r] && rows[s.r].pages[s.p]) { r = s.r; p = s.p; } }
 }
 renderColorPickers();
+loadLib();
 render();
 </script>
 </body>

@@ -8,7 +8,7 @@ Sammlung kleiner Web-Apps fürs Häkeln. Die Startseite (`/index.html`) verlinkt
 | `zaehler/` | Reihenzähler im Pop-it-Stil |
 | `grid/` | Grid-Ersteller: Bild → Tapestry-Muster |
 | `muster/` | Mustersammlung: Bilder, PDFs, Word, Texte ablegen, taggen, suchen |
-| `shared/` | gemeinsam: `isadody.css` (CD-Tokens, Schriften, Grundstil, `.logo`, `.small`, `.btn`, `.home`), `store.js` (`Store('<app>')` speichert unter `<app>.<key>`), `logo.png` |
+| `shared/` | gemeinsam: `isadody.css` (CD-Tokens, Schriften, Grundstil, `.logo`, `.small`, `.btn`, `.home`), `store.js` (`Store('<app>')` speichert unter `<app>.<key>`), `muster-db.js` (Zugriff auf die Sammlung), `doctext.js` (Dateiformate, Text aus .docx/.odt), `logo.png` |
 
 Neue App: eigener Ordner mit `index.html`, bindet `../shared/isadody.css` und `../shared/store.js` ein, Logo `../shared/logo.png`, Link `<a class="home" href="../">‹ Alle Apps</a>`, Karte auf der Startseite eintragen. Kein Build.
 
@@ -30,7 +30,7 @@ Live: https://doxx1983.github.io/haekelapp/anleitung/ (Startseite: https://doxx1
 
 ## Funktionen
 
-- **Anleitung laden** als `.txt`-Datei oder eingefügter Text. Anleitung, Position und Fortschritt bleiben im Browser (`localStorage`, Schlüssel `anleitung.*`; ältere Daten ohne Präfix werden einmalig übernommen).
+- **Anleitung laden** aus der Mustersammlung (Liste der Textmuster mit Suche und Tags; Bilder, PDFs und alte .doc fehlen dort), als Datei (dieselben Formate wie die Sammlung; Text aus `.txt`, `.docx`, `.odt`) oder als eingefügter Text. Anleitung, Position und Fortschritt bleiben im Browser (`localStorage`, Schlüssel `anleitung.*`; ältere Daten ohne Präfix werden einmalig übernommen).
 - **Deutsch und Englisch:** Reihen beginnen mit `R`, `Row`, `Reihe`, `Runde`, `Round`, `Rnd` + Nummer. Kürzel (`fM`, `Stb`, `sc`, `dc`, `bs` …) werden unverändert angezeigt.
 - **Überschriften und Notizen:** Enthält die Anleitung nummerierte Reihen, werden Zeilen ohne Reihennummer (Titel, Material …) übersprungen; Farbwechsel darin gelten trotzdem. Ohne nummerierte Reihen ist jede Zeile eine Reihe.
 - **Wiederholungen:** `(fM, Zun) x 6`, `(3 fM, Abn) 5x`, Anzahl vor dem Kürzel (`254sc`, `6 fM`).
