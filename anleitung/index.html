@@ -9,6 +9,7 @@
 <script src="../shared/store.js"></script>
 <script src="../shared/muster-db.js"></script>
 <script src="../shared/doctext.js"></script>
+<script src="../shared/projekte.js"></script>
 <style>
   html,body { height:100%; }
   body { display:flex; flex-direction:column; padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom); }
@@ -61,17 +62,36 @@
   #liblist b { font-family:var(--display); font-size:1.05rem; line-height:1.2; overflow-wrap:anywhere; }
   #liblist small, #lib .note { color:var(--ink-soft); font-size:.8rem; font-weight:600; }
   #lib .note:empty { display:none; } #lib .note { margin:0; }
+  /* Projekte */
+  #projs { display:flex; flex-direction:column; gap:8px; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; padding:12px; }
+  #projs .head { display:flex; justify-content:space-between; align-items:center; gap:10px; font-family:var(--display); font-size:1.15rem; font-weight:700; }
+  #projs .head small { font-family:var(--body); font-size:.8rem; color:var(--ink-soft); font-weight:700; }
+  #setup #newp { flex:none; padding:8px 14px; font-size:.85rem; box-shadow:none; }
+  #plist { display:flex; flex-direction:column; gap:6px; } #plist:empty { display:none; }
+  #plist .it { display:flex; gap:6px; }
+  #setup #plist button { border-radius:12px; background:var(--paper); border:1px solid var(--line); font-weight:700; padding:10px 12px; }
+  #setup #plist .open { flex:1; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; }
+  #setup #plist .open.cur { border-color:var(--ink); }
+  #plist .open b { font-family:var(--display); font-size:1.05rem; line-height:1.2; overflow-wrap:anywhere; }
+  #plist .open small { color:var(--ink-soft); font-size:.8rem; font-weight:600; }
+  #setup #plist .del { flex:none; width:44px; padding:0; color:var(--ink-soft); font-size:1.2rem; }
+  #edhead { font-family:var(--display); font-size:1.15rem; font-weight:700; margin:4px 0 -2px; }
+  #pname { font:inherit; padding:10px 14px; border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--ink); min-width:0; }
   body.setup #setup { display:flex; } body.setup #chips, body.setup #nav { display:none; }
 </style>
 </head>
 <body>
 <header>
   <div class="title"><img class="logo" src="../shared/logo.png" alt="Isadody"><div><div id="row">–</div><div id="pos"></div></div></div>
-  <div class="actions"><a class="home" href="../">‹ Alle Apps</a><div class="tools"><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a><button class="small" id="menu">Anleitung laden</button></div></div>
+  <div class="actions"><div class="tools"><a class="home" href="../">‹ Alle Apps</a><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div><button class="small" id="menu">Projekte</button></div>
 </header>
 <main id="chips"></main>
 <div id="nav"><button id="back">‹ Zurück</button><button id="next">Weiter ›</button></div>
 <section id="setup">
+  <div id="projs">
+    <div class="head"><span>Projekte <small id="pcount"></small></span><button id="newp" type="button">+ Neues Projekt</button></div>
+    <div id="plist"></div>
+  </div>
   <div id="lib" hidden>
     <div class="head">Aus der Sammlung<a href="../muster/">Sammlung öffnen ›</a></div>
     <input id="libq" type="search" placeholder="Suchen: Name, Tag, Text">
@@ -79,8 +99,10 @@
     <div id="liblist"></div>
     <p class="note" id="libnote"></p>
   </div>
+  <div id="edhead"></div>
   <button id="pick" type="button">Externe Datei laden</button>
   <input type="file" id="file" hidden>
+  <input id="pname" placeholder="Name des Projekts" maxlength="60">
   <div id="colors"></div>
   <textarea id="text" placeholder="Anleitung hier einfügen"></textarea>
   <div class="row"><button id="ok">Starten</button></div>
@@ -159,10 +181,10 @@ addEventListener('resize', fitSeams);
 const store = Store('anleitung');
 store.migrate(['pattern', 'pos', 'done', 'colors']); // Daten aus der Zeit vor der App-Sammlung
 
-const DEFAULT_COLORS = { A: '#e53935', B: '#1e88e5' };
-let colors = DEFAULT_COLORS;
-colors = { ...DEFAULT_COLORS, ...store.get('colors', {}) };
-const saveColors = () => store.set('colors', colors);
+// P = aktives Projekt (Kacheln), E = Projekt im Bearbeiten-Bereich (P oder ein neues ohne id)
+let P = null, E = null, colors = { ...Projekte.DEFAULT_COLORS };
+const draft = () => ({ id: null, name: '', pattern: '', colors: { ...Projekte.DEFAULT_COLORS, ...(P ? P.colors : {}) } });
+const saveColors = () => { if (E && E.id) Projekte.put(E); };
 const textOn = hex => { const n = parseInt(hex.slice(1), 16);
   return (0.299 * (n >> 16) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) > 150 ? '#222' : '#fff'; };
 const colorKeysIn = t => [...t.matchAll(/(?:farbe|colou?r)\s+([\p{L}\d]+)/giu)].map(m => m[1].toUpperCase());
@@ -240,11 +262,50 @@ function renderColorPickers() {
 const $ = id => document.getElementById(id);
 let rows = [], r = 0, p = 0;
 let done = {}; // Reihe -> Anzahl abgeschlossener Kacheln
-const save = () => { store.set('pos', { r, p }); store.set('done', done); };
+const save = () => { if (!P) return; P.pos = { r, p }; P.done = done; P.used = Date.now(); Projekte.put(P); };
+function load(proj) {
+  P = proj; rows = []; r = p = 0; done = {};
+  if (!P) return;
+  Projekte.setCurrent(P.id); colors = P.colors; rows = parse(P.pattern); done = P.done || {};
+  const s = P.pos || {};
+  if (rows[s.r] && rows[s.r].pages[s.p]) { r = s.r; p = s.p; }
+}
+function openSetup(proj) {
+  E = proj || draft(); colors = E.colors; editing = null;
+  $('text').value = E.pattern || ''; $('pname').value = E.id ? E.name : '';
+  $('edhead').textContent = E.id ? 'Anleitung bearbeiten' : 'Neues Projekt';
+  $('ok').textContent = E.id ? 'Weiterhäkeln' : 'Starten';
+  renderProjects(); renderColorPickers(); loadLib();
+  document.body.classList.add('setup');
+}
+function renderProjects() {
+  const list = Projekte.all().sort((a, b) => b.used - a.used);
+  $('pcount').textContent = list.length ? `${list.length}/${Projekte.MAX}` : '';
+  $('plist').innerHTML = list.map(x => {
+    const n = parse(x.pattern).length, at = Math.min(n, ((x.pos && x.pos.r) || 0) + 1);
+    return `<div class="it"><button class="open${P && x.id === P.id ? ' cur' : ''}" data-id="${esc(x.id)}"><b>${esc(x.name)}</b>` +
+      `<small>${P && x.id === P.id ? 'Aktiv · ' : ''}Reihe ${at} von ${n}</small></button>` +
+      `<button class="del" data-del="${esc(x.id)}" aria-label="Projekt ${esc(x.name)} löschen" title="Löschen">×</button></div>`;
+  }).join('');
+}
+$('plist').onclick = e => {
+  const o = e.target.closest('[data-id]'), d = e.target.closest('[data-del]');
+  if (o) { const x = Projekte.all().find(q => q.id === o.dataset.id); if (x) { x.used = Date.now(); Projekte.put(x); load(x); render(); } return; }
+  if (!d) return;
+  const x = Projekte.all().find(q => q.id === d.dataset.del);
+  if (!x || !confirm(`Projekt „${x.name}“ löschen? Anleitung und Fortschritt gehen verloren.`)) return;
+  Projekte.remove(x.id);
+  if (P && P.id === x.id) load(Projekte.all().sort((a, b) => b.used - a.used)[0] || null);
+  if (E && E.id === x.id) openSetup(P); else renderProjects();
+};
+$('newp').onclick = () => {
+  if (Projekte.full()) return alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`);
+  openSetup(null); $('text').focus();
+};
 
 function render() {
-  if (!rows.length) { document.body.classList.add('setup'); return; }
-  document.body.classList.remove('setup');
+  if (!rows.length) { openSetup(P); return; }
+  document.body.classList.remove('setup'); colors = P.colors;
   const row = rows[r], page = row.pages[p];
   const used = [...new Set(page.map(c => c.c).filter(k => colors[k]))];
   $('row').innerHTML = `Reihe ${row.label}` + used.map(k => `<span class="dot" style="background:${colors[k]}" title="Farbe ${k}"></span>`).join('');
@@ -271,14 +332,19 @@ $('chips').onclick = e => {
 };
 $('next').onclick = () => { if (p < rows[r].pages.length - 1) p++; else if (r < rows.length - 1) { r++; p = 0; } render(); };
 $('back').onclick = () => { if (p > 0) p--; else if (r > 0) { r--; p = rows[r].pages.length - 1; } render(); };
-$('menu').onclick = () => { renderColorPickers(); loadLib(); document.body.classList.add('setup'); };
+$('menu').onclick = () => document.body.classList.contains('setup') && P ? render() : openSetup(P);
 $('text').oninput = renderColorPickers;
 $('file').accept = FILE_ACCEPT;
 $('pick').onclick = () => $('file').click();
 $('file').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
   const t = await fileText(f);
-  if (t.trim()) { $('text').value = t; renderColorPickers(); }
+  if (t.trim()) {
+    // Datei wird ein neues Projekt, außer der Bereich ist gerade leer
+    if (E.id && $('text').value.trim()) { if (Projekte.full()) { alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`); e.target.value = ''; return; } openSetup(null); }
+    if (!$('pname').value.trim()) $('pname').value = f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
+    $('text').value = t; renderColorPickers();
+  }
   else alert(fileKind(f) ? 'Aus dieser Datei kann der Häkelhelfer keinen Text lesen (Bild, PDF oder alte .doc). Bitte den Text einfügen.' : 'Dieses Dateiformat wird nicht unterstützt.');
   e.target.value = '';
 };
@@ -299,7 +365,7 @@ function renderLib() {
   for (const k of [...libSel]) if (!tags.has(k)) libSel.delete(k);
   $('libtags').innerHTML = [...tags].sort((a, b) => a[1].localeCompare(b[1], 'de'))
     .map(([k, t]) => `<button data-tag="${esc(k)}"${libSel.has(k) ? ' class="on"' : ''}>${esc(t)}</button>`).join('');
-  const q = $('libq').value.trim().toLowerCase().split(/\s+/).filter(Boolean), now = store.get('pattern', '');
+  const q = $('libq').value.trim().toLowerCase().split(/\s+/).filter(Boolean), now = P ? P.pattern : '', pats = new Set(Projekte.all().map(x => x.pattern));
   const vis = lib.filter(it => {
     const tg = (it.tags || []).map(t => t.toLowerCase());
     if (![...libSel].every(t => tg.includes(t))) return false;
@@ -308,31 +374,31 @@ function renderLib() {
   });
   $('liblist').innerHTML = !lib.length ? '<small>Noch keine Textmuster in der Sammlung.</small>' : !vis.length ? '<small>Nichts gefunden.</small>' :
     vis.map(it => `<button data-id="${esc(it.id)}"${it.text === now ? ' class="cur"' : ''}><b>${it.fav ? '★ ' : ''}${esc(it.title)}</b>` +
-      `<small>${it.text === now ? 'Geladen · ' : ''}${esc((it.tags || []).join(', ') || it.text.trim().split('\n')[0].slice(0, 60))}</small></button>`).join('');
+      `<small>${it.text === now ? 'Aktiv · ' : pats.has(it.text) ? 'Projekt · ' : ''}${esc((it.tags || []).join(', ') || it.text.trim().split('\n')[0].slice(0, 60))}</small></button>`).join('');
 }
 $('libq').oninput = renderLib;
 $('libtags').onclick = e => { const b = e.target.closest('[data-tag]'); if (!b) return; const k = b.dataset.tag; libSel.has(k) ? libSel.delete(k) : libSel.add(k); renderLib(); };
 $('liblist').onclick = e => {
   const b = e.target.closest('[data-id]'), it = b && lib.find(x => x.id === b.dataset.id); if (!it) return;
-  $('text').value = it.text; renderColorPickers(); $('ok').click();
+  if (!Projekte.open(it.text, it.title)) return alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`);
+  load(Projekte.current()); render();
 };
 $('ok').onclick = () => {
-  const old = store.get('pattern', '');
-  rows = parse($('text').value);
-  if (old !== $('text').value) { r = p = 0; done = {}; }
-  store.set('pattern', $('text').value);
+  const t = $('text').value, name = $('pname').value.trim();
+  if (!parse(t).length) return alert('In diesem Text sind keine Maschen zu finden.');
+  if (!E.id) {
+    const x = Projekte.create(t, name, E.colors);
+    if (!x) return alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`);
+    load(x);
+  } else {
+    if (E.pattern !== t) { E.pos = { r: 0, p: 0 }; E.done = {}; } // andere Anleitung: Fortschritt von vorn
+    E.pattern = t; E.name = name || Projekte.nameOf(t); E.used = Date.now(); Projekte.put(E); load(E);
+  }
   render();
 };
 
-{
-  const t = store.get('pattern', '');
-  if (t) { $('text').value = t; rows = parse(t); done = store.get('done', {});
-    const s = store.get('pos', {});
-    if (rows[s.r] && rows[s.r].pages[s.p]) { r = s.r; p = s.p; } }
-}
-renderColorPickers();
-loadLib();
-render();
+load(Projekte.current() || Projekte.all().sort((a, b) => b.used - a.used)[0] || null);
+if (P) render(); else openSetup(null);
 </script>
 </body>
 </html>

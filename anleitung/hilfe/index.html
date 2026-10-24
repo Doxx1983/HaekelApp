@@ -14,7 +14,7 @@
   <a class="home" href="../">‹ Zur App</a>
 </header>
 <nav class="toc">
-  <a href="#laden">Anleitung laden</a><a href="#haekeln">Häkeln</a><a href="#schreiben">So schreibst du Anleitungen</a><a href="#farben">Farben</a><a href="#speicher">Speichern</a>
+  <a href="#projekte">Projekte</a><a href="#laden">Anleitung laden</a><a href="#haekeln">Häkeln</a><a href="#schreiben">So schreibst du Anleitungen</a><a href="#farben">Farben</a><a href="#speicher">Speichern</a>
 </nav>
 
 <section>
@@ -22,15 +22,27 @@
   <p>Du lädst eine Häkelanleitung, und die App zeigt dir immer nur die nächsten Maschen als große Kacheln. So verlierst du unterwegs nicht die Stelle, an der du bist.</p>
 </section>
 
+<section id="projekte">
+  <h2>Projekte</h2>
+  <p>Du kannst bis zu <b>10 Projekte</b> speichern und parallel daran arbeiten. Jedes Projekt hat seine eigene Anleitung, seinen eigenen Fortschritt und eigene Farben.</p>
+  <ul>
+    <li>Tippe oben rechts auf <span class="k">Projekte</span>. Oben siehst du alle Projekte, das zuletzt benutzte zuerst, mit der Reihe, in der du gerade bist. Das aktive ist umrandet.</li>
+    <li><b>Tipp auf ein Projekt:</b> Du häkelst dort weiter, wo du aufgehört hast.</li>
+    <li><span class="k">+ Neues Projekt</span> öffnet ein leeres Projekt. Anleitung laden oder einfügen, Namen geben, <span class="k">Starten</span>.</li>
+    <li><span class="k">×</span> löscht ein Projekt nach einer Rückfrage.</li>
+    <li>Sind 10 Projekte gespeichert, lösche erst eins, bevor du ein neues anlegst.</li>
+  </ul>
+  <p>Darunter bearbeitest du das aktive Projekt: Namen, Farben und Anleitung. <span class="k">Weiterhäkeln</span> übernimmt die Änderungen. Änderst du dabei die Anleitung, beginnt der Fortschritt wieder bei Reihe 1. Nochmal <span class="k">Projekte</span> antippen führt ohne Änderung zurück.</p>
+</section>
+
 <section id="laden">
   <h2>Anleitung laden</h2>
-  <p>Tippe oben rechts auf <span class="k">Anleitung laden</span>. Dort hast du drei Wege:</p>
+  <p>Unter <span class="k">Projekte</span> hast du drei Wege:</p>
   <ul>
-    <li><b>Aus der Sammlung:</b> Liegen Textmuster in der <a href="../../muster/">Mustersammlung</a>, erscheinen sie hier als Liste. Suche nach Name, Tag oder Text, oder tippe Tags zum Filtern an. Ein Tipp auf ein Muster startet es sofort. Bilder und PDFs fehlen in der Liste, weil die App daraus keinen Text lesen kann.</li>
-    <li><b>Externe Datei laden:</b> Textdatei (<code>.txt</code>), Word (<code>.docx</code>) oder LibreOffice (<code>.odt</code>). Der Text landet im Eingabefeld. Aus Bildern, PDFs und alten <code>.doc</code>-Dateien kann die App keinen Text lesen, dann bitte den Text einfügen.</li>
+    <li><b>Aus der Sammlung:</b> Liegen Textmuster in der <a href="../../muster/">Mustersammlung</a>, erscheinen sie hier als Liste. Suche nach Name, Tag oder Text, oder tippe Tags zum Filtern an. Ein Tipp auf ein Muster legt ein neues Projekt an und startet es sofort. Gibt es das Projekt schon, öffnet es sich mit deinem Fortschritt. Bilder und PDFs fehlen in der Liste, weil die App daraus keinen Text lesen kann.</li>
+    <li><b>Externe Datei laden:</b> Textdatei (<code>.txt</code>), Word (<code>.docx</code>) oder LibreOffice (<code>.odt</code>). Der Text wird zu einem neuen Projekt, der Dateiname zum Namen. Aus Bildern, PDFs und alten <code>.doc</code>-Dateien kann die App keinen Text lesen, dann bitte den Text einfügen.</li>
     <li><b>Einfügen:</b> Anleitung ins große Textfeld kopieren oder tippen.</li>
   </ul>
-  <p>Mit <span class="k">Starten</span> geht es los. Lädst du denselben Text noch einmal, bleibt dein Fortschritt erhalten. Bei einem anderen Text beginnst du wieder bei Reihe 1.</p>
 </section>
 
 <section id="haekeln">
@@ -83,13 +95,13 @@ Reihe 3: Wechsel zu Farbe C: 8 fM</pre>
     <li>Gleiche Maschen in verschiedenen Farben werden nicht zu einer Kachel zusammengefasst.</li>
   </ul>
   <h3>Farben festlegen</h3>
-  <p>Unter <span class="k">Anleitung laden</span> steht für jede Farbe ein Knopf (A ist am Anfang Rot, B Blau). Tippe ihn an und wähle eine Farbe aus der Palette, mit den Reglern Farbton, Sättigung und Helligkeit, oder als Hex-Wert wie <code>#F2896B</code>. Farben aus deinem Text erscheinen dort automatisch. Mit <span class="k">+ Farbe</span> legst du eine weitere an.</p>
+  <p>Unter <span class="k">Projekte</span> steht für jedes Projekt und jede Farbe ein Knopf (A ist am Anfang Rot, B Blau). Tippe ihn an und wähle eine Farbe aus der Palette, mit den Reglern Farbton, Sättigung und Helligkeit, oder als Hex-Wert wie <code>#F2896B</code>. Farben aus deinem Text erscheinen dort automatisch. Mit <span class="k">+ Farbe</span> legst du eine weitere an.</p>
 </section>
 
 <section id="speicher">
   <h2>Speichern</h2>
-  <p>Anleitung, Position, Fortschritt und Farben bleiben in diesem Browser auf diesem Gerät gespeichert, auch nach dem Schließen. Auf einem anderen Gerät oder in einem privaten Fenster sind sie nicht da.</p>
-  <p>Aus dem <a href="../../grid/">Grid-Ersteller</a> und der <a href="../../muster/">Mustersammlung</a> kannst du Anleitungen direkt hierher schicken. Dann ersetzen sie die aktuelle Anleitung.</p>
+  <p>Alle Projekte mit Anleitung, Position, Fortschritt und Farben bleiben in diesem Browser auf diesem Gerät gespeichert, auch nach dem Schließen. Auf einem anderen Gerät oder in einem privaten Fenster sind sie nicht da.</p>
+  <p>Aus dem <a href="../../grid/">Grid-Ersteller</a> und der <a href="../../muster/">Mustersammlung</a> kannst du Anleitungen direkt hierher schicken. Sie werden ein neues Projekt. Ist die Anleitung schon ein Projekt, geht es dort weiter.</p>
 </section>
 
 <a class="btn back" href="../">Zurück zum Häkelhelfer</a>
