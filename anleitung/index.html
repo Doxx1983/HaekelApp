@@ -546,7 +546,8 @@ let done = {}; // Reihe -> Anzahl abgeschlossener Kacheln
 // Fortschritt gebündelt speichern: Jeder Tipp schreibt sonst alle Projekte neu (spürbar bei großen Tapestrys auf älteren Handys).
 // Spätestens 300 ms nach dem letzten Tipp, sofort beim Verlassen und bevor andere Projektdaten gelesen oder geändert werden (flush).
 let saveT = null;
-const save = () => { if (!P) return; P.pos = { r, p, label: rows[r] ? rows[r].label : String(r + 1) }; // label: Reihen-Bezeichnung aus der Anleitung (z. B. „0“ bei Row 0), für die Startseite P.done = done; P.used = Date.now(); clearTimeout(saveT); saveT = setTimeout(flush, 300); };
+// label: Reihen-Bezeichnung aus der Anleitung (z. B. „0“ bei Row 0), für die Startseite
+const save = () => { if (!P) return; P.pos = { r, p, label: rows[r] ? rows[r].label : String(r + 1) }; P.done = done; P.used = Date.now(); clearTimeout(saveT); saveT = setTimeout(flush, 300); };
 function flush() { if (saveT === null) return; clearTimeout(saveT); saveT = null; if (P) Projekte.put(P); }
 addEventListener('pagehide', flush);
 document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
