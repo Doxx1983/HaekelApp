@@ -8,6 +8,9 @@
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../shared/icon-180.png">
 <link rel="stylesheet" href="../shared/isadody.css">
+<script src="../shared/i18n.js"></script>
+<script src="../shared/en.js"></script>
+<script src="en.js"></script>
 <script src="../shared/store.js"></script>
 <script src="../shared/dialog.js"></script>
 <script src="../shared/projekte.js"></script>
@@ -77,13 +80,13 @@
 </head>
 <body>
 <header>
-  <div class="title"><a class="home" href="../" aria-label="Alle Apps" title="Alle Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/></svg></a><img class="logo" src="../shared/logo.png" alt="Isadody"><div><h1 class="apptitle">Kalkulation</h1><div id="sub"></div></div></div>
+  <div class="title"><a class="home" href="../" aria-label="Alle Apps" title="Alle Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/></svg></a><img class="logo" src="../shared/logo.png" alt="Isadody"><div><h1 class="apptitle">Kalkulation</h1><div id="sub" translate="no"></div></div></div>
   <div class="tools"><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div>
 </header>
 <main>
   <section class="card" id="empty" hidden>
     <h2>Noch keine Projekte</h2>
-    <p>Die Kalkulation rechnet je Projekt aus dem <a href="../anleitung/">Häkelhelfer</a>. Lege dort ein Projekt an, dann kannst du hier den Preis berechnen.</p>
+    <p data-i18n>Die Kalkulation rechnet je Projekt aus dem <a href="../anleitung/">Häkelhelfer</a>. Lege dort ein Projekt an, dann kannst du hier den Preis berechnen.</p>
   </section>
   <div id="app" hidden>
     <section class="card">
@@ -139,17 +142,17 @@
 // kalkulation.prefs = { ms, up, tax, marge } (Endpreis-Rundung, Umsatzsteuer 0/7/19, Gewinn-Voreinstellung), kalkulation.current = Projekt-id.
 // Liest stoppuhr.t (Zeit, Stundensatz) und stoppuhr.prefs (Zeitrundung), schreibt dort nichts.
 const $ = id => document.getElementById(id), store = Store('kalkulation'), uhr = Store('stoppuhr');
-const MSTEPS = [[1, 'genau'], [10, '10 Cent'], [50, '50 Cent'], [100, '1 Euro']];
-const MODES = [[false, 'kaufmännisch'], [true, 'immer aufrunden']];
-const TAXES = [[0, 'keine (Kleinunternehmer)'], [7, '7 %'], [19, '19 %']];
-const TSTEP = { 0: 'genau', 10: 'auf 10 Min.', 15: 'auf ¼ Std.', 30: 'auf ½ Std.', 60: 'auf 1 Std.' };
+const MSTEPS = [[1, T('genau')], [10, T('10 Cent')], [50, T('50 Cent')], [100, T('1 Euro')]];
+const MODES = [[false, T('kaufmännisch')], [true, T('immer aufrunden')]];
+const TAXES = [[0, T('keine (Kleinunternehmer)')], [7, '7 %'], [19, '19 %']];
+const TSTEP = { 0: T('genau'), 10: T('auf 10 Min.'), 15: T('auf ¼ Std.'), 30: T('auf ½ Std.'), 60: T('auf 1 Std.') };
 const MAXMAT = 30, MAXEXT = 20;
-const eur = c => (c / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
-const num = n => n.toLocaleString('de-DE', { maximumFractionDigits: 2 });
-const money = c => c ? (c / 100).toLocaleString('de-DE', { minimumFractionDigits: 2 }) : '';
+const eur = c => (c / 100).toLocaleString(I18N.locale, { style: 'currency', currency: 'EUR' });
+const num = n => n.toLocaleString(I18N.locale, { maximumFractionDigits: 2, useGrouping: false });
+const money = c => c ? (c / 100).toLocaleString(I18N.locale, { minimumFractionDigits: 2, useGrouping: false }) : '';
 const two = n => String(n).padStart(2, '0');
-const hm = min => { const m = Math.round(min); return `${Math.floor(m / 60)}:${two(m % 60)} Std.`; };
-const day = t => new Date(t).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const hm = min => { const m = Math.round(min); return T('{t} Std.', { t: `${Math.floor(m / 60)}:${two(m % 60)}` }); };
+const day = t => new Date(t).toLocaleDateString(I18N.locale, { day: '2-digit', month: '2-digit', year: 'numeric' });
 const obj = v => v && typeof v === 'object' && !Array.isArray(v);
 
 // ---- Rechnen ----
@@ -212,9 +215,9 @@ function renderList() {
   for (const p of projects()) {
     const x = get(p.id), b = document.createElement('button');
     b.dataset.id = p.id; b.className = p.id === pid ? 'on' : '';
-    b.innerHTML = '<b></b><small></small>';
+    b.innerHTML = '<b translate="no"></b><small></small>';
     b.querySelector('b').textContent = p.name;
-    b.querySelector('small').textContent = x.price ? eur(x.price.end) : 'noch nicht gespeichert';
+    b.querySelector('small').textContent = x.price ? eur(x.price.end) : T('noch nicht gespeichert');
     $('plist').append(b);
   }
 }
@@ -223,7 +226,7 @@ function opts(el, list, val, key) {
   for (const [v, t] of list) { const b = document.createElement('button'); b.textContent = t; b.className = v === val ? 'on' : ''; b.onclick = () => { prefs[key] = v; store.set('prefs', prefs); render(); }; el.append(b); }
 }
 const inp = (cls, val, ph, label, mode = 'decimal') => { const i = document.createElement('input'); i.className = cls; i.value = val; i.placeholder = ph; i.setAttribute('aria-label', label); i.autocomplete = 'off'; if (mode) i.inputMode = mode; return i; };
-const delBtn = () => { const b = document.createElement('button'); b.className = 'del'; b.textContent = '×'; b.setAttribute('aria-label', 'Posten löschen'); return b; };
+const delBtn = () => { const b = document.createElement('button'); b.className = 'del'; b.textContent = '×'; b.setAttribute('aria-label', T('Posten löschen')); return b; };
 // Material- und Nebenkosten-Posten; nicht neu aufbauen, solange darin getippt wird
 function renderItems(force) {
   const act = document.activeElement;
@@ -233,17 +236,17 @@ function renderItems(force) {
   x.mat.forEach((m, i) => {
     const d = document.createElement('div'); d.className = 'item'; d.dataset.i = i;
     const u = document.createElement('div'); u.className = 'u';
-    for (const [v, t] of [['stk', 'Stück'], ['g', 'Gramm']]) { const b = document.createElement('button'); b.dataset.u = v; b.textContent = t; b.className = m.u === v ? 'on' : ''; u.append(b); }
-    const per = document.createElement('span'); per.className = 'per'; per.textContent = m.u === 'g' ? '€ je 100 g' : '€ je Stück';
+    for (const [v, t] of [['stk', T('Stück')], ['g', T('Gramm')]]) { const b = document.createElement('button'); b.dataset.u = v; b.textContent = t; b.className = m.u === v ? 'on' : ''; u.append(b); }
+    const per = document.createElement('span'); per.className = 'per'; per.textContent = T(m.u === 'g' ? '€ je 100 g' : '€ je Stück');
     const sum = document.createElement('span'); sum.className = 'sum'; sum.textContent = eur(matCost(m));
-    d.append(inp('nm', m.n, 'z. B. Garn Baumwolle', 'Bezeichnung', ''), inp('q', m.q ? num(m.q) : '', '0', m.u === 'g' ? 'Gramm' : 'Anzahl'), u, inp('pr', money(m.p), '0,00', m.u === 'g' ? 'Preis je 100 g' : 'Preis je Stück'), per, sum, delBtn());
+    d.append(inp('nm', m.n, T('z. B. Garn Baumwolle'), T('Bezeichnung'), ''), inp('q', m.q ? num(m.q) : '', '0', T(m.u === 'g' ? 'Gramm' : 'Anzahl')), u, inp('pr', money(m.p), T('0,00'), T(m.u === 'g' ? 'Preis je 100 g' : 'Preis je Stück')), per, sum, delBtn());
     $('mat').append(d);
   });
   $('ext').innerHTML = '';
   x.ext.forEach((e, i) => {
     const d = document.createElement('div'); d.className = 'item ext'; d.dataset.i = i;
     const per = document.createElement('span'); per.className = 'per'; per.textContent = '€';
-    d.append(inp('nm', e.n, 'z. B. Verpackung', 'Bezeichnung', ''), inp('pr', money(e.c), '0,00', 'Betrag'), per, delBtn());
+    d.append(inp('nm', e.n, T('z. B. Verpackung'), T('Bezeichnung'), ''), inp('pr', money(e.c), T('0,00'), T('Betrag')), per, delBtn());
     $('ext').append(d);
   });
   $('addmat').hidden = x.mat.length >= MAXMAT; $('addext').hidden = x.ext.length >= MAXEXT;
@@ -259,14 +262,15 @@ function render() {
   renderList();
   opts($('mstep'), MSTEPS, prefs.ms, 'ms'); opts($('mode'), MODES, prefs.up, 'up'); opts($('tax'), TAXES, prefs.tax, 'tax');
   $('tax-note').textContent = prefs.tax
-    ? `Der Endpreis enthält ${prefs.tax} % Umsatzsteuer. Für Häkelwaren gilt in der Regel 19 %.`
-    : 'Kleinunternehmer (§ 19 UStG): keine Umsatzsteuer auf dem Preis. Auf die Rechnung gehört der Satz „Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.“';
+    ? T('Der Endpreis enthält {p} % Umsatzsteuer. Für Häkelwaren gilt in der Regel 19 %.', { p: prefs.tax })
+    : T('Kleinunternehmer (§ 19 UStG): keine Umsatzsteuer auf dem Preis. Auf die Rechnung gehört der Satz „Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.“');
   renderItems();
   $('saved').hidden = !x.price;
   if (x.price) {
     const k = x.price;
-    $('sdate').textContent = `am ${day(k.at)}`; $('samount').textContent = eur(k.end);
-    $('sinfo').textContent = `Arbeit ${eur(k.lab)}${k.rate ? ` (${hm(k.min)} × ${eur(k.rate)})` : ''} · Material ${eur(k.mat)} · Nebenkosten ${eur(k.ext)} · Gewinn ${num(k.marge)} % · ${k.tax ? `inkl. ${k.tax} % USt.` : 'ohne USt.'}`;
+    $('sdate').textContent = T('am {d}', { d: day(k.at) }); $('samount').textContent = eur(k.end);
+    $('sinfo').textContent = [T('Arbeit {v}', { v: eur(k.lab) }) + (k.rate ? ` (${hm(k.min)} × ${eur(k.rate)})` : ''), T('Material {v}', { v: eur(k.mat) }), T('Nebenkosten {v}', { v: eur(k.ext) }),
+      T('Gewinn {p} %', { p: num(k.marge) }), k.tax ? T('inkl. {p} % USt.', { p: k.tax }) : T('ohne USt.')].join(' · ');
   }
   tick();
 }
@@ -274,24 +278,24 @@ function render() {
 function tick() {
   if (!pid || $('app').hidden) return;
   const x = get(), w = work(x), r = priceOf(w, x, prefs);
-  $('wsrc').textContent = w.watch ? 'Aus der Stoppuhr' : 'Von Hand eingegeben';
+  $('wsrc').textContent = T(w.watch ? 'Aus der Stoppuhr' : 'Von Hand eingegeben');
   $('wtime').textContent = hm(w.min);
   $('wnote').innerHTML = '';
-  if (w.watch) $('wnote').append(w.run ? 'Die Stoppuhr läuft noch. ' : '', `Gerundet ${TSTEP[w.ts] || ''} wie in der `, Object.assign(document.createElement('a'), { href: '../stoppuhr/', textContent: 'Stoppuhr' }), '.');
-  else $('wnote').textContent = 'Die Zeit der Stoppuhr wird für dieses Projekt nicht verwendet.';
+  if (w.watch) $('wnote').append((w.run ? T('Die Stoppuhr läuft noch.') + ' ' : '') + T('Gerundet {s} wie in der', { s: TSTEP[w.ts] || '' }) + ' ', Object.assign(document.createElement('a'), { href: '../stoppuhr/', textContent: T('Stoppuhr') }), '.');
+  else $('wnote').textContent = T('Die Zeit der Stoppuhr wird für dieses Projekt nicht verwendet.');
   $('wwatch').hidden = w.watch;
   if (document.activeElement !== $('rate')) $('rate').value = money(w.rate);
   if (document.activeElement !== $('marge')) $('marge').value = num(x.marge ?? prefs.marge);
   $('labtot').textContent = eur(r.lab); $('mattot').textContent = eur(r.mat); $('exttot').textContent = eur(r.ext);
   $('mat').querySelectorAll('.item').forEach(d => { const m = x.mat[d.dataset.i]; if (m) d.querySelector('.sum').textContent = eur(matCost(m)); });
-  $('pcalc').innerHTML = `<div><span>Arbeitskosten</span><span>${eur(r.lab)}</span></div><div><span>Material</span><span>${eur(r.mat)}</span></div>`
-    + `<div><span>Nebenkosten</span><span>${eur(r.ext)}</span></div><div class="mid"><span>Selbstkosten</span><span>${eur(r.self)}</span></div>`
-    + `<div><span>Gewinn ${num(r.marge)} %</span><span>${eur(r.net - r.self)}</span></div>`
-    + (r.tax ? `<div class="mid"><span>Netto</span><span>${eur(r.net)}</span></div><div><span>Umsatzsteuer ${r.tax} %</span><span>${eur(r.vat)}</span></div>` : '')
-    + (r.end !== r.gross ? `<div class="soft"><span>Gerundet von</span><span>${eur(r.gross)}</span></div>` : '')
-    + `<div class="sum"><span>Endpreis</span><span>${eur(r.end)}</span></div>`;
+  $('pcalc').innerHTML = `<div><span>${T('Arbeitskosten')}</span><span>${eur(r.lab)}</span></div><div><span>${T('Material')}</span><span>${eur(r.mat)}</span></div>`
+    + `<div><span>${T('Nebenkosten')}</span><span>${eur(r.ext)}</span></div><div class="mid"><span>${T('Selbstkosten')}</span><span>${eur(r.self)}</span></div>`
+    + `<div><span>${T('Gewinn {p} %', { p: num(r.marge) })}</span><span>${eur(r.net - r.self)}</span></div>`
+    + (r.tax ? `<div class="mid"><span>${T('Netto')}</span><span>${eur(r.net)}</span></div><div><span>${T('Umsatzsteuer {p} %', { p: r.tax })}</span><span>${eur(r.vat)}</span></div>` : '')
+    + (r.end !== r.gross ? `<div class="soft"><span>${T('Gerundet von')}</span><span>${eur(r.gross)}</span></div>` : '')
+    + `<div class="sum"><span>${T('Endpreis')}</span><span>${eur(r.end)}</span></div>`;
   $('perh').hidden = r.perh === null || !r.end;
-  if (r.perh !== null) $('perh').textContent = `Bei ${eur(r.end)} bleiben dir ${eur(Math.round(r.perh))} pro Stunde (Arbeit und Gewinn, ohne Material, Nebenkosten${r.tax ? ' und Steuer' : ''}).`;
+  if (r.perh !== null) $('perh').textContent = T(r.tax ? 'Bei {p} bleiben dir {h} pro Stunde (Arbeit und Gewinn, ohne Material, Nebenkosten und Steuer).' : 'Bei {p} bleiben dir {h} pro Stunde (Arbeit und Gewinn, ohne Material, Nebenkosten).', { p: eur(r.end), h: eur(Math.round(r.perh)) });
   $('save').disabled = !r.self; $('share').disabled = !r.end;
 }
 setInterval(() => { if (pid && !$('app').hidden && work(get()).run) tick(); }, 1000);
@@ -300,20 +304,20 @@ setInterval(() => { if (pid && !$('app').hidden && work(get()).run) tick(); }, 1
 $('plist').onclick = e => { const b = e.target.closest('[data-id]'); if (!b || b.dataset.id === pid) return; pid = b.dataset.id; renderItems(true); render(); };
 $('wset').onclick = async () => {
   const w = work(get());
-  const v = await Dialog.prompt('Arbeitszeit als Std:Min (z. B. 3:45) oder in Minuten:', `${Math.floor(w.min / 60)}:${two(Math.round(w.min) % 60)}`, { title: 'Zeit eingeben', ok: 'Übernehmen' });
+  const v = await Dialog.prompt(T('Arbeitszeit als Std:Min (z. B. 3:45) oder in Minuten:'), `${Math.floor(w.min / 60)}:${two(Math.round(w.min) % 60)}`, { title: T('Zeit eingeben'), ok: T('Übernehmen') });
   if (v === null) return;
-  const min = parseTime(v); if (min === null) return Dialog.alert('Bitte die Zeit als Std:Min (z. B. 3:45) oder in Minuten eingeben.');
+  const min = parseTime(v); if (min === null) return Dialog.alert(T('Bitte die Zeit als Std:Min (z. B. 3:45) oder in Minuten eingeben.'));
   const x = get(); x.min = min; put(x); render();
 };
 $('wwatch').onclick = () => { const x = get(); x.min = null; put(x); render(); };
 $('rate').onchange = () => {
   const c = parseMoney($('rate').value);
-  if (c === null) { Dialog.alert('Bitte den Stundensatz als Betrag eingeben, z. B. 12,50.'); render(); return; }
+  if (c === null) { Dialog.alert(T('Bitte den Stundensatz als Betrag eingeben, z. B. 12,50.')); render(); return; }
   const x = get(); x.rate = c; put(x); $('rate').blur(); render();
 };
 $('marge').onchange = () => {
   const v = parseNum($('marge').value, 1000);
-  if (v === null) { Dialog.alert('Bitte den Gewinn in Prozent eingeben, z. B. 20 (höchstens 1000).'); render(); return; }
+  if (v === null) { Dialog.alert(T('Bitte den Gewinn in Prozent eingeben, z. B. 20 (höchstens 1000).')); render(); return; }
   const x = get(); x.marge = v; put(x); prefs.marge = v; store.set('prefs', prefs); $('marge').blur(); render();
 };
 for (const id of ['rate', 'marge']) $(id).onkeydown = e => { if (e.key === 'Enter') $(id).onchange(); };
@@ -325,11 +329,11 @@ function itemChange(e) {
   if (el.classList.contains('nm')) it.n = el.value.trim().slice(0, 60);
   else if (el.classList.contains('q')) {
     const v = parseNum(el.value, 99999);
-    if (v === null) { Dialog.alert(it.u === 'g' ? 'Bitte die Gramm als Zahl eingeben, z. B. 80.' : 'Bitte die Anzahl als Zahl eingeben, z. B. 2 oder 1,5.'); el.value = it.q ? num(it.q) : ''; return; }
+    if (v === null) { Dialog.alert(T(it.u === 'g' ? 'Bitte die Gramm als Zahl eingeben, z. B. 80.' : 'Bitte die Anzahl als Zahl eingeben, z. B. 2 oder 1,5.')); el.value = it.q ? num(it.q) : ''; return; }
     it.q = v; el.value = v ? num(v) : '';
   } else if (el.classList.contains('pr')) {
     const c = parseMoney(el.value);
-    if (c === null) { Dialog.alert('Bitte den Preis als Betrag eingeben, z. B. 3,95.'); el.value = money(kind === 'mat' ? it.p : it.c); return; }
+    if (c === null) { Dialog.alert(T('Bitte den Preis als Betrag eingeben, z. B. 3,95.')); el.value = money(kind === 'mat' ? it.p : it.c); return; }
     if (kind === 'mat') it.p = c; else it.c = c;
     el.value = money(c);
   }
@@ -342,7 +346,7 @@ for (const id of ['mat', 'ext']) {
     const d = e.target.closest('.item'); if (!d) return;
     const i = +d.dataset.i, x = get(), it = x[id][i]; if (!it) return;
     if (e.target.closest('.del')) {
-      if ((it.n || it.p || it.c) && !await Dialog.confirm(`Posten${it.n ? ` „${it.n}“` : ''} löschen?`, { ok: 'Löschen', danger: true })) return;
+      if ((it.n || it.p || it.c) && !await Dialog.confirm(it.n ? T('Posten „{n}“ löschen?', { n: it.n }) : T('Posten löschen?'), { ok: T('Löschen'), danger: true })) return;
       const y = get(); y[id].splice(i, 1); put(y); renderItems(true); render();
     } else if (e.target.dataset.u && e.target.dataset.u !== it.u) {
       it.u = e.target.dataset.u; put(x); renderItems(true); tick();
@@ -360,31 +364,31 @@ $('addext').onclick = () => addItem('ext');
 
 $('save').onclick = async () => {
   const x = get();
-  if (x.price && !await Dialog.confirm(`Schon gespeichert: ${eur(x.price.end)}. Durch die neue Kalkulation ersetzen?`, { ok: 'Ersetzen' })) return;
+  if (x.price && !await Dialog.confirm(T('Schon gespeichert: {v}. Durch die neue Kalkulation ersetzen?', { v: eur(x.price.end) }), { ok: T('Ersetzen') })) return;
   const y = get(), r = priceOf(work(y), y, prefs);
   if (!r.self) return;
   y.price = { end: r.end, net: r.net, self: r.self, lab: r.lab, mat: r.mat, ext: r.ext, marge: r.marge, tax: r.tax, min: r.min, rate: r.rate, at: Date.now() };
   put(y); render();
 };
 $('sdel').onclick = async () => {
-  if (!await Dialog.confirm('Gespeicherte Kalkulation löschen? Material, Nebenkosten und Einstellungen bleiben.', { ok: 'Löschen', danger: true })) return;
+  if (!await Dialog.confirm(T('Gespeicherte Kalkulation löschen? Material, Nebenkosten und Einstellungen bleiben.'), { ok: T('Löschen'), danger: true })) return;
   const x = get(); x.price = null; put(x); render();
 };
 // Aktuelle Kalkulation als Text teilen (Handy) oder kopieren
 $('share').onclick = async () => {
   const x = get(), r = priceOf(work(x), x, prefs), p = Projekte.all().find(q => q.id === pid);
-  const lines = [`Kalkulation „${p ? p.name : 'Projekt'}“ vom ${day(Date.now())}`];
-  lines.push(`Arbeit: ${r.rate ? `${hm(r.min)} × ${eur(r.rate)} = ` : ''}${eur(r.lab)}`);
-  for (const m of x.mat) lines.push(`${m.n || 'Material'}: ${num(m.q)} ${m.u === 'g' ? 'g' : 'Stk.'} × ${eur(m.p)}${m.u === 'g' ? ' je 100 g' : ''} = ${eur(matCost(m))}`);
-  lines.push(`Material: ${eur(r.mat)}`);
-  for (const e of x.ext) lines.push(`${e.n || 'Nebenkosten'}: ${eur(e.c)}`);
-  lines.push(`Nebenkosten: ${eur(r.ext)}`, `Selbstkosten: ${eur(r.self)}`, `Gewinn ${num(r.marge)} %: ${eur(r.net - r.self)}`);
-  if (r.tax) lines.push(`Netto: ${eur(r.net)}`, `Umsatzsteuer ${r.tax} %: ${eur(r.vat)}`);
-  lines.push(`Endpreis: ${eur(r.end)}${r.tax ? '' : ' (Kleinunternehmer, ohne USt.)'}`);
+  const lines = [T('Kalkulation „{n}“ vom {d}', { n: p ? p.name : T('Projekt'), d: day(Date.now()) })];
+  lines.push(`${T('Arbeit')}: ${r.rate ? `${hm(r.min)} × ${eur(r.rate)} = ` : ''}${eur(r.lab)}`);
+  for (const m of x.mat) lines.push(`${m.n || T('Material')}: ${num(m.q)} ${m.u === 'g' ? 'g' : T('Stk.')} × ${eur(m.p)}${m.u === 'g' ? ' ' + T('je 100 g') : ''} = ${eur(matCost(m))}`);
+  lines.push(`${T('Material')}: ${eur(r.mat)}`);
+  for (const e of x.ext) lines.push(`${e.n || T('Nebenkosten')}: ${eur(e.c)}`);
+  lines.push(`${T('Nebenkosten')}: ${eur(r.ext)}`, `${T('Selbstkosten')}: ${eur(r.self)}`, `${T('Gewinn {p} %', { p: num(r.marge) })}: ${eur(r.net - r.self)}`);
+  if (r.tax) lines.push(`${T('Netto')}: ${eur(r.net)}`, `${T('Umsatzsteuer {p} %', { p: r.tax })}: ${eur(r.vat)}`);
+  lines.push(`${T('Endpreis')}: ${eur(r.end)}${r.tax ? '' : ' ' + T('(Kleinunternehmer, ohne USt.)')}`);
   const text = lines.join('\n');
-  if (navigator.share) { try { await navigator.share({ title: 'Kalkulation', text }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
-  try { await navigator.clipboard.writeText(text); Dialog.alert('Kalkulation in die Zwischenablage kopiert.'); }
-  catch { Dialog.prompt('Kalkulation zum Kopieren:', text, { title: 'Teilen', ok: 'Fertig' }); }
+  if (navigator.share) { try { await navigator.share({ title: T('Kalkulation'), text }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+  try { await navigator.clipboard.writeText(text); Dialog.alert(T('Kalkulation in die Zwischenablage kopiert.')); }
+  catch { Dialog.prompt(T('Kalkulation zum Kopieren:'), text, { title: T('Teilen'), ok: T('Fertig') }); }
 };
 // Änderungen aus anderen Tabs (Stoppuhr, neues Projekt im Häkelhelfer) übernehmen
 addEventListener('storage', e => { if (!e.key || e.key.startsWith('kalkulation.') || e.key.startsWith('stoppuhr.') || e.key === 'anleitung.projects') render(); });

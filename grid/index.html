@@ -8,6 +8,9 @@
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../shared/icon-180.png">
 <link rel="stylesheet" href="../shared/isadody.css">
+<script src="../shared/i18n.js"></script>
+<script src="../shared/en.js"></script>
+<script src="en.js"></script>
 <script src="../shared/store.js"></script>
 <script src="../shared/dialog.js"></script>
 <script src="../shared/erinnerung.js"></script>
@@ -131,6 +134,8 @@
 <script>
 // ---- Kern (ohne DOM, auch mit node testbar) ----
 const LETTERS = 'ABCDEFGHIJ';
+// Übersetzung (shared/i18n.js); unter node bleibt es Deutsch
+const tr = typeof T === 'function' ? T : (s, v) => v ? s.replace(/\{(\w+)\}/g, (m, k) => v[k]) : s;
 
 function rgbToLab([r, g, b]) {
   const f = v => { v /= 255; return v > 0.04045 ? ((v + 0.055) / 1.055) ** 2.4 : v / 12.92; };
@@ -236,13 +241,14 @@ function instructions(cells, w, h, mode, left) {
   return res;
 }
 
-const castOn = (w, mode) => mode === 'rounds' ? `Anschlag: ${w} Lm, zur Runde schließen.` : `Anschlag: ${w + 1} Lm, Reihe 1 ab der 2. Lm von der Nadel.`;
-const rowLabel = (mode) => mode === 'rounds' ? 'Runde' : 'Reihe';
-const toText = (ins, w, mode) => [castOn(w, mode), 'Tapestry: feste Maschen, nicht genutzte Farben mitführen.', '',
-  ...ins.map(r => `${rowLabel(mode)} ${r.n} (von ${r.right ? 'rechts' : 'links'}): ` + r.runs.map(([c, k]) => `${k} ${LETTERS[c]}`).join(', '))].join('\n');
+const castOn = (w, mode) => mode === 'rounds' ? tr('Anschlag: {n} Lm, zur Runde schließen.', { n: w }) : tr('Anschlag: {n} Lm, Reihe 1 ab der 2. Lm von der Nadel.', { n: w + 1 });
+const rowLabel = (mode) => mode === 'rounds' ? tr('Runde') : tr('Reihe');
+const toText = (ins, w, mode) => [castOn(w, mode), tr('Tapestry: feste Maschen, nicht genutzte Farben mitführen.'), '',
+  ...ins.map(r => `${rowLabel(mode)} ${r.n} (${r.right ? tr('von rechts') : tr('von links')}): ` + r.runs.map(([c, k]) => `${k} ${LETTERS[c]}`).join(', '))].join('\n');
 // Format für den Häkelhelfer (../anleitung/): Farbwechsel + Anzahl fM
 // mit Richtung, die der Häkelhelfer als Hinweis zur Reihe zeigt
-const toHelper = ins => ins.map(r => `Reihe ${r.n} (von ${r.right ? 'rechts' : 'links'}): ` + r.runs.map(([c, k]) => `Farbe ${LETTERS[c]}, ${k} fM`).join(', ')).join('\n');
+// (auf Englisch „Row 3 (from right): color A, 5 sc“, liest der Häkelhelfer ebenso)
+const toHelper = ins => ins.map(r => `${tr('Reihe')} ${r.n} (${r.right ? tr('von rechts') : tr('von links')}): ` + r.runs.map(([c, k]) => tr('Farbe {c}, {k} fM', { c: LETTERS[c], k })).join(', ')).join('\n');
 
 if (typeof module !== 'undefined') { module.exports = { quantize, despeckle, compact, instructions, toText, toHelper, fromRight }; }
 else {
@@ -257,7 +263,8 @@ let sel = 0, zoom = 1, painting = false, undo = [], redo = [];
 const opts = () => ({ w: +$('cols').value, h: +$('rowsN').value, k: +$('ncol').value, mode: $('mode').value, left: $('left').checked, smooth: $('smooth').checked, gm: +$('gm').value || 0, gr: +$('gr').value || 0 });
 // Maschenprobe: Höhe einer Masche im Verhältnis zur Breite (ohne Angabe quadratisch)
 const ratio = () => { const o = opts(); return o.gm > 0 && o.gr > 0 ? o.gm / o.gr : 1; };
-const sizeCm = (w, h) => { const o = opts(); return o.gm > 0 && o.gr > 0 ? ` Fertig ca. ${(w * 10 / o.gm).toFixed(1).replace('.', ',')} × ${(h * 10 / o.gr).toFixed(1).replace('.', ',')} cm.` : ''; };
+const cm = v => I18N.num(v, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const sizeCm = (w, h) => { const o = opts(); return o.gm > 0 && o.gr > 0 ? ' ' + T('Fertig ca. {w} × {h} cm.', { w: cm(w * 10 / o.gm), h: cm(h * 10 / o.gr) }) : ''; };
 const clamp = (v, a, b) => Math.max(a, Math.min(b, Math.round(v) || a));
 const store = Store('grid');
 const save = () => { store.set('state', { G, o: opts(), keep: $('keep').checked }); store.set('src', src); }; // Bild getrennt, falls es zu groß ist
@@ -316,10 +323,10 @@ function draw() {
   $('out').classList.remove('hidden'); $('empty').classList.add('hidden');
   drawChart($('chart'), cellSize());
   const counts = G.palette.map(() => 0); G.cells.forEach(c => counts[c]++);
-  $('legend').innerHTML = G.palette.map((p, i) => `<button data-i="${i}" class="${i === sel ? 'on' : ''}"><i style="background:${p}"></i>${LETTERS[i]} <small>${counts[i]} M</small></button>`).join('');
+  $('legend').innerHTML = G.palette.map((p, i) => `<button data-i="${i}" class="${i === sel ? 'on' : ''}"><i style="background:${p}"></i>${LETTERS[i]} <small>${T('{n} M', { n: counts[i] })}</small></button>`).join('');
   const o = opts(), ins = instructions(G.cells, G.w, G.h, o.mode, o.left);
-  $('cast').textContent = `${G.w} × ${G.h} Maschen.${sizeCm(G.w, G.h)} ` + castOn(G.w, o.mode);
-  $('rows').innerHTML = ins.map(r => `<li><b>${rowLabel(o.mode)} ${r.n}</b><span class="d">${r.right ? '← von rechts' : 'von links →'}</span>` +
+  $('cast').textContent = T('{w} × {h} Maschen.', { w: G.w, h: G.h }) + `${sizeCm(G.w, G.h)} ` + castOn(G.w, o.mode);
+  $('rows').innerHTML = ins.map(r => `<li><b>${rowLabel(o.mode)} ${r.n}</b><span class="d">${r.right ? '← ' + T('von rechts') : T('von links') + ' →'}</span>` +
     r.runs.map(([c, k]) => `<span class="s"><i style="background:${G.palette[c]}"></i>${k} ${LETTERS[c]}</span>`).join('') + '</li>').join('');
   $('undo').disabled = !undo.length; $('redo').disabled = !redo.length;
   if ($('editor').classList.contains('open')) openEditor();
@@ -375,7 +382,7 @@ $('file').onchange = e => {
     setMid(null); // neues Bild = neues Muster in der Sammlung
     loadSrc(cv.toDataURL('image/jpeg', 0.9), () => { if ($('keep').checked) fitRows(); build(); });
   };
-  im.onerror = () => Dialog.alert('Dieses Bild lässt sich nicht öffnen.');
+  im.onerror = () => Dialog.alert(T('Dieses Bild lässt sich nicht öffnen.'));
   im.src = u;
 };
 function loadSrc(data, then) {
@@ -388,20 +395,20 @@ const fitCols = () => { $('cols').value = clamp(+$('rowsN').value * ratio() / as
 let t = 0; const later = () => { clearTimeout(t); t = setTimeout(build, 250); };
 $('cols').oninput = () => { if ($('keep').checked && img) fitRows(); later(); };
 $('rowsN').oninput = () => { if ($('keep').checked && img) fitCols(); later(); };
-const LIMITS = [['cols', 5, 200, 'Breite', 'Maschen'], ['rowsN', 5, 200, 'Höhe', 'Reihen'], ['ncol', 2, 10, 'Farben', 'Farben']];
+const LIMITS = [['cols', 5, 200, T('Breite'), T('Maschen')], ['rowsN', 5, 200, T('Höhe'), T('Reihen')], ['ncol', 2, 10, T('Farben'), T('Farben')]];
 const LIMIT_TEXT = $('limits').textContent;
 // Sehr große Muster (versehentlich 500 getippt) nicht still übernehmen
 const BIG = 10000, big = () => +$('cols').value * +$('rowsN').value > BIG;
-const bigText = () => big() ? `Großes Muster: ${(+$('cols').value * +$('rowsN').value).toLocaleString('de-DE')} Maschen.` : '';
+const bigText = () => big() ? T('Großes Muster: {n} Maschen.', { n: I18N.num(+$('cols').value * +$('rowsN').value) }) : '';
 $('cols').onchange = $('rowsN').onchange = $('ncol').onchange = () => {
   const msg = [];
   for (const [id, a, b, name, unit] of LIMITS) {
     const v = +$(id).value, c = clamp(v, a, b);
-    if (c !== v) msg.push(`${name}: ${v > b ? 'höchstens' : 'mindestens'} ${c} ${unit}`);
+    if (c !== v) msg.push(`${name}: ${v > b ? T('höchstens') : T('mindestens')} ${c} ${unit}`);
     $(id).value = c;
   }
   const big = bigText();
-  $('limits').textContent = msg.length ? msg.join(' · ') + ', Wert angepasst.' + (big ? ' ' + big : '') : big || LIMIT_TEXT;
+  $('limits').textContent = msg.length ? msg.join(' · ') + T(', Wert angepasst.') + (big ? ' ' + big : '') : big || LIMIT_TEXT;
   $('limits').classList.toggle('warn', !!(msg.length || big));
   build();
 };
@@ -417,13 +424,13 @@ addEventListener('resize', () => { if (G) drawChart($('chart'), cellSize()); });
 
 // ---- Ausgabe ----
 const download = (blob, name) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
-const curText = () => { const o = opts(); return toText(instructions(G.cells, G.w, G.h, o.mode, o.left), G.w, o.mode) + '\n\nFarben:\n' + G.palette.map((p, i) => `${LETTERS[i]} = ${p}`).join('\n'); };
+const curText = () => { const o = opts(); return toText(instructions(G.cells, G.w, G.h, o.mode, o.left), G.w, o.mode) + '\n\n' + T('Farben') + ':\n' + G.palette.map((p, i) => `${LETTERS[i]} = ${p}`).join('\n'); };
 const chartBlob = () => new Promise(ok => { const cv = document.createElement('canvas'); drawChart(cv, Math.max(12, Math.min(24, Math.floor(2400 / Math.max(G.w, G.h))))); cv.toBlob(ok); });
-$('png').onclick = async () => download(await chartBlob(), 'tapestry-raster.png');
+$('png').onclick = async () => download(await chartBlob(), T('tapestry-raster.png'));
 
 // ---- Mustersammlung: einmal anlegen, danach dasselbe Muster aktualisieren ----
 let mid = store.get('mid', null); // id des Musters in der Sammlung
-function setMid(id) { mid = id; store.set('mid', id); $('toLib').textContent = id ? 'In Sammlung aktualisieren' : 'In Sammlung speichern'; }
+function setMid(id) { mid = id; store.set('mid', id); $('toLib').textContent = id ? T('In Sammlung aktualisieren') : T('In Sammlung speichern'); }
 async function thumbOf(blob) { // wie in muster/: kleines Vorschaubild
   try {
     const img = await createImageBitmap(blob), k = Math.min(1, 360 / Math.max(img.width, img.height));
@@ -437,7 +444,7 @@ $('toLib').onclick = async () => {
   try {
     let it = mid ? await MusterDB.get(mid) : null; // in der Sammlung gelöscht → neu anlegen
     if (!it) {
-      const title = await Dialog.prompt('Name des Musters', `Tapestry ${G.w} × ${G.h}`, { ok: 'Speichern' }); if (title === null) return;
+      const title = await Dialog.prompt(T('Name des Musters'), `Tapestry ${G.w} × ${G.h}`, { ok: T('Speichern') }); if (title === null) return;
       it = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), kind: 'image', title: title.trim() || 'Tapestry', tags: ['Tapestry'], fav: false, notes: '', added: Date.now() };
     }
     const o = opts(), png = await chartBlob(), colors = {};
@@ -447,13 +454,13 @@ $('toLib').onclick = async () => {
       text: toHelper(instructions(G.cells, G.w, G.h, o.mode, o.left)), colors, grid: { G, o, keep: $('keep').checked, src }, changed: Date.now() });
     await MusterDB.put(it);
     try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch {}
-    setMid(it.id); btn.textContent = 'Gespeichert ✓';
-  } catch { btn.textContent = 'Nicht möglich'; }
+    setMid(it.id); btn.textContent = T('Gespeichert ✓');
+  } catch { btn.textContent = T('Nicht möglich'); }
   setTimeout(() => setMid(mid), 1500);
 };
-$('txt').onclick = () => download(new Blob([curText()], { type: 'text/plain' }), 'tapestry-anleitung.txt');
-$('copy').onclick = async () => { try { await navigator.clipboard.writeText(curText()); $('copy').textContent = 'Kopiert ✓'; } catch { $('copy').textContent = 'Nicht möglich'; } setTimeout(() => $('copy').textContent = 'Text kopieren', 1500); };
-const bigOk = () => !big() || Dialog.confirm(`Das Muster hat ${G.w} × ${G.h} = ${(G.w * G.h).toLocaleString('de-DE')} Maschen. Wirklich so groß übernehmen?`, { ok: 'Übernehmen' });
+$('txt').onclick = () => download(new Blob([curText()], { type: 'text/plain' }), T('tapestry-anleitung.txt'));
+$('copy').onclick = async () => { try { await navigator.clipboard.writeText(curText()); $('copy').textContent = T('Kopiert ✓'); } catch { $('copy').textContent = T('Nicht möglich'); } setTimeout(() => $('copy').textContent = T('Text kopieren'), 1500); };
+const bigOk = () => !big() || Dialog.confirm(T('Das Muster hat {w} × {h} = {n} Maschen. Wirklich so groß übernehmen?', { w: G.w, h: G.h, n: I18N.num(G.w * G.h) }), { ok: T('Übernehmen') });
 $('toHelper').onclick = async e => {
   e.preventDefault();
   if (!await bigOk()) return;
@@ -462,7 +469,7 @@ $('toHelper').onclick = async e => {
   G.palette.forEach((p, i) => cols[LETTERS[i]] = p);
   const text = toHelper(instructions(G.cells, G.w, G.h, o.mode, o.left)), sent = Projekte.all().find(p => p.id === store.get('pid', ''));
   // schon einmal geschickt und seitdem geändert: dieses Projekt aktualisieren statt ein neues anzulegen
-  if (sent && sent.pattern !== text && await Dialog.confirm(`Projekt „${sent.name}“ im Häkelhelfer aktualisieren? Häkchen unveränderter Reihen bleiben.`, { ok: 'Aktualisieren', cancel: 'Neues Projekt' })) Projekte.update(sent.id, text, cols);
+  if (sent && sent.pattern !== text && await Dialog.confirm(T('Projekt „{name}“ im Häkelhelfer aktualisieren? Häkchen unveränderter Reihen bleiben.', { name: sent.name }), { ok: T('Aktualisieren'), cancel: T('Neues Projekt') })) Projekte.update(sent.id, text, cols);
   else if (!Projekte.open(text, `Tapestry ${G.w} × ${G.h}`, cols)) return Dialog.alert(Projekte.FULL_MSG);
   store.set('pid', Projekte.current().id);
   location.href = '../anleitung/';

@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Help – Isadody Crochet Helper</title>
+<meta name="theme-color" content="#FBF6EC">
+<link rel="stylesheet" href="../../shared/isadody.css">
+<link rel="stylesheet" href="../../shared/hilfe.css">
+<script src="../../shared/i18n.js"></script>
+</head>
+<body>
+<header>
+  <div class="title"><img class="logo" src="../../shared/logo.png" alt="Isadody"><div><h1>Help</h1><p>Crochet Helper</p></div></div>
+  <div class="tools"><a class="zurueck" href="../">‹ Back to app</a><span id="lang"></span></div>
+</header>
+<nav class="toc">
+  <a href="#projekte">Projects</a><a href="#laden">Loading a pattern</a><a href="#foto">Photo</a><a href="#pruefen">Check</a><a href="#haekeln">Crocheting</a><a href="#schreiben">How to write patterns</a><a href="#farben">Colours</a><a href="#speicher">Saving</a>
+</nav>
+
+<section>
+  <h2>What the Crochet Helper does</h2>
+  <p>You load a crochet pattern, and the app only shows you the next stitches as large tiles. That way you never lose your place, even on the go.</p>
+</section>
+
+<section id="projekte">
+  <h2>Projects</h2>
+  <p>You can save up to <b>10 projects</b> and work on them in parallel. Each project has its own pattern, its own progress and its own colours.</p>
+  <ul>
+    <li>Tap <span class="k">Projects</span> at the top right. At the top you see all projects, the most recently used first. Each shows the row you are on, when you last worked on it, its yarn colours and a progress bar. The active one is outlined and marked <b>Active</b>.</li>
+    <li><b>Tap a project:</b> you continue where you left off.</li>
+    <li><span class="k">+ New project</span> opens an empty project. Load or paste a pattern, give it a name, <span class="k">Start</span>.</li>
+    <li><span class="k">×</span> deletes a project after asking.</li>
+    <li>When 10 projects are saved, delete one before creating a new one.</li>
+  </ul>
+  <p>Below that you edit the active project: name, colours and pattern. <span class="k">Continue crocheting</span> applies the changes. If you change the pattern, e.g. to fix a typo, the position and ticks of unchanged rows are kept; only changed rows start over. <span class="k">‹ Crochet</span> at the top right goes back without changes.</p>
+</section>
+
+<section id="laden">
+  <h2>Loading a pattern</h2>
+  <p>Under <span class="k">Projects</span> you have three ways:</p>
+  <ul>
+    <li><b>From the collection:</b> patterns with text in the <a href="../../muster/">Pattern Collection</a> appear here as a list (including PDFs with text). Search by name, tag or text, or tap tags to filter. Tapping a pattern creates a new project and starts it right away. If the project already exists, it opens with your progress. Images and scanned PDFs are not in the list because the app cannot read text from them.</li>
+    <li><b>Load external file:</b> text file (<code>.txt</code>), Word (<code>.docx</code>), LibreOffice (<code>.odt</code>) or <b>PDF</b>. The text becomes a new project, the file name its name. For PDFs the app reads the text inside the file; scanned PDFs and images have none.</li>
+    <li><b>Paste:</b> copy or type the pattern into the big text field.</li>
+  </ul>
+  <h3 id="foto">Pattern as a photo or screenshot</h3>
+  <p>Your phone can recognise text in pictures itself. This is how it gets into the Crochet Helper:</p>
+  <ul>
+    <li><b>iPhone/iPad (Live Text):</b> open the photo in the Photos app, touch and hold the text, select everything with the handles, <span class="k">Copy</span>. Tap into the text field here and <span class="k">Paste</span>.</li>
+    <li><b>Android (Google Lens):</b> open the photo in Google Photos, <span class="k">Lens</span> → <span class="k">Text</span>, select everything, <span class="k">Copy</span>, paste here.</li>
+    <li>Copy several pages one after the other and add each at the end.</li>
+  </ul>
+  <p>Charts and photos with no readable text can be opened in the <a href="../../lineal/">Ruler</a>: it marks the row you are on.</p>
+  <h3 id="pruefen">Check before you start</h3>
+  <p>Below the text field the Crochet Helper shows what it read: how many rows, each row with its stitch count and stitches. Rows with <b>⚠</b> don’t match the pattern’s stitch count, lines marked <b>missing</b> gave no stitches. Fix both in the text before starting.</p>
+  <p>If the text contains more than the rows (materials list, introduction, photo captions from a PDF), select only the part with the rows in the text field and tap <span class="k">Keep selection only</span>.</p>
+</section>
+
+<section id="haekeln">
+  <h2>Crocheting</h2>
+  <ul>
+    <li>The current <b>row</b> is at the top left, below it the position and project name, e.g. “4 of 20 · Page 1/3 · 18 sts · Chick” (row 4 of 20, page 1 of 3 of this row; the page is only shown for long rows). Colour dots next to the row show the yarn colours on this page.</li>
+    <li>After that comes the <b>stitch count at the end of the row</b>, e.g. <b>18 sts</b>. If the pattern states it (e.g. “(18)”), the app uses that number. Otherwise it counts itself: increase = 2 stitches, decrease = 1, chains, slip stitches and turning don’t count. If the stitches of the row don’t match the number in the pattern, <b>⚠ counted 17</b> appears. Then it’s worth checking the pattern.</li>
+    <li><b>Notes</b> from the pattern (e.g. “Head”, “insert safety eyes between R8 and R9”, “then stuff”) appear in colour above the tiles of the row they belong to.</li>
+    <li>Below the tiles you see the <b>abbreviations</b> on this page with their meaning, e.g. <b>sc</b> single crochet. Tap one to open the entry in the <a href="../../lexikon/">Glossary</a>. For abbreviations that mean different things in US and UK patterns (<code>dc</code>, <code>tr</code>), the app decides by the pattern: if <code>sc</code> appears, it is US, with <code>htr</code> or <code>ss</code> UK, otherwise both are shown. Unknown abbreviations get a <b>?</b>.</li>
+    <li>Each page shows at most <b>8 tiles</b>. Long rows are spread over several pages.</li>
+    <li>Up to 3 identical stitches in a row get one tile each. From 4 identical stitches there is one tile with a count, e.g. <b>10× sc</b>.</li>
+    <li><span class="k">Next ›</span> shows the next page or row, <span class="k">‹ Back</span> the previous one. The last page shows <b>Done ✓</b>.</li>
+  </ul>
+  <p>While the Crochet Helper is open, the screen stays on (if the browser supports it, e.g. Chrome, Safari from iOS 16.4).</p>
+  <h3>Patterns with several parts</h3>
+  <p>If the numbering starts again (R1 after R12), that is a new part. Its name comes from the line before, e.g. “Head”, and is shown below the position while crocheting. If that line has a count like <code>Arm (2x)</code>, <code>Leg x2</code> or <code>2 pieces</code>, the app shows the part that many times in a row, with “Arm 1 of 2”, “Arm 2 of 2”.</p>
+  <pre>Head
+R1: 6 sc in magic ring (6)
+…
+Arm (2x)
+R1: 5 sc in magic ring (5)
+R2-8: 5 sc</pre>
+  <h3>Progress by tapping</h3>
+  <ul>
+    <li><b>Tap a tile:</b> this tile and all before it in the row fade, i.e. they are done.</li>
+    <li><b>Tap a faded tile:</b> after asking, it and all following tiles become active again.</li>
+  </ul>
+  <p class="note">Progress is per row. “Next” only turns pages and doesn’t tick anything off.</p>
+</section>
+
+<section id="schreiben">
+  <h2>How to write patterns</h2>
+  <p>The app reads English and German patterns. Abbreviations are shown exactly as written.</p>
+  <h3>Rows</h3>
+  <p>Each line starts with a row number. Allowed are <code>R</code>, <code>Row</code>, <code>Round</code>, <code>Rnd</code>, <code>Rd</code> and the German <code>Reihe</code>, <code>Runde</code>, then the number and ideally a colon. Separate the stitches with commas.</p>
+  <p>Several identical rows at once: <code>R12-14: 30 sc</code>, also <code>Rows 20 to 25</code> or <code>Runde 5 bis 8</code>. The app then shows each row separately. The number may also come first: <code>1. Rd: 6 fM</code>.</p>
+  <p>The stitch count at the end may be in brackets, e.g. <code>(18)</code>, <code>[18]</code>, <code>(18 sts)</code> or <code>= 18 sts</code>, also right after the number: <code>Rd 7 (18 sts): 18 sc</code>. <code>Rounds 12-15 (4 rnds)</code> only counts the rounds and is skipped. The stitch count appears at the top while crocheting.</p>
+  <p>If a numbered line gives no stitches at all, the app tells you when starting, so no round goes missing unnoticed.</p>
+  <pre>R1: 6 sc in magic ring
+R2: 6 inc
+R3: (sc, inc) x 6 (18)</pre>
+  <p>Abbreviations (<code>sc</code>, <code>dc</code>, <code>inc</code>, <code>bs</code>, German <code>fM</code>, <code>Stb</code>, <code>Zun</code> …) are shown as written. Abbreviations with numbers or two words stay whole: <code>sc2tog</code>, <code>dc2tog</code>, <code>sl st</code>, <code>inv dec</code>, <code>magic ring</code>.</p>
+  <ul>
+    <li><b>Magic ring:</b> <code>6 sc in magic ring</code> or <code>MR 6 sc</code> give one tile for the ring first, then the stitches.</li>
+    <li><b>Several stitches into one:</b> <code>2 sc in next st</code> = increase. Other stitches keep their kind: <code>3 dc in next st</code> gives one tile <b>3 dc in 1 st</b> (counts as 3 sts).</li>
+    <li><b>Group into one stitch:</b> <code>(sc, hdc, dc, hdc, sc) in next st</code> becomes one tile.</li>
+    <li><b>Chains that count as a stitch:</b> <code>ch 3 (counts as dc)</code>. If that isn’t stated, chains at the start only count as double crochet if the stitch count wouldn’t match otherwise.</li>
+    <li>“in next st”, “in 2nd ch from hook”, “then” are positions or filler words, not tiles. Work steps like “stuff the head” or “fasten off” appear as notes.</li>
+  </ul>
+  <h3>Loops</h3>
+  <p><code>BLO</code>, <code>FLO</code> (German <code>hMg</code>, <code>vMg</code>) before or after the abbreviation also appears on the tile, e.g. <b>sc BLO</b>. If it stands alone at the start of the row (<code>Rd 8 (BLO): 30 sc</code> or <code>BLO: 30 sc</code>), it applies to the whole row.</p>
+  <h3>Headings and notes</h3>
+  <p>If the pattern has numbered rows, all other lines (title, materials, notes) are just text and don’t become stitches. Lines between rows are shown as a note with the next row; before row 1 only a short heading like “Head”. A colour change in them (e.g. “color B”) still applies. A materials list before row 1 like <code>Color A: white</code> is not a colour change. A colour change after the stitch count (<code>R2: 12 sc (12) – color B</code>) applies from the next row. If there are no row numbers at all, every line with stitches is a row. Lines without a number and without a known abbreviation (e.g. “Head”, “Stuff”) then count as headings.</p>
+  <h3>Counts and repeats</h3>
+  <ul>
+    <li>Count before the abbreviation, with or without a space: <code>6 sc</code>, <code>254sc</code>, or after it: <code>sc 5</code>, <code>inc x 6</code>, <code>sc in next 5 sts</code></li>
+    <li>Brackets with a count after: <code>(sc, inc) x 6</code>, also <code>× 6</code> or <code>* 6</code></li>
+    <li>or a count with x: <code>(3 sc, dec) 5x</code>, <code>6x (2 sc, inc)</code>, in words: <code>repeat 6 times</code></li>
+    <li>Instead of round brackets <code>[…]</code> and asterisks also work: <code>*2 sc, inc* 6x</code></li>
+    <li>Repeat from asterisk: <code>*sc 3, inc; rep from * 5 more times</code> (6× in total)</li>
+    <li>Without a count but with a stitch count at the end, the app fills up: <code>sc in each st (24)</code>, <code>sc around (30)</code>, <code>(sc, inc) around (18)</code>. Without a stitch count it stays one tile.</li>
+    <li>Increase in every stitch: <code>2 sc in each st (12)</code> gives inc tiles up to the stitch count. Turning chains don’t count.</li>
+    <li>Just one abbreviation with a stitch count: <code>Rd 6-9: sc (30)</code> means 30 sc.</li>
+    <li>A repeat without brackets applies to everything before it: <code>sc 2, inc; repeat 6 times (24)</code>, <code>sc, dec around (12)</code>, <code>2sc, inc *6</code>. With <code>inc x 6</code> the number only applies to that abbreviation, unless the stitch count at the end only fits the whole sequence.</li>
+    <li>Brackets can be nested: <code>(2 sc, (sc, inc) x 2) x 3</code></li>
+  </ul>
+  <h3>German patterns</h3>
+  <pre>R1: 6 fM in Fadenring
+R2: 6 Zun
+R3: (fM, Zun) x 6 (18)</pre>
+  <p>German forms like <code>2 fM in 1 M</code>, <code>jede M verdoppeln</code>, <code>6x wiederholen</code>, <code>ab * noch 5x wiederholen</code> or <code>3 Lm (zählt als 1. Stb)</code> are understood too. The <a href="../../lexikon/">Glossary</a> translates German abbreviations.</p>
+</section>
+
+<section id="farben">
+  <h2>Colours</h2>
+  <p>With a colour change in the pattern, the tiles appear in the yarn colour:</p>
+  <pre>Row 1: Use color A, 5 sc, color B, 3 sc
+Row 2: 8 sc
+Row 3: Change to color C: 8 sc</pre>
+  <ul>
+    <li>Ways to write it: <code>Use color A</code>, <code>Change to colour B</code>, <code>color C</code>, German <code>Farbe A</code>, <code>Wechsel zu Farbe B</code>. Instead of A, B, C you can also use names like <code>color Pink</code>.</li>
+    <li>The change applies from that point, even in the middle of a row, and stays until the next change, also across rows. In the example, row 2 is all in colour B.</li>
+    <li>Identical stitches in different colours are not merged into one tile.</li>
+  </ul>
+  <h3>Setting colours</h3>
+  <p>Under <span class="k">Projects</span> there is a button for each colour of each project (A starts as red, B as blue). Tap it and pick a colour from the palette, with the hue, saturation and lightness sliders, or as a hex value like <code>#F2896B</code>. Colours from your text appear there automatically. <span class="k">+ Colour</span> adds another.</p>
+</section>
+
+<section id="speicher">
+  <h2>Saving</h2>
+  <p>All projects with pattern, position, progress and colours stay saved in this browser on this device, even after closing. They are not available on another device or in a private window. If you have the Crochet Helper open in two tabs, each picks up the other’s state.</p>
+  <p>You can back up everything on the <a href="../../">start page</a> under <b>Back up your data</b>: one file with projects, counters, grid and collection. It also shows when you last backed up. If it was more than 14 days ago, every app reminds you. On iPhone, add the page via “Share” → “Add to Home Screen”, otherwise Safari deletes the data after 7 days without use.</p>
+  <p>If the browser storage is full, the app tells you. Then back up and delete old things.</p>
+  <p><b>Offline:</b> after the first visit with internet, the browser stores all apps on the device. After that they also work without a connection, e.g. at a market or on the train. With a connection the app always fetches the latest version.</p>
+  <p>From the <a href="../../grid/">Grid Maker</a> and the <a href="../../muster/">Pattern Collection</a> you can send patterns straight here. They become a new project. If the pattern is already a project, you continue there.</p>
+</section>
+
+<a class="btn back" href="../">Back to the Crochet Helper</a>
+<script>document.getElementById('lang').append(I18N.switcher());</script>
+</body>
+</html>

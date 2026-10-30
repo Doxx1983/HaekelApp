@@ -8,6 +8,9 @@
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../shared/icon-180.png">
 <link rel="stylesheet" href="../shared/isadody.css">
+<script src="../shared/i18n.js"></script>
+<script src="../shared/en.js"></script>
+<script src="en.js"></script>
 <script src="../shared/store.js"></script>
 <script src="../shared/dialog.js"></script>
 <script src="../shared/erinnerung.js"></script>
@@ -66,7 +69,7 @@
 </head>
 <body>
 <header>
-  <div class="title"><a class="home" href="../" aria-label="Alle Apps" title="Alle Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/></svg></a><img class="logo" src="../shared/logo.png" alt="Isadody"><div><div id="count">Reihe 0</div><div id="sub"></div></div></div>
+  <div class="title"><a class="home" href="../" aria-label="Alle Apps" title="Alle Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/></svg></a><img class="logo" src="../shared/logo.png" alt="Isadody"><div><div id="count">Reihe 0</div><div id="sub" translate="no"></div></div></div>
   <div class="tools"><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a><button class="small icon-m" id="menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span class="lbl">Einstellungen</span></button></div>
 </header>
 <div id="bar"><i></i></div>
@@ -127,7 +130,7 @@ for (const [k, c] of Object.entries(counters)) if (k !== 'frei' && !c.name) {
   c.name = (hp && hp.name) || 'Projekt';
 }
 const projects = () => Object.keys(counters).filter(k => k !== 'frei').sort((a, b) => (counters[b].used || 0) - (counters[a].used || 0));
-const nameOf = id => id === 'frei' ? 'Freier Zähler' : (counters[id] && counters[id].name) || 'Projekt';
+const nameOf = id => id === 'frei' ? T('Freier Zähler') : (counters[id] && counters[id].name) || 'Projekt';
 let s;
 function pick(id) {
   if (!counters.frei) counters.frei = FRESH();
@@ -187,12 +190,12 @@ function render() {
     d.style.setProperty('--tone', TONES[Math.floor(i / cols) % TONES.length]);
     d.classList.toggle('on', s.popped.includes(i));
     const nr = s.flips * s.n + i + 1;
-    d.textContent = nr; d.setAttribute('aria-label', 'Reihe ' + nr);
+    d.textContent = nr; d.setAttribute('aria-label', T('Reihe {n}', { n: nr }));
   });
   const t = total();
-  $('count').textContent = 'Reihe ' + t;
-  const parts = [nameOf(cur), `Platte ${s.flips + 1} · ${s.popped.length}/${s.n}`];
-  if (s.target) parts.push(t >= s.target ? 'Ziel erreicht' : `noch ${s.target - t}`);
+  $('count').textContent = T('Reihe {n}', { n: t });
+  const parts = [nameOf(cur), `${T('Platte {n}', { n: s.flips + 1 })} · ${s.popped.length}/${s.n}`];
+  if (s.target) parts.push(t >= s.target ? T('Ziel erreicht') : T('noch {n}', { n: s.target - t }));
   // Platte/Stand und Ziel bleiben je beisammen, damit z. B. „0/10“ nicht allein umbricht
   $('sub').replaceChildren(...parts.flatMap((x, i) => { const e = document.createElement('span'); e.textContent = x; if (i) e.className = 'nw'; return i ? [' · ', e] : [e]; }));
   document.body.classList.toggle('target', !!s.target);
@@ -274,18 +277,18 @@ $('padd').onclick = async () => {
   // Gleicher Name: nach Rückfrage das vorhandene Projekt neu beginnen statt ein zweites anzulegen
   const same = projects().find(id => nameOf(id).toLowerCase() === name.toLowerCase());
   if (same) {
-    if (!(await Dialog.confirm(`Das Projekt „${nameOf(same)}“ gibt es schon (Reihe ${counters[same].popped.length + counters[same].flips * counters[same].n}). Überschreiben setzt es auf 0 zurück.`, { ok: 'Überschreiben', danger: true }))) return;
+    if (!(await Dialog.confirm(T('Das Projekt „{name}“ gibt es schon (Reihe {n}). Überschreiben setzt es auf 0 zurück.', { name: nameOf(same), n: counters[same].popped.length + counters[same].flips * counters[same].n }), { ok: T('Überschreiben'), danger: true }))) return;
     counters[same] = { ...FRESH(nameOf(same)), used: Date.now() }; $('pnew').value = '';
     pick(same); openSetup(); build(); return;
   }
-  if (projects().length >= MAX) return Dialog.alert(`Es gibt schon ${MAX} Projekte. Bitte erst eins löschen.`);
+  if (projects().length >= MAX) return Dialog.alert(T('Es gibt schon {n} Projekte. Bitte erst eins löschen.', { n: MAX }));
   const id = uid(); counters[id] = { ...FRESH(name), used: Date.now() }; $('pnew').value = '';
   pick(id); openSetup(); build();
 };
 $('pnew').onkeydown = e => { if (e.key === 'Enter') $('padd').click(); };
 $('pname').onchange = () => { if (cur === 'frei') return; s.name = $('pname').value.trim() || 'Projekt'; save(); openSetup(); render(); };
 $('pdel').onclick = async () => {
-  if (cur === 'frei' || !(await Dialog.confirm(`Projekt „${nameOf(cur)}“ löschen? Der Zählerstand geht verloren.`, { ok: 'Löschen', danger: true }))) return;
+  if (cur === 'frei' || !(await Dialog.confirm(T('Projekt „{name}“ löschen? Der Zählerstand geht verloren.', { name: nameOf(cur) }), { ok: T('Löschen'), danger: true }))) return;
   delete counters[cur]; pick('frei'); openSetup(); build();
 };
 $('sizes').onclick = e => {
@@ -303,7 +306,7 @@ $('ok').onclick = async () => {
   // Leeres Feld = Stand bleibt; 0 nur nach Rückfrage (oder über „Auf 0 zurücksetzen“)
   const v = $('set').value.trim(), t = total();
   if (v !== '' && +v !== t) {
-    if (+v === 0 && !zeroOk && !(await Dialog.confirm(`Zähler von Reihe ${t} auf 0 zurücksetzen?`, { ok: 'Zurücksetzen', danger: true }))) return;
+    if (+v === 0 && !zeroOk && !(await Dialog.confirm(T('Zähler von Reihe {n} auf 0 zurücksetzen?', { n: t }), { ok: T('Zurücksetzen'), danger: true }))) return;
     setTotal(+v);
   } else setTotal(t);
   zeroOk = false;

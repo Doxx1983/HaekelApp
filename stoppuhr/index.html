@@ -8,6 +8,9 @@
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../shared/icon-180.png">
 <link rel="stylesheet" href="../shared/isadody.css">
+<script src="../shared/i18n.js"></script>
+<script src="../shared/en.js"></script>
+<script src="en.js"></script>
 <script src="../shared/store.js"></script>
 <script src="../shared/dialog.js"></script>
 <script src="../shared/projekte.js"></script>
@@ -62,13 +65,13 @@
 </head>
 <body>
 <header>
-  <div class="title"><a class="home" href="../" aria-label="Alle Apps" title="Alle Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/></svg></a><img class="logo" src="../shared/logo.png" alt="Isadody"><div><h1 class="apptitle">Stoppuhr</h1><div id="sub"></div></div></div>
+  <div class="title"><a class="home" href="../" aria-label="Alle Apps" title="Alle Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/></svg></a><img class="logo" src="../shared/logo.png" alt="Isadody"><div><h1 class="apptitle">Stoppuhr</h1><div id="sub" translate="no"></div></div></div>
   <div class="tools"><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div>
 </header>
 <main>
   <section class="card" id="empty" hidden>
     <h2>Noch keine Projekte</h2>
-    <p>Die Stoppuhr läuft je Projekt aus dem <a href="../anleitung/">Häkelhelfer</a>. Lege dort ein Projekt an, dann kannst du hier die Zeit messen.</p>
+    <p data-i18n>Die Stoppuhr läuft je Projekt aus dem <a href="../anleitung/">Häkelhelfer</a>. Lege dort ein Projekt an, dann kannst du hier die Zeit messen.</p>
   </section>
   <div id="app" hidden>
       <section class="card">
@@ -106,14 +109,14 @@
 // cost = gespeicherte Kalkulation { c (Cent), min (gerundete Minuten), raw (ms), rate, ts, ms: Betragsschritt, up, at }.
 // stoppuhr.prefs = { ts, ms, up } (zuletzt gewählte Rundung), stoppuhr.current = Projekt-id.
 const $ = id => document.getElementById(id), store = Store('stoppuhr');
-const TSTEPS = [[0, 'genau'], [10, '10 Min.'], [15, '¼ Std.'], [30, '½ Std.'], [60, '1 Std.']];
-const MSTEPS = [[1, 'genau'], [5, '5 Cent'], [10, '10 Cent'], [50, '50 Cent'], [100, '1 Euro']];
-const MODES = [[false, 'kaufmännisch'], [true, 'immer aufrunden']];
-const eur = c => (c / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+const TSTEPS = [[0, T('genau')], [10, T('10 Min.')], [15, T('¼ Std.')], [30, T('½ Std.')], [60, T('1 Std.')]];
+const MSTEPS = [[1, T('genau')], [5, T('5 Cent')], [10, T('10 Cent')], [50, T('50 Cent')], [100, T('1 Euro')]];
+const MODES = [[false, T('kaufmännisch')], [true, T('immer aufrunden')]];
+const eur = c => (c / 100).toLocaleString(I18N.locale, { style: 'currency', currency: 'EUR' });
 const two = n => String(n).padStart(2, '0');
 const clock = ms => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 3600)}:${two(Math.floor(s / 60) % 60)}:${two(s % 60)}`; };
-const hm = min => { const m = Math.round(min); return `${Math.floor(m / 60)}:${two(m % 60)} Std.`; };
-const day = t => new Date(t).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const hm = min => { const m = Math.round(min); return T('{t} Std.', { t: `${Math.floor(m / 60)}:${two(m % 60)}` }); };
+const day = t => new Date(t).toLocaleDateString(I18N.locale, { day: '2-digit', month: '2-digit', year: 'numeric' });
 
 // ---- Rechnen ----
 // Auf ein Vielfaches von step runden; up = immer aufrunden (kleine Toleranz gegen Rechenungenauigkeit)
@@ -161,7 +164,7 @@ function renderList() {
   for (const p of list) {
     const x = get(p.id), b = document.createElement('button');
     b.dataset.id = p.id; b.className = p.id === pid ? 'on' : '';
-    b.innerHTML = '<b></b><small></small>';
+    b.innerHTML = '<b translate="no"></b><small></small>';
     b.querySelector('b').textContent = p.name;
     const s = b.querySelector('small');
     if (x.run) { const d = document.createElement('span'); d.className = 'dot'; s.append(d); }
@@ -182,14 +185,14 @@ function render() {
   const p = list.find(q => q.id === pid), x = get();
   $('sub').textContent = p.name;
   renderList();
-  $('go').textContent = x.run ? 'Stopp' : 'Start'; $('go').classList.toggle('run', !!x.run);
-  if (document.activeElement !== $('rate')) $('rate').value = x.rate ? (x.rate / 100).toLocaleString('de-DE', { minimumFractionDigits: 2 }) : '';
+  $('go').textContent = x.run ? T('Stopp') : T('Start'); $('go').classList.toggle('run', !!x.run);
+  if (document.activeElement !== $('rate')) $('rate').value = x.rate ? (x.rate / 100).toLocaleString(I18N.locale, { minimumFractionDigits: 2, useGrouping: false }) : '';
   opts($('tstep'), TSTEPS, prefs.ts, 'ts'); opts($('mstep'), MSTEPS, prefs.ms, 'ms'); opts($('mode'), MODES, prefs.up, 'up');
   $('saved').hidden = !x.cost;
   if (x.cost) {
     const k = x.cost;
-    $('sdate').textContent = `am ${day(k.at)}`; $('samount').textContent = eur(k.c);
-    $('sinfo').textContent = `${hm(k.min)} × ${eur(k.rate)} pro Stunde (gemessen ${clock(k.raw)})`;
+    $('sdate').textContent = T('am {d}', { d: day(k.at) }); $('samount').textContent = eur(k.c);
+    $('sinfo').textContent = T('{t} × {rate} pro Stunde (gemessen {raw})', { t: hm(k.min), rate: eur(k.rate), raw: clock(k.raw) });
   }
   tick();
 }
@@ -198,14 +201,14 @@ function tick() {
   if (!pid || $('app').hidden) return;
   const x = get(), ms = elapsed(x);
   $('time').textContent = clock(ms);
-  $('state').textContent = x.run ? 'läuft …' : ms ? 'angehalten' : 'bereit';
+  $('state').textContent = T(x.run ? 'läuft …' : ms ? 'angehalten' : 'bereit');
   if (x.run) { const b = $('plist').querySelector('.on small'); if (b) { b.lastChild.textContent = clock(ms) + (x.cost ? ` · ${eur(x.cost.c)}` : ''); } }
   $('norate').hidden = !!x.rate; $('save').disabled = !x.rate;
   if (!x.rate) { $('calc').hidden = true; return; }
   const r = calc(ms, x.rate, prefs.ts, prefs.ms, prefs.up);
   $('calc').hidden = false;
-  $('calc').innerHTML = `<div><span>Gemessen</span><span>${clock(ms)}</span></div><div><span>Gerechnet</span><span>${hm(r.min)}</span></div>`
-    + `<div><span>Stundensatz</span><span>${eur(x.rate)}</span></div><div class="sum"><span>Kosten</span><span>${eur(r.c)}</span></div>`;
+  $('calc').innerHTML = `<div><span>${T('Gemessen')}</span><span>${clock(ms)}</span></div><div><span>${T('Gerechnet')}</span><span>${hm(r.min)}</span></div>`
+    + `<div><span>${T('Stundensatz')}</span><span>${eur(x.rate)}</span></div><div class="sum"><span>${T('Kosten')}</span><span>${eur(r.c)}</span></div>`;
 }
 setInterval(tick, 1000);
 
@@ -219,34 +222,34 @@ $('go').onclick = () => {
 };
 $('fix').onclick = async () => {
   const x = get(), min = Math.floor(elapsed(x) / 60000);
-  const v = await Dialog.prompt('Gesamtzeit als Std:Min (z. B. 3:45) oder in Minuten:', `${Math.floor(min / 60)}:${two(min % 60)}`, { title: 'Zeit ändern', ok: 'Übernehmen' });
+  const v = await Dialog.prompt(T('Gesamtzeit als Std:Min (z. B. 3:45) oder in Minuten:'), `${Math.floor(min / 60)}:${two(min % 60)}`, { title: T('Zeit ändern'), ok: T('Übernehmen') });
   if (v === null) return;
-  const ms = parseTime(v); if (ms === null) return Dialog.alert('Bitte die Zeit als Std:Min (z. B. 3:45) oder in Minuten eingeben.');
+  const ms = parseTime(v); if (ms === null) return Dialog.alert(T('Bitte die Zeit als Std:Min (z. B. 3:45) oder in Minuten eingeben.'));
   const y = get(); y.ms = ms; if (y.run) y.run = Date.now(); put(y); render();
 };
 $('reset').onclick = async () => {
-  if (!await Dialog.confirm('Gemessene Zeit dieses Projekts auf 0 setzen? Gespeicherte Kosten bleiben.', { ok: 'Auf 0 setzen', danger: true })) return;
+  if (!await Dialog.confirm(T('Gemessene Zeit dieses Projekts auf 0 setzen? Gespeicherte Kosten bleiben.'), { ok: T('Auf 0 setzen'), danger: true })) return;
   const x = get(); x.ms = 0; x.run = 0; put(x); render();
 };
 $('rate').onchange = () => {
   const c = parseRate($('rate').value);
-  if (c === null) { Dialog.alert('Bitte den Stundensatz als Betrag eingeben, z. B. 12,50.'); render(); return; }
+  if (c === null) { Dialog.alert(T('Bitte den Stundensatz als Betrag eingeben, z. B. 12,50.')); render(); return; }
   const x = get(); x.rate = c; put(x); $('rate').blur(); render();
 };
 $('rate').onkeydown = e => { if (e.key === 'Enter') $('rate').onchange(); };
 $('save').onclick = async () => {
   let x = get(); if (!x.rate) return;
   if (x.run) {
-    if (!await Dialog.confirm('Die Stoppuhr läuft noch. Anhalten und Kosten speichern?', { ok: 'Anhalten und speichern' })) return;
+    if (!await Dialog.confirm(T('Die Stoppuhr läuft noch. Anhalten und Kosten speichern?'), { ok: T('Anhalten und speichern') })) return;
     x = get(); x.ms += Math.max(0, Date.now() - x.run); x.run = 0;
   }
-  if (x.cost && !await Dialog.confirm(`Schon gespeichert: ${eur(x.cost.c)}. Durch den neuen Wert ersetzen?`, { ok: 'Ersetzen' })) return;
+  if (x.cost && !await Dialog.confirm(T('Schon gespeichert: {v}. Durch den neuen Wert ersetzen?', { v: eur(x.cost.c) }), { ok: T('Ersetzen') })) return;
   const r = calc(x.ms, x.rate, prefs.ts, prefs.ms, prefs.up);
   x.cost = { c: r.c, min: r.min, raw: x.ms, rate: x.rate, ts: prefs.ts, ms: prefs.ms, up: prefs.up, at: Date.now() };
   put(x); render();
 };
 $('sdel').onclick = async () => {
-  if (!await Dialog.confirm('Gespeicherte Kosten löschen? Die gemessene Zeit bleibt.', { ok: 'Löschen', danger: true })) return;
+  if (!await Dialog.confirm(T('Gespeicherte Kosten löschen? Die gemessene Zeit bleibt.'), { ok: T('Löschen'), danger: true })) return;
   const x = get(); x.cost = null; put(x); render();
 };
 // Änderungen aus anderen Tabs (z. B. neues Projekt im Häkelhelfer) übernehmen

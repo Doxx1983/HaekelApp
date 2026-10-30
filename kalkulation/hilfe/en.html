@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Help – Isadody Pricing</title>
+<meta name="theme-color" content="#FBF6EC">
+<link rel="stylesheet" href="../../shared/isadody.css">
+<link rel="stylesheet" href="../../shared/hilfe.css">
+<script src="../../shared/i18n.js"></script>
+</head>
+<body>
+<header>
+  <div class="title"><img class="logo" src="../../shared/logo.png" alt="Isadody"><div><h1>Help</h1><p>Pricing</p></div></div>
+  <div class="tools"><a class="zurueck" href="../">‹ Back to app</a><span id="lang"></span></div>
+</header>
+<nav class="toc">
+  <a href="#arbeit">Labour</a><a href="#material">Materials</a><a href="#neben">Extra costs</a><a href="#gewinn">Profit and tax</a><a href="#preis">Price</a><a href="#speicher">Saving</a>
+</nav>
+
+<section>
+  <h2>What pricing does</h2>
+  <p>It works out a selling price for a project from working time, materials, extra costs, profit and tax.</p>
+  <p>The projects are those from the <a href="../../anleitung/">Crochet Helper</a>. If there are none yet, create a project there first.</p>
+  <p class="note">The calculation is a guide, not tax advice.</p>
+</section>
+
+<section id="arbeit">
+  <h2>Labour</h2>
+  <ul>
+    <li>The time comes from the <a href="../../stoppuhr/">Stopwatch</a>, rounded as set there. If the stopwatch is still running, pricing keeps counting along.</li>
+    <li><span class="k">Enter time</span>: type the time by hand as h:mm (<code>3:45</code>) or in minutes. <span class="k">Time from stopwatch</span> goes back to the measured time.</li>
+    <li>The <b>hourly rate</b> comes from the stopwatch; you can change it here for the calculation. The stopwatch stays as it is.</li>
+  </ul>
+</section>
+
+<section id="material">
+  <h2>Materials</h2>
+  <ul>
+    <li><span class="k">+ Material</span> adds an item.</li>
+    <li><i>Pieces</i>: quantity × price per piece, e.g. 2 balls × 3.95 €.</li>
+    <li><i>Grams</i>: grams used × price per 100 g, e.g. 80 g at 4.95 € per 100 g = 3.96 €.</li>
+    <li>Add more items for supplies like stuffing, eyes or labels. <span class="k">×</span> deletes an item.</li>
+  </ul>
+</section>
+
+<section id="neben">
+  <h2>Extra costs</h2>
+  <p>Fixed amounts like packaging, shipping, stall fee or selling fees, one line per item.</p>
+</section>
+
+<section id="gewinn">
+  <h2>Profit and tax</h2>
+  <ul>
+    <li><b>Profit:</b> a percentage added on top of your costs (labour + materials + extra costs). The last value you entered is suggested for new projects.</li>
+    <li><b>VAT:</b> <i>none (small business)</i>, 7 % or 19 % (German rates). Crochet goods are usually 19 %. As a small business in Germany (§ 19 UStG) the invoice says: “Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.” The setting applies to all projects.</li>
+  </ul>
+</section>
+
+<section id="preis">
+  <h2>Price</h2>
+  <ul>
+    <li><b>Round final price to:</b> exact, 10 cents, 50 cents or whole euros; <i>standard</i> to the nearest step or <i>always round up</i>.</li>
+    <li>Below the final price you see what you keep per hour at that price.</li>
+    <li><span class="k">Save calculation</span> stores the final price and all parts with the date for the project. A new calculation replaces the old one after asking.</li>
+    <li><span class="k">Share</span> sends the calculation as text (on a computer: to the clipboard).</li>
+  </ul>
+</section>
+
+<section id="speicher">
+  <h2>Saving</h2>
+  <p>Everything is stored in this browser on this device. If a project is deleted in the Crochet Helper, it also disappears from the list here.</p>
+  <p>You can back up everything on the <a href="../../">start page</a> under <b>Back up your data</b>. If the last backup is more than 14 days old, every app reminds you.</p>
+</section>
+
+<a class="btn back" href="../">Back to Pricing</a>
+<script>document.getElementById('lang').append(I18N.switcher());</script>
+</body>
+</html>

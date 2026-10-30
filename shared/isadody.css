@@ -63,3 +63,7 @@ header .title > div { min-width:0; }
 .backup-hint { position:fixed; left:0; right:0; bottom:0; z-index:5; display:flex; align-items:center; justify-content:center; min-height:44px; padding:0 16px env(safe-area-inset-bottom); background:var(--paper); color:var(--coral); font-weight:800; font-size:1rem; text-decoration:none; }
 .backup-hint:hover { text-decoration:underline; }
 body:has(.backup-hint) { padding-bottom:calc(52px + env(safe-area-inset-bottom)); }
+/* Sprachumschalter DE | EN (shared/i18n.js) */
+.lang { display:inline-flex; flex:none; background:var(--paper-alt); border:1px solid var(--line); border-radius:999px; padding:3px; gap:2px; }
+.lang button { min-width:44px; min-height:38px; padding:0 10px; border-radius:999px; background:transparent; font-size:.85rem; font-weight:800; color:var(--ink-soft); }
+.lang button[aria-pressed="true"] { background:var(--coral); color:var(--ink); }

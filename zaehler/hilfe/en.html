@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Help – Isadody Row Counter</title>
+<meta name="theme-color" content="#FBF6EC">
+<link rel="stylesheet" href="../../shared/isadody.css">
+<link rel="stylesheet" href="../../shared/hilfe.css">
+<script src="../../shared/i18n.js"></script>
+</head>
+<body>
+<header>
+  <div class="title"><img class="logo" src="../../shared/logo.png" alt="Isadody"><div><h1>Help</h1><p>Row Counter</p></div></div>
+  <div class="tools"><a class="zurueck" href="../">‹ Back to app</a><span id="lang"></span></div>
+</header>
+<nav class="toc">
+  <a href="#projekte">Projects</a><a href="#zaehlen">Counting</a><a href="#platte">Full board</a><a href="#einstellungen">Settings</a><a href="#speicher">Saving</a>
+</nav>
+
+<section>
+  <h2>What the row counter does</h2>
+  <p>The counter looks like a pop-it: each bubble is one row. When you finish a row, you press a bubble. The top left shows which row you are on.</p>
+</section>
+
+<section id="projekte">
+  <h2>Projects</h2>
+  <p>You can create up to <b>10 projects</b>, e.g. one per hat or blanket. Each has its own count, its own bubbles and its own goal. There is also the <b>free counter</b>, which belongs to no project.</p>
+  <ul>
+    <li>Under <span class="k">Settings</span> → <b>Project</b>, tap a project to switch to it.</li>
+    <li><b>New project:</b> type a name and tap <span class="k">+ Add</span>. It starts at 0. If the name already exists, the app asks whether to overwrite the existing project (reset it to 0).</li>
+    <li><b>Rename:</b> change the name in the field below the list. <span class="k">Delete</span> removes the project and its count after asking. The free counter cannot be deleted.</li>
+    <li>Below the row number at the top you see which project is running.</li>
+  </ul>
+  <p class="note">The counter’s projects are separate from those in the Crochet Helper.</p>
+</section>
+
+<section id="zaehlen">
+  <h2>Counting</h2>
+  <ul>
+    <li><b>Tap a bubble:</b> it and all bubbles before it are pressed. The top then shows its row number, which is also printed on each bubble.</li>
+    <li><b>Tap a pressed bubble:</b> it and all bubbles after it pop back up. The count is then the bubble before it.</li>
+    <li><span class="k">Row done</span> presses the next free bubble.</li>
+    <li><span class="k">− 1</span> takes back the last pressed bubble, even if the board has just flipped.</li>
+  </ul>
+  <p>While the counter is open, the screen stays on (if the browser supports it).</p>
+  <p>Below “Row” you see e.g. “Board 2 · 3/10”: you are on the second board and 3 of 10 bubbles are pressed.</p>
+</section>
+
+<section id="platte">
+  <h2>Full board</h2>
+  <p>When all bubbles are pressed, the board flips over like a real pop-it. All bubbles are up again and counting continues. With 10 bubbles, the second board shows numbers 11 to 20.</p>
+</section>
+
+<section id="einstellungen">
+  <h2>Settings</h2>
+  <p>Tap <span class="k">Settings</span> at the top right. <span class="k">Done</span> applies your changes.</p>
+  <ul>
+    <li><b>Bubbles per board:</b> 6 to 30, 10 to start with.</li>
+    <li><b>Goal:</b> how many rows does your piece have? A bar then shows your progress, and the top says “12 to go” or “Goal reached”. Leave empty if you don’t need a goal.</li>
+    <li><b>Count:</b> shows the current row. You can set it by hand here, e.g. if you kept crocheting without the app. Leaving it empty changes nothing; entering 0 asks first.</li>
+    <li>Turn the <b>pop sound</b> and <b>vibration</b> on or off (applies to all projects). Vibration only works on devices that support it.</li>
+    <li><span class="k">Reset to 0</span> sets the count to 0 after asking. It is only saved with “Done”.</li>
+  </ul>
+</section>
+
+<section id="speicher">
+  <h2>Saving</h2>
+  <p>Count and settings stay saved in this browser on this device, even after closing. They are not available on another device or in a private window.</p>
+  <p>You can back up everything on the <a href="../../">start page</a> under <b>Back up your data</b>: one file with projects, counters, grid and collection. It also shows when you last backed up. If it was more than 14 days ago, every app reminds you. On iPhone, add the page via “Share” → “Add to Home Screen”, otherwise Safari deletes the data after 7 days without use.</p>
+  <p>If the browser storage is full, the app tells you. Then back up and delete old things.</p>
+</section>
+
+<a class="btn back" href="../">Back to the Row Counter</a>
+<script>document.getElementById('lang').append(I18N.switcher());</script>
+</body>
+</html>

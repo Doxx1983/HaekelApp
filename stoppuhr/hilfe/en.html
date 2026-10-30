@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Help – Isadody Stopwatch</title>
+<meta name="theme-color" content="#FBF6EC">
+<link rel="stylesheet" href="../../shared/isadody.css">
+<link rel="stylesheet" href="../../shared/hilfe.css">
+<script src="../../shared/i18n.js"></script>
+</head>
+<body>
+<header>
+  <div class="title"><img class="logo" src="../../shared/logo.png" alt="Isadody"><div><h1>Help</h1><p>Stopwatch</p></div></div>
+  <div class="tools"><a class="zurueck" href="../">‹ Back to app</a><span id="lang"></span></div>
+</header>
+<nav class="toc">
+  <a href="#messen">Tracking time</a><a href="#satz">Hourly rate</a><a href="#kosten">Labour cost</a><a href="#speicher">Saving</a>
+</nav>
+
+<section>
+  <h2>What the stopwatch does</h2>
+  <p>It measures how long you crochet on a project. Times add up per project. With an hourly rate it works out the labour cost at the end, e.g. for a selling price.</p>
+  <p>The projects are those from the <a href="../../anleitung/">Crochet Helper</a>. If there are none yet, create a project there first.</p>
+</section>
+
+<section id="messen">
+  <h2>Tracking time</h2>
+  <ul>
+    <li>Tap the <b>project</b> at the top. The list shows the time so far for each project and, if saved, the cost.</li>
+    <li><span class="k">Start</span> runs the clock, <span class="k">Stop</span> pauses it. The next start continues counting.</li>
+    <li>The clock keeps running when you close the app or lock your phone.</li>
+    <li>Only one clock runs at a time: starting another project pauses the previous one.</li>
+    <li><span class="k">Change time</span>: enter the total time by hand, as h:mm (<code>3:45</code>) or in minutes (<code>225</code>). Handy if you forgot to stop.</li>
+    <li><span class="k">Set to 0</span> deletes the measured time of the project.</li>
+  </ul>
+</section>
+
+<section id="satz">
+  <h2>Hourly rate</h2>
+  <p>Optional. Enter what an hour of work is worth to you, e.g. <code>12.50</code>. Each project has its own rate.</p>
+</section>
+
+<section id="kosten">
+  <h2>Labour cost</h2>
+  <p>With an hourly rate, the stopwatch shows the cost as it runs: measured time, charged time, hourly rate and amount.</p>
+  <ul>
+    <li><b>Round time to:</b> exact, 10 minutes, quarter hour, half hour or full hour.</li>
+    <li><b>Round amount to:</b> exact (cents), 5 cents, 10 cents, 50 cents or whole euros.</li>
+    <li><b>Rounding:</b> <i>standard</i> rounds to the nearest step (3:07 → 3:00 with quarter hours), <i>always round up</i> counts every started step (3:07 → 3:15).</li>
+    <li><span class="k">Save cost</span> stores the amount with the project, with date, charged time and hourly rate. If the clock is still running, it is paused first. A new value replaces the old one after asking.</li>
+  </ul>
+  <p class="note">The app remembers the rounding for all projects.</p>
+</section>
+
+<section id="speicher">
+  <h2>Saving</h2>
+  <p>Times, hourly rates and saved costs are stored in this browser on this device. If a project is deleted in the Crochet Helper, it also disappears from the list here.</p>
+  <p>You can back up everything on the <a href="../../">start page</a> under <b>Back up your data</b>. If the last backup was more than 14 days ago, every app reminds you.</p>
+</section>
+
+<a class="btn back" href="../">Back to the Stopwatch</a>
+<script>document.getElementById('lang').append(I18N.switcher());</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+// Englische Texte des Häkellexikons (Schlüssel = deutscher Text, siehe shared/i18n.js). Die Einträge selbst: shared/maschen-en.js
+I18N.add({
+  'Isadody Häkellexikon': 'Isadody Crochet Glossary',
+  'Häkellexikon': 'Crochet Glossary',
+  'Begriffe': 'Terms',
+  'Masche oder Kürzel suchen': 'Search stitch or abbreviation',
+  'Suchen: Masche oder Kürzel, z. B. sc2tog, Zun, BLO': 'Search: stitch or abbreviation, e.g. sc2tog, inc, BLO',
+  'Nichts gefunden. Probier ein anderes Wort oder nimm Filter heraus.': 'Nothing found. Try another word or remove filters.',
+  'US oder UK?': 'US or UK?',
+  'Englische Anleitungen nutzen zwei Schreibweisen. Dieselben Kürzel bedeuten dort verschiedene Maschen: <b>„dc“ ist in US ein Stäbchen, in UK eine feste Masche.</b>': 'English patterns use two systems. The same abbreviations mean different stitches: <b>“dc” means double crochet in US patterns, but what the US calls single crochet in UK patterns.</b>',
+  'So erkennst du sie: Kommt <b>sc</b> vor, ist es US (UK kennt kein sc). <b>htr</b>, <b>ss</b> oder „tension“ deuten auf UK. Im Zweifel steht es am Anfang der Anleitung.': 'How to tell: if <b>sc</b> appears, it is US (UK has no sc). <b>htr</b>, <b>ss</b> or “tension” point to UK. If in doubt, check the start of the pattern.',
+  'Hervorgehoben: US und UK sagen hier Verschiedenes.': 'Highlighted: US and UK use different terms here.',
+  'Einstieg': 'Beginner',
+  'Fortgeschritten': 'Intermediate',
+  'Profi': 'Advanced',
+  '<b>„{q}“</b> heißt in US-Anleitungen <b>{us}</b>, in UK-Anleitungen <b>{uk}</b>. Die Umrechnung hilft beim Erkennen.': 'In US patterns <b>“{q}”</b> means <b>{us}</b>, in UK patterns <b>{uk}</b>. The conversion table helps you tell them apart.',
+  'Aus Favoriten nehmen': 'Remove from favourites',
+  'Zu Favoriten': 'Add to favourites',
+  '★ Favoriten': '★ Favourites',
+  '{n} Begriffe': '{n} terms',
+  '{n} von {m}': '{n} of {m}',
+  'Deutsch': 'German',
+});

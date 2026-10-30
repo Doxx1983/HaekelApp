@@ -8,6 +8,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="shared/icon-180.png">
 <link rel="stylesheet" href="shared/isadody.css">
+<script src="shared/i18n.js"></script>
+<script src="shared/en.js"></script>
+<script src="en.js"></script>
 <style>
   body { padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom); max-width:720px; margin:0 auto; }
   header { display:flex; align-items:center; gap:12px; padding:10px 0 4px; }
@@ -46,12 +49,13 @@
 <header>
   <img class="logo" src="shared/logo.png" alt="Isadody">
   <div><h1>Häkel-Apps</h1><p>Kleine Helfer fürs Häkeln</p></div>
+  <span id="langsw" style="margin-left:auto"></span>
 </header>
 <!-- Neue App: Karte hier eintragen; solange sie fehlt, Klasse "soon" und Markierung "bald" -->
 <main id="apps">
   <a class="app" id="resume" href="anleitung/">
     <span class="ic" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M12 8l9 8-9 8"/></svg></span>
-    <div><span class="k">Weitermachen</span><h2 id="rname"></h2><p id="rpos"></p></div>
+    <div><span class="k">Weitermachen</span><h2 id="rname" translate="no"></h2><p id="rpos"></p></div>
   </a>
   <a class="app" href="anleitung/">
     <span class="ic" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="15" cy="15" r="10"/><path d="M8 8c5 1 10 5 13 12M5.5 12.5c5 1 9.5 5 11.5 11.5M12 5.2c4 1.5 8.5 5.5 11 10.5"/><path d="M8 22c3-6 8-10 14-12"/><path d="M22.5 22c2.5 2.5 5 3.5 7 2.5"/></svg></span>
@@ -102,10 +106,11 @@
 <script src="shared/sicherung.js"></script>
 <script>
 const $ = id => document.getElementById(id);
+$('langsw').append(I18N.switcher());
 async function stand() { const s = await Sicherung.status(); $('stand').textContent = s.text; Erinnerung.hint('', () => $('save').click()); }
-$('save').onclick = async () => { $('save').disabled = true; try { await Sicherung.save(); } catch { Dialog.alert('Sicherung nicht möglich.'); } $('save').disabled = false; stand(); };
+$('save').onclick = async () => { $('save').disabled = true; try { await Sicherung.save(); } catch { Dialog.alert(T('Sicherung nicht möglich.')); } $('save').disabled = false; stand(); };
 $('load').onclick = () => $('file').click();
-$('file').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; const r = await Sicherung.restore(f); Dialog.alert(r.text, { title: 'Sicherung einspielen' }); stand(); };
+$('file').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; const r = await Sicherung.restore(f); Dialog.alert(r.text, { title: T('Sicherung einspielen') }); stand(); };
 // Hinweis nur in Safari auf iPhone/iPad, nicht in der Home-Bildschirm-App
 const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 $('ios').hidden = !ios || navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
@@ -114,7 +119,7 @@ stand();
 const last = Projekte.all().sort((a, b) => b.used - a.used)[0];
 if (last) {
   document.getElementById('rname').textContent = last.name;
-  document.getElementById('rpos').textContent = `Häkelhelfer · Reihe ${(last.pos && last.pos.label) || ((last.pos && last.pos.r) || 0) + 1}`;
+  document.getElementById('rpos').textContent = T('Häkelhelfer · Reihe {n}', { n: (last.pos && last.pos.label) || ((last.pos && last.pos.r) || 0) + 1 });
   const r = document.getElementById('resume'); r.classList.add('on');
   r.onclick = () => Projekte.setCurrent(last.id);
 }

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Help – Isadody Grid Maker</title>
+<meta name="theme-color" content="#FBF6EC">
+<link rel="stylesheet" href="../../shared/isadody.css">
+<link rel="stylesheet" href="../../shared/hilfe.css">
+<script src="../../shared/i18n.js"></script>
+</head>
+<body>
+<header>
+  <div class="title"><img class="logo" src="../../shared/logo.png" alt="Isadody"><div><h1>Help</h1><p>Grid Maker</p></div></div>
+  <div class="tools"><a class="zurueck" href="../">‹ Back to app</a><span id="lang"></span></div>
+</header>
+<nav class="toc">
+  <a href="#bild">Picture and size</a><a href="#raster">Reading the chart</a><a href="#bearbeiten">Editing</a><a href="#anleitung">Pattern</a><a href="#speicher">Saving</a>
+</nav>
+
+<section>
+  <h2>What the Grid Maker does</h2>
+  <p>It turns a photo or graphic into a chart for tapestry crochet: each square is one single crochet (UK double crochet), with a few yarn colours. You also get a row-by-row pattern.</p>
+</section>
+
+<section id="bild">
+  <h2>Picture and size</h2>
+  <ul>
+    <li><span class="k">Choose picture</span> loads a photo or graphic. Clear shapes with few colours make the best charts. Transparent areas become white.</li>
+    <li><b>Stitches (width)</b> and <b>Rows (height)</b>: 5 to 200 each. Larger or smaller values are set to the limit, and a note below the fields tells you. From 10,000 stitches the app points out the size and asks before opening it in the Crochet Helper.</li>
+    <li><b>Keep aspect ratio:</b> if you change the width, the height follows the picture, and vice versa.</li>
+    <li><b>Colours:</b> 2 to 10 yarn colours. The app picks matching colours itself. Small, clearly different areas (e.g. eyes) are kept.</li>
+    <li><b>Smooth single stitches:</b> a single stitch completely surrounded by other colours takes its neighbours’ colour. This saves colour changes.</li>
+    <li><b>Worked in:</b> rows (back and forth) or rounds.</li>
+    <li><b>Left-handed:</b> mirrors the crochet direction.</li>
+    <li><b>Gauge:</b> single crochet stitches are rarely exactly square. Crochet a swatch and count how many stitches and rows fit in 10 cm. With both numbers the chart shows the real shape of the stitches, “Keep aspect ratio” uses them, and the finished size appears under “Pattern”. Leave empty = square boxes.</li>
+  </ul>
+  <p class="note">If you change size, number of colours or smoothing, the app recalculates the chart. Anything you painted is lost.</p>
+</section>
+
+<section id="raster">
+  <h2>Reading the chart</h2>
+  <ul>
+    <li><b>Row 1 is at the bottom.</b> The row number is on the side where the row starts.</li>
+    <li>Right-handers start row 1 on the right. In rows the direction changes every row; in rounds it always goes the same way. “Left-handed” reverses this.</li>
+    <li>Thick lines divide the chart into blocks of 10 stitches and 10 rows.</li>
+    <li><span class="k">−</span> and <span class="k">+</span> zoom out and in, <span class="k">Whole chart</span> fits the whole chart in the window.</li>
+  </ul>
+</section>
+
+<section id="bearbeiten">
+  <h2>Editing</h2>
+  <h3>Changing colours</h3>
+  <p>Under “Colours” each yarn colour is listed with its letter and number of stitches (A is the most common). Tap a colour and pick one from the palette or enter a hex value like <code>#F2896B</code> so the chart matches your yarn. Tap again to close.</p>
+  <h3>Painting</h3>
+  <ol>
+    <li>Tap the colour you want under “Colours”.</li>
+    <li>Turn on <span class="k">✎ Paint</span>.</li>
+    <li>Tap squares or drag across them.</li>
+  </ol>
+  <p><span class="k">↶ Undo</span> takes back the last painting steps and colour changes (up to 30). <span class="k">↷ Redo</span> restores them. To scroll the chart, turn “Paint” off again.</p>
+</section>
+
+<section id="anleitung">
+  <h2>Pattern</h2>
+  <p>Under “Pattern” you find the foundation and then every row with direction and colour sequence, starting with row 1, e.g. <b>Row 3 from left →: 5 A, 2 B, 33 A</b>.</p>
+  <ul>
+    <li>Foundation for rows: width + 1 chain, row 1 starts in the 2nd chain. For rounds: width in chains, join into a round.</li>
+    <li>Work in single crochet (UK double crochet) and carry the colours not in use.</li>
+  </ul>
+  <h3>Tips for tapestry crochet</h3>
+  <ul>
+    <li><b>Colour change:</b> start the stitch before the new colour as usual and finish it with the new colour on the last pull-through. The new colour then sits neatly.</li>
+    <li><b>Carrying:</b> lay the other yarns on top of the stitches of the previous row and crochet over them, not too tight, or the piece puckers. More than 2 to 3 colours in a row make the piece thick and stiff.</li>
+    <li><b>Slant in rounds:</b> normal single crochet leans a little to the side, so motifs drift diagonally in rounds. Back-loop-only single crochet or waistcoat stitch stands straighter.</li>
+    <li><b>Jog at the start of rounds:</b> continuous rounds have a small step at the transition. Place it where it is hardly seen, e.g. at the back or side.</li>
+  </ul>
+  <h3>Output</h3>
+  <ul>
+    <li><span class="k">Save to collection</span> stores the pattern in the <a href="../../muster/">Pattern Collection</a>: chart as image, pattern and colours. After that the button reads <span class="k">Update in collection</span> and changes the same pattern instead of creating a new one. A new picture makes a new pattern.</li>
+    <li><span class="k">Open in Crochet Helper</span> sends the pattern with its colours to the <a href="../../anleitung/">Crochet Helper</a>. It becomes a new project there and you crochet tile by tile; each row shows its direction (from right/left). If you changed the chart since, the button asks whether to update the same project; ticks of unchanged rows are kept. If there are already 10 projects there, delete one first.</li>
+    <li><span class="k">Copy text</span> puts the pattern with the colour list on the clipboard, <span class="k">As .txt</span> saves it as a file. The Crochet Helper can read both, including colours.</li>
+    <li><span class="k">Save image</span> downloads the chart as a PNG, good for printing.</li>
+  </ul>
+</section>
+
+<section id="speicher">
+  <h2>Saving</h2>
+  <p>Chart, settings and a reduced copy of the picture stay saved in this browser on this device. Next time you open it, your last chart is back. The picture never leaves your device.</p>
+</section>
+
+<a class="btn back" href="../">Back to the Grid Maker</a>
+<script>document.getElementById('lang').append(I18N.switcher());</script>
+</body>
+</html>

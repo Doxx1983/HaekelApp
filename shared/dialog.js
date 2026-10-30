@@ -19,7 +19,7 @@ const Dialog = (() => {
     const inp = d.querySelector('input'), ok = d.querySelector('.btn'), no = d.querySelector('.small');
     ok.textContent = o.ok || 'OK';
     if (o.danger) ok.classList.add('danger');
-    if (no) no.textContent = o.cancel || 'Abbrechen';
+    if (no) no.textContent = o.cancel || T('Abbrechen');
     if (inp) inp.value = value ?? '';
     const back = document.activeElement;
     return new Promise(res => {

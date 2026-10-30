@@ -11,7 +11,7 @@ const Projekte = (() => {
   const nameOf = (text, what = 'Projekt') => {
     const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
     const t = lines.find(l => !/^(?:(?:R|Row|Rows|Reihen?|Runden?|Rounds?|Rnds?|Rds?)\.?\s*\d|\d+\.?\s*(?:-\s*\d+\.?\s*)?(?:Reihen?|Runden?|Rnd|Rd|R)\b)/i.test(l)) || '';
-    return t.replace(/\s+/g, ' ').slice(0, 40) || `${what} vom ${new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}`;
+    return t.replace(/\s+/g, ' ').slice(0, 40) || T(`${what} vom {d}`, { d: new Date().toLocaleDateString(I18N.locale, { day: '2-digit', month: '2-digit' }) });
   };
   // Einmalig: die eine Anleitung aus der Zeit vor den Projekten wird Projekt 1
   function all() {
@@ -54,6 +54,6 @@ const Projekte = (() => {
     if (colors) p.colors = { ...p.colors, ...cleanColors(colors) };
     p.used = Date.now(); put(p); setCurrent(p.id); return p;
   }
-  const FULL_MSG = `Im Häkelhelfer sind schon ${MAX} Projekte gespeichert. Bitte dort unter „Projekte“ erst eins löschen.`;
+  const FULL_MSG = T('Im Häkelhelfer sind schon {n} Projekte gespeichert. Bitte dort unter „Projekte“ erst eins löschen.', { n: MAX });
   return { MAX, DEFAULT_COLORS, FULL_MSG, all, saveAll, current, setCurrent, put, remove, full, create, open, update, nameOf, cleanColors };
 })();
