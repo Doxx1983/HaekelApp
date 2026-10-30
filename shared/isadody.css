@@ -67,3 +67,9 @@ body:has(.backup-hint) { padding-bottom:calc(52px + env(safe-area-inset-bottom))
 .lang { display:inline-flex; flex:none; background:var(--paper-alt); border:1px solid var(--line); border-radius:999px; padding:3px; gap:2px; }
 .lang button { min-width:44px; min-height:38px; padding:0 10px; border-radius:999px; background:transparent; font-size:.85rem; font-weight:800; color:var(--ink-soft); }
 .lang button[aria-pressed="true"] { background:var(--coral); color:var(--ink); }
+/* Fußzeile Impressum | Datenschutz (shared/recht.js) */
+footer.recht { display:flex; justify-content:center; flex-wrap:wrap; gap:4px 18px; padding:12px 0 16px; clear:both; }
+footer.recht a { display:inline-flex; align-items:center; min-height:44px; padding:0 6px; color:var(--ink-soft); font-size:.85rem; font-weight:700; text-decoration:none; }
+footer.recht a:hover { color:var(--ink); text-decoration:underline; text-decoration-color:var(--coral); }
+/* Platzhalter in Rechtstexten, die noch ersetzt werden müssen */
+.ph { background:var(--coral-soft); border-radius:4px; padding:0 4px; }

@@ -144,7 +144,7 @@
 const $ = id => document.getElementById(id), store = Store('kalkulation'), uhr = Store('stoppuhr');
 const MSTEPS = [[1, T('genau')], [10, T('10 Cent')], [50, T('50 Cent')], [100, T('1 Euro')]];
 const MODES = [[false, T('kaufmännisch')], [true, T('immer aufrunden')]];
-const TAXES = [[0, T('keine (Kleinunternehmer)')], [7, '7 %'], [19, '19 %']];
+const TAXES = [[0, T('keine')], [7, '7 %'], [19, '19 %']];
 const TSTEP = { 0: T('genau'), 10: T('auf 10 Min.'), 15: T('auf ¼ Std.'), 30: T('auf ½ Std.'), 60: T('auf 1 Std.') };
 const MAXMAT = 30, MAXEXT = 20;
 const eur = c => (c / 100).toLocaleString(I18N.locale, { style: 'currency', currency: 'EUR' });
@@ -262,8 +262,8 @@ function render() {
   renderList();
   opts($('mstep'), MSTEPS, prefs.ms, 'ms'); opts($('mode'), MODES, prefs.up, 'up'); opts($('tax'), TAXES, prefs.tax, 'tax');
   $('tax-note').textContent = prefs.tax
-    ? T('Der Endpreis enthält {p} % Umsatzsteuer. Für Häkelwaren gilt in der Regel 19 %.', { p: prefs.tax })
-    : T('Kleinunternehmer (§ 19 UStG): keine Umsatzsteuer auf dem Preis. Auf die Rechnung gehört der Satz „Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.“');
+    ? T('Der Endpreis enthält {p} % Umsatzsteuer.', { p: prefs.tax })
+    : T('Der Endpreis enthält keine Umsatzsteuer.');
   renderItems();
   $('saved').hidden = !x.price;
   if (x.price) {
@@ -384,7 +384,7 @@ $('share').onclick = async () => {
   for (const e of x.ext) lines.push(`${e.n || T('Nebenkosten')}: ${eur(e.c)}`);
   lines.push(`${T('Nebenkosten')}: ${eur(r.ext)}`, `${T('Selbstkosten')}: ${eur(r.self)}`, `${T('Gewinn {p} %', { p: num(r.marge) })}: ${eur(r.net - r.self)}`);
   if (r.tax) lines.push(`${T('Netto')}: ${eur(r.net)}`, `${T('Umsatzsteuer {p} %', { p: r.tax })}: ${eur(r.vat)}`);
-  lines.push(`${T('Endpreis')}: ${eur(r.end)}${r.tax ? '' : ' ' + T('(Kleinunternehmer, ohne USt.)')}`);
+  lines.push(`${T('Endpreis')}: ${eur(r.end)}${r.tax ? '' : ' ' + T('(ohne USt.)')}`);
   const text = lines.join('\n');
   if (navigator.share) { try { await navigator.share({ title: T('Kalkulation'), text }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
   try { await navigator.clipboard.writeText(text); Dialog.alert(T('Kalkulation in die Zwischenablage kopiert.')); }
@@ -396,5 +396,6 @@ addEventListener('pageshow', render);
 render();
 Erinnerung.hint();
 </script>
+<script src="../shared/recht.js"></script>
 </body>
 </html>

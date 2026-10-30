@@ -8,6 +8,8 @@
 // Hilfeseiten: hilfe/index.html (Deutsch) und hilfe/en.html (Englisch); der „?“-Knopf führt zur passenden.
 const I18N = (() => {
   const KEY = 'isadody.lang', LANGS = ['de', 'en'];
+  // Seiten mit eigener englischer Fassung (index.html + en.html): Hilfe, Impressum, Datenschutz
+  const TWIN = /\/(hilfe|impressum|datenschutz)\/(index\.html)?$/, TWIN_EN = /\/(hilfe|impressum|datenschutz)\/en\.html$/;
   let lang = null;
   try { lang = localStorage.getItem(KEY); } catch {}
   if (!LANGS.includes(lang)) lang = /^en/i.test((navigator.languages && navigator.languages[0]) || navigator.language || '') ? 'en' : 'de';
@@ -67,10 +69,10 @@ const I18N = (() => {
   function set(l) {
     if (!LANGS.includes(l) || l === lang) return;
     try { localStorage.setItem(KEY, l); } catch {}
-    // Hilfeseiten: zur Fassung in der anderen Sprache wechseln
+    // Hilfe- und Rechtsseiten: zur Fassung in der anderen Sprache wechseln
     const p = location.pathname;
-    if (/\/hilfe\/(index\.html)?$/.test(p) && l === 'en') location.replace('en.html' + location.hash);
-    else if (/\/hilfe\/en\.html$/.test(p) && l === 'de') location.replace('./' + location.hash);
+    if (TWIN.test(p) && l === 'en') location.replace('en.html' + location.hash);
+    else if (TWIN_EN.test(p) && l === 'de') location.replace('./' + location.hash);
     else location.reload();
   }
   // Umschalter „DE | EN“
@@ -85,9 +87,9 @@ const I18N = (() => {
     }
     return d;
   }
-  // Hilfeseite in der falschen Sprache aufgerufen (z. B. alter Link): passende Fassung zeigen
-  if (en && /\/hilfe\/(index\.html)?$/.test(location.pathname)) location.replace('en.html' + location.hash);
-  else if (!en && /\/hilfe\/en\.html$/.test(location.pathname)) location.replace('./' + location.hash);
+  // Hilfe- oder Rechtsseite in der falschen Sprache aufgerufen (z. B. alter Link): passende Fassung zeigen
+  if (en && TWIN.test(location.pathname)) location.replace('en.html' + location.hash);
+  else if (!en && TWIN_EN.test(location.pathname)) location.replace('./' + location.hash);
   // Ziffern, Datum und Beträge im Format der Sprache
   const num = (n, o) => Number(n).toLocaleString(locale, o);
   return { lang, en, locale, t, add, set, switcher, num, apply };
