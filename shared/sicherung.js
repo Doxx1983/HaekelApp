@@ -3,7 +3,7 @@
 // Alte Sicherungen der Sammlung ({ app: 'isadody-muster', items }) werden auch gelesen.
 // Beim Einspielen wird alles geprüft und nur Bekanntes übernommen: Die Datei kann von jemand anderem stammen.
 const Sicherung = (() => {
-  const APPS = ['anleitung', 'zaehler', 'grid', 'muster', 'lexikon', 'lineal'], st = Store('sicherung');
+  const APPS = ['anleitung', 'zaehler', 'grid', 'muster', 'lexikon', 'lineal', 'stoppuhr'], st = Store('sicherung');
   const HEX = /^#[0-9a-f]{6}$/i, ID = /^[\w-]{1,64}$/, KINDS = ['image', 'pdf', 'word', 'text'];
   const int = (v, a, b, d) => Number.isInteger(v) && v >= a && v <= b ? v : d;
   const str = (v, n) => typeof v === 'string' ? v.slice(0, n) : '';
@@ -50,6 +50,14 @@ const Sicherung = (() => {
     if (!obj(o)) return null;
     const n = int(o.n, 2, 60, 10), popped = Array.isArray(o.popped) ? [...new Set(o.popped.filter(i => int(i, 0, n - 1, -1) === i))] : [];
     return { name: str(o.name, 40).trim(), n, flips: int(o.flips, 0, 1e5, 0), popped: popped.length >= n ? [] : popped, target: int(o.target, 0, 1e5, 0), used: Number.isFinite(o.used) ? o.used : 0 };
+  }
+  // Stoppuhr eines Projekts { ms, run, rate, cost, used }; Beträge in Cent
+  function cleanTimer(o) {
+    if (!obj(o)) return null;
+    const MAXMS = 1e5 * 36e5, k = obj(o.cost) ? o.cost : null;
+    const cost = k && int(k.c, 0, 1e9, -1) >= 0 ? { c: k.c, min: Number.isFinite(k.min) && k.min >= 0 && k.min <= 6e6 ? k.min : 0, raw: int(k.raw, 0, MAXMS, 0), rate: int(k.rate, 0, 1e7, 0),
+      ts: [0, 10, 15, 30, 60].includes(k.ts) ? k.ts : 0, ms: [1, 5, 10, 50, 100].includes(k.ms) ? k.ms : 1, up: k.up === true, at: Number.isFinite(k.at) ? k.at : 0 } : null;
+    return { ms: int(o.ms, 0, MAXMS, 0), run: int(o.run, 0, Date.now(), 0), rate: int(o.rate, 0, 1e7, 0), cost, used: Number.isFinite(o.used) ? o.used : 0 };
   }
 
   // ---- Sichern ----
@@ -152,6 +160,16 @@ const Sicherung = (() => {
           if (!have[k] || c.used > (have[k].used || 0)) { have[k] = c; n++; }
         }
         if (n) { ls.set('s', have); parts.push(`${n} Lineal-${n === 1 ? 'Stand' : 'Stände'}`); }
+      }
+      // Stoppuhr: Zeit je Projekt, der zuletzt benutzte Stand gewinnt (höchstens 50 Projekte)
+      const inS = json(L['stoppuhr.t']);
+      if (obj(inS)) {
+        const su = Store('stoppuhr'), have = obj(su.get('t', {})) ? su.get('t', {}) : {}; let n = 0;
+        for (const [k, v] of Object.entries(inS)) {
+          const c = cleanTimer(v); if (!ID.test(k) || !c || Object.keys(have).length >= 50 && !have[k]) continue;
+          if (!have[k] || c.used > (have[k].used || 0)) { have[k] = c; n++; }
+        }
+        if (n) { su.set('t', have); parts.push(`${n} Stoppuhr-${n === 1 ? 'Zeit' : 'Zeiten'}`); }
       }
       // Lexikon: Favoriten zusammenführen (nur Einträge wie „abn“, höchstens 200)
       const inF = json(L['lexikon.fav']);

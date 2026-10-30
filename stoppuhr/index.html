@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Isadody Stoppuhr</title>
+<meta name="theme-color" content="#FBF6EC">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../shared/icon-180.png">
+<link rel="stylesheet" href="../shared/isadody.css">
+<script src="../shared/store.js"></script>
+<script src="../shared/dialog.js"></script>
+<script src="../shared/projekte.js"></script>
+<script src="../shared/erinnerung.js"></script>
+<script src="../shared/offline.js"></script>
+<style>
+  body { padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom); max-width:720px; margin:0 auto; }
+  header { display:flex; justify-content:space-between; align-items:center; padding:10px 0; gap:10px; }
+  #sub { font-size:.9rem; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  main, #app { display:flex; flex-direction:column; gap:14px; }
+  main { padding-bottom:16px; }
+  .card { background:var(--paper-alt); border-radius:16px; padding:14px; display:flex; flex-direction:column; gap:10px; }
+  .card h2 { font-family:var(--display); font-size:1.15rem; margin:0; }
+  .card p { margin:0; font-size:.9rem; color:var(--ink-soft); }
+  .opts { display:flex; flex-wrap:wrap; gap:8px; }
+  .opts button { background:var(--paper); border:1px solid var(--line); border-radius:999px; padding:8px 14px; font-weight:700; min-width:48px; min-height:44px; }
+  .opts button.on { border-color:var(--ink); background:var(--coral-soft); }
+  .ghost { padding:10px 16px; min-height:44px; border-radius:999px; background:var(--paper); border:1px solid var(--line); font-weight:700; }
+
+  /* Projekte: Name, Zeit, gespeicherte Kosten */
+  #plist { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; }
+  #plist button { display:flex; flex-direction:column; align-items:flex-start; gap:2px; padding:10px 12px; min-height:44px; text-align:left; background:var(--paper); border:1px solid var(--line); border-radius:14px; }
+  #plist button.on { border-color:var(--ink); background:var(--coral-soft); }
+  #plist b { overflow-wrap:anywhere; }
+  #plist small { color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+  .dot { display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--coral); margin-right:5px; vertical-align:middle; animation:blink 1.2s infinite; }
+  @keyframes blink { 50% { opacity:.25; } }
+
+  /* Uhr */
+  #clock { align-items:center; text-align:center; padding:18px 14px; }
+  #time { font-family:var(--display); font-size:clamp(3rem,16vw,4.6rem); font-weight:700; line-height:1; font-variant-numeric:tabular-nums; }
+  #state { font-size:.95rem; color:var(--ink-soft); min-height:1.4em; }
+  #go { width:100%; max-width:360px; font-family:var(--display); font-size:1.7rem; padding:16px 0; }
+  #go.run { background:var(--ink); color:var(--paper); }
+  #clock .row { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+
+  /* Stundensatz */
+  .rate { display:flex; align-items:center; gap:8px; font-weight:700; }
+  .rate input { font:inherit; width:8em; padding:10px 12px; min-height:44px; border-radius:12px; border:var(--field-border); background:#fff; color:var(--ink); text-align:right; }
+
+  /* Kosten */
+  .lbl { font-weight:700; font-size:.9rem; }
+  #calc { background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:10px 12px; font-variant-numeric:tabular-nums; }
+  #calc div { display:flex; justify-content:space-between; gap:10px; }
+  #calc .sum { font-family:var(--display); font-size:1.5rem; font-weight:700; border-top:1px solid var(--line); margin-top:6px; padding-top:6px; }
+  #saved { background:var(--coral-soft); border-radius:12px; padding:10px 12px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  #saved b { font-family:var(--display); font-size:1.25rem; }
+  #save { align-self:flex-start; }
+  #save:disabled { opacity:.5; cursor:default; }
+  #empty a { color:var(--ink); font-weight:700; }
+</style>
+</head>
+<body>
+<header>
+  <div class="title"><a class="home" href="../" aria-label="Alle Apps" title="Alle Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/></svg></a><img class="logo" src="../shared/logo.png" alt="Isadody"><div><h1 class="apptitle">Stoppuhr</h1><div id="sub"></div></div></div>
+  <div class="tools"><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div>
+</header>
+<main>
+  <section class="card" id="empty" hidden>
+    <h2>Noch keine Projekte</h2>
+    <p>Die Stoppuhr läuft je Projekt aus dem <a href="../anleitung/">Häkelhelfer</a>. Lege dort ein Projekt an, dann kannst du hier die Zeit messen.</p>
+  </section>
+  <div id="app" hidden>
+      <section class="card">
+        <h2>Projekt</h2>
+        <div id="plist"></div>
+      </section>
+      <section class="card" id="clock">
+        <div id="time">0:00:00</div>
+        <div id="state"></div>
+        <button class="btn" id="go">Start</button>
+        <div class="row"><button class="ghost" id="fix">Zeit ändern</button><button class="ghost" id="reset">Auf 0 setzen</button></div>
+      </section>
+      <section class="card">
+        <h2>Stundensatz <small class="lbl" style="font-family:var(--body);color:var(--ink-soft)">optional</small></h2>
+        <label class="rate"><input id="rate" inputmode="decimal" autocomplete="off" placeholder="0,00" aria-label="Stundensatz in Euro"> € pro Stunde</label>
+      </section>
+      <section class="card" id="cost">
+        <h2>Arbeitskosten</h2>
+        <div class="lbl">Zeit runden auf</div>
+        <div class="opts" id="tstep"></div>
+        <div class="lbl">Betrag runden auf</div>
+        <div class="opts" id="mstep"></div>
+        <div class="lbl">Runden</div>
+        <div class="opts" id="mode"></div>
+        <p id="norate" hidden>Gib oben einen Stundensatz ein, dann rechnet die Stoppuhr die Kosten aus.</p>
+        <div id="calc"></div>
+        <button class="btn" id="save">Kosten speichern</button>
+        <div id="saved" hidden><div><div class="lbl">Gespeichert <span id="sdate"></span></div><b id="samount"></b><p id="sinfo"></p></div><button class="ghost" id="sdel" aria-label="Gespeicherten Wert löschen">Löschen</button></div>
+      </section>
+  </div>
+</main>
+<script>
+// Zeiten je Häkelhelfer-Projekt, gespeichert unter stoppuhr.t: { <Projekt-id>: { ms, run, rate, cost, used } }
+// ms = gemessene Zeit ohne den laufenden Abschnitt, run = Startzeitpunkt (0 = steht), rate = Stundensatz in Cent,
+// cost = gespeicherte Kalkulation { c (Cent), min (gerundete Minuten), raw (ms), rate, ts, ms: Betragsschritt, up, at }.
+// stoppuhr.prefs = { ts, ms, up } (zuletzt gewählte Rundung), stoppuhr.current = Projekt-id.
+const $ = id => document.getElementById(id), store = Store('stoppuhr');
+const TSTEPS = [[0, 'genau'], [10, '10 Min.'], [15, '¼ Std.'], [30, '½ Std.'], [60, '1 Std.']];
+const MSTEPS = [[1, 'genau'], [5, '5 Cent'], [10, '10 Cent'], [50, '50 Cent'], [100, '1 Euro']];
+const MODES = [[false, 'kaufmännisch'], [true, 'immer aufrunden']];
+const eur = c => (c / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+const two = n => String(n).padStart(2, '0');
+const clock = ms => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 3600)}:${two(Math.floor(s / 60) % 60)}:${two(s % 60)}`; };
+const hm = min => { const m = Math.round(min); return `${Math.floor(m / 60)}:${two(m % 60)} Std.`; };
+const day = t => new Date(t).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+// ---- Rechnen ----
+// Auf ein Vielfaches von step runden; up = immer aufrunden (kleine Toleranz gegen Rechenungenauigkeit)
+const roundTo = (v, step, up) => step ? (up ? Math.ceil(v / step - 1e-9) : Math.round(v / step)) * step : v;
+// Kosten aus Zeit (ms), Stundensatz (Cent) und Rundung → { min (gerundete Minuten), c (Cent) }
+function calc(ms, rate, ts, mstep, up) {
+  const min = roundTo(ms / 60000, ts, up);
+  const c = roundTo(min / 60 * rate, mstep, up);
+  return { min, c: Math.round(c) };
+}
+// „15“, „15,5“, „15.50“, „15 €“ → Cent; leer → 0; sonst null
+function parseRate(s) {
+  s = String(s).replace(/[€\s]/g, '').replace(',', '.');
+  if (!s) return 0;
+  return /^\d{1,5}(\.\d{0,2})?$/.test(s) ? Math.round(parseFloat(s) * 100) : null;
+}
+// „3:45“ (Std:Min) oder „90“ (Minuten) → ms; sonst null
+function parseTime(s) {
+  s = String(s).trim(); let m;
+  if ((m = s.match(/^(\d{1,4}):([0-5]?\d)$/))) return (+m[1] * 60 + +m[2]) * 60000;
+  if ((m = s.match(/^\d{1,6}$/))) return +s * 60000;
+  return null;
+}
+
+// ---- Daten ----
+const all = () => { const t = store.get('t', {}); return t && typeof t === 'object' && !Array.isArray(t) ? t : {}; };
+const blank = () => ({ ms: 0, run: 0, rate: 0, cost: null, used: 0 });
+let pid = null;
+const prefs = { ts: 15, ms: 10, up: false, ...store.get('prefs', {}) };
+function get(id = pid) { return { ...blank(), ...all()[id] }; }
+function put(x, id = pid) { const t = all(); x.used = Date.now(); t[id] = x; store.set('t', t); }
+const elapsed = x => x.ms + (x.run ? Math.max(0, Date.now() - x.run) : 0);
+// Es läuft immer nur eine Uhr: Start in einem Projekt hält die anderen an
+function stopOthers() {
+  const t = all(); let ch = false;
+  for (const [id, x] of Object.entries(t)) if (id !== pid && x.run) { x.ms += Math.max(0, Date.now() - x.run); x.run = 0; ch = true; }
+  if (ch) store.set('t', t);
+}
+
+// ---- Anzeige ----
+function projects() { return Projekte.all().slice().sort((a, b) => Math.max(get(b.id).used, b.used || 0) - Math.max(get(a.id).used, a.used || 0)); }
+function renderList() {
+  const list = projects();
+  $('plist').innerHTML = '';
+  for (const p of list) {
+    const x = get(p.id), b = document.createElement('button');
+    b.dataset.id = p.id; b.className = p.id === pid ? 'on' : '';
+    b.innerHTML = '<b></b><small></small>';
+    b.querySelector('b').textContent = p.name;
+    const s = b.querySelector('small');
+    if (x.run) { const d = document.createElement('span'); d.className = 'dot'; s.append(d); }
+    s.append(clock(elapsed(x)) + (x.cost ? ` · ${eur(x.cost.c)}` : ''));
+    $('plist').append(b);
+  }
+}
+function opts(el, list, val, key) {
+  el.innerHTML = '';
+  for (const [v, t] of list) { const b = document.createElement('button'); b.textContent = t; b.className = v === val ? 'on' : ''; b.onclick = () => { prefs[key] = v; store.set('prefs', prefs); render(); }; el.append(b); }
+}
+function render() {
+  const list = Projekte.all();
+  $('empty').hidden = list.length > 0; $('app').hidden = !list.length;
+  if (!list.length) { $('sub').textContent = ''; return; }
+  if (!list.some(p => p.id === pid)) pid = (list.find(p => p.id === store.get('current', '')) || Projekte.current() || projects()[0]).id;
+  store.set('current', pid);
+  const p = list.find(q => q.id === pid), x = get();
+  $('sub').textContent = p.name;
+  renderList();
+  $('go').textContent = x.run ? 'Stopp' : 'Start'; $('go').classList.toggle('run', !!x.run);
+  if (document.activeElement !== $('rate')) $('rate').value = x.rate ? (x.rate / 100).toLocaleString('de-DE', { minimumFractionDigits: 2 }) : '';
+  opts($('tstep'), TSTEPS, prefs.ts, 'ts'); opts($('mstep'), MSTEPS, prefs.ms, 'ms'); opts($('mode'), MODES, prefs.up, 'up');
+  $('saved').hidden = !x.cost;
+  if (x.cost) {
+    const k = x.cost;
+    $('sdate').textContent = `am ${day(k.at)}`; $('samount').textContent = eur(k.c);
+    $('sinfo').textContent = `${hm(k.min)} × ${eur(k.rate)} pro Stunde (gemessen ${clock(k.raw)})`;
+  }
+  tick();
+}
+// Uhr und Kalkulation jede Sekunde neu
+function tick() {
+  if (!pid || $('app').hidden) return;
+  const x = get(), ms = elapsed(x);
+  $('time').textContent = clock(ms);
+  $('state').textContent = x.run ? 'läuft …' : ms ? 'angehalten' : 'bereit';
+  if (x.run) { const b = $('plist').querySelector('.on small'); if (b) { b.lastChild.textContent = clock(ms) + (x.cost ? ` · ${eur(x.cost.c)}` : ''); } }
+  $('norate').hidden = !!x.rate; $('save').disabled = !x.rate;
+  if (!x.rate) { $('calc').hidden = true; return; }
+  const r = calc(ms, x.rate, prefs.ts, prefs.ms, prefs.up);
+  $('calc').hidden = false;
+  $('calc').innerHTML = `<div><span>Gemessen</span><span>${clock(ms)}</span></div><div><span>Gerechnet</span><span>${hm(r.min)}</span></div>`
+    + `<div><span>Stundensatz</span><span>${eur(x.rate)}</span></div><div class="sum"><span>Kosten</span><span>${eur(r.c)}</span></div>`;
+}
+setInterval(tick, 1000);
+
+// ---- Bedienung ----
+$('plist').onclick = e => { const b = e.target.closest('[data-id]'); if (!b || b.dataset.id === pid) return; pid = b.dataset.id; render(); };
+$('go').onclick = () => {
+  const x = get();
+  if (x.run) { x.ms += Math.max(0, Date.now() - x.run); x.run = 0; }
+  else { stopOthers(); x.run = Date.now(); }
+  put(x); render();
+};
+$('fix').onclick = async () => {
+  const x = get(), min = Math.floor(elapsed(x) / 60000);
+  const v = await Dialog.prompt('Gesamtzeit als Std:Min (z. B. 3:45) oder in Minuten:', `${Math.floor(min / 60)}:${two(min % 60)}`, { title: 'Zeit ändern', ok: 'Übernehmen' });
+  if (v === null) return;
+  const ms = parseTime(v); if (ms === null) return Dialog.alert('Bitte die Zeit als Std:Min (z. B. 3:45) oder in Minuten eingeben.');
+  const y = get(); y.ms = ms; if (y.run) y.run = Date.now(); put(y); render();
+};
+$('reset').onclick = async () => {
+  if (!await Dialog.confirm('Gemessene Zeit dieses Projekts auf 0 setzen? Gespeicherte Kosten bleiben.', { ok: 'Auf 0 setzen', danger: true })) return;
+  const x = get(); x.ms = 0; x.run = 0; put(x); render();
+};
+$('rate').onchange = () => {
+  const c = parseRate($('rate').value);
+  if (c === null) { Dialog.alert('Bitte den Stundensatz als Betrag eingeben, z. B. 12,50.'); render(); return; }
+  const x = get(); x.rate = c; put(x); $('rate').blur(); render();
+};
+$('rate').onkeydown = e => { if (e.key === 'Enter') $('rate').onchange(); };
+$('save').onclick = async () => {
+  let x = get(); if (!x.rate) return;
+  if (x.run) {
+    if (!await Dialog.confirm('Die Stoppuhr läuft noch. Anhalten und Kosten speichern?', { ok: 'Anhalten und speichern' })) return;
+    x = get(); x.ms += Math.max(0, Date.now() - x.run); x.run = 0;
+  }
+  if (x.cost && !await Dialog.confirm(`Schon gespeichert: ${eur(x.cost.c)}. Durch den neuen Wert ersetzen?`, { ok: 'Ersetzen' })) return;
+  const r = calc(x.ms, x.rate, prefs.ts, prefs.ms, prefs.up);
+  x.cost = { c: r.c, min: r.min, raw: x.ms, rate: x.rate, ts: prefs.ts, ms: prefs.ms, up: prefs.up, at: Date.now() };
+  put(x); render();
+};
+$('sdel').onclick = async () => {
+  if (!await Dialog.confirm('Gespeicherte Kosten löschen? Die gemessene Zeit bleibt.', { ok: 'Löschen', danger: true })) return;
+  const x = get(); x.cost = null; put(x); render();
+};
+// Änderungen aus anderen Tabs (z. B. neues Projekt im Häkelhelfer) übernehmen
+addEventListener('storage', e => { if (!e.key || e.key.startsWith('stoppuhr.') || e.key === 'anleitung.projects') render(); });
+addEventListener('pageshow', render);
+render();
+Erinnerung.hint();
+</script>
+</body>
+</html>

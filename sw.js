@@ -1,10 +1,10 @@
 // Offline-Cache der Häkel-Apps. Mit Netz kommt jede Datei frisch aus dem Netz und wird im Cache aktualisiert;
 // ohne Netz (oder nach 4 s ohne Antwort) aus dem Cache. Beim ersten Besuch werden alle Dateien vorab geladen.
 // Neue Dateien in FILES eintragen und VERSION erhöhen (Dateien, die nur besucht werden, landen auch so im Cache).
-const VERSION = 'isadody-2';
+const VERSION = 'isadody-3';
 const FILES = [
   './', 'manifest.webmanifest',
-  'anleitung/', 'anleitung/hilfe/', 'grid/', 'grid/hilfe/', 'lexikon/', 'lexikon/hilfe/', 'lineal/', 'lineal/hilfe/', 'muster/', 'muster/hilfe/', 'zaehler/', 'zaehler/hilfe/',
+  'anleitung/', 'anleitung/hilfe/', 'grid/', 'grid/hilfe/', 'lexikon/', 'lexikon/hilfe/', 'lineal/', 'lineal/hilfe/', 'muster/', 'muster/hilfe/', 'stoppuhr/', 'stoppuhr/hilfe/', 'zaehler/', 'zaehler/hilfe/',
   'shared/isadody.css', 'shared/hilfe.css', 'shared/fonts/fonts.css',
   'shared/fonts/baloo2-latin.woff2', 'shared/fonts/baloo2-latin-ext.woff2', 'shared/fonts/nunito-latin.woff2', 'shared/fonts/nunito-latin-ext.woff2',
   'shared/store.js', 'shared/dialog.js', 'shared/erinnerung.js', 'shared/muster-db.js', 'shared/doctext.js', 'shared/projekte.js', 'shared/sicherung.js', 'shared/maschen.js',
