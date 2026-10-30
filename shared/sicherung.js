@@ -51,13 +51,19 @@ const Sicherung = (() => {
     const n = int(o.n, 2, 60, 10), popped = Array.isArray(o.popped) ? [...new Set(o.popped.filter(i => int(i, 0, n - 1, -1) === i))] : [];
     return { name: str(o.name, 40).trim(), n, flips: int(o.flips, 0, 1e5, 0), popped: popped.length >= n ? [] : popped, target: int(o.target, 0, 1e5, 0), used: Number.isFinite(o.used) ? o.used : 0 };
   }
-  // Stoppuhr eines Projekts { ms, run, rate, cost, used }; Beträge in Cent
+  // Stoppuhr eines Projekts { ms, run, rate, mat, ext, marge, cost, price, used }; Beträge in Cent
   function cleanTimer(o) {
     if (!obj(o)) return null;
-    const MAXMS = 1e5 * 36e5, k = obj(o.cost) ? o.cost : null;
-    const cost = k && int(k.c, 0, 1e9, -1) >= 0 ? { c: k.c, min: Number.isFinite(k.min) && k.min >= 0 && k.min <= 6e6 ? k.min : 0, raw: int(k.raw, 0, MAXMS, 0), rate: int(k.rate, 0, 1e7, 0),
+    const MAXMS = 1e5 * 36e5, k = obj(o.cost) ? o.cost : null, P = obj(o.price) ? o.price : null;
+    const fin = (v, a, b, d) => Number.isFinite(v) && v >= a && v <= b ? v : d;
+    const cost = k && int(k.c, 0, 1e9, -1) >= 0 ? { c: k.c, min: fin(k.min, 0, 6e6, 0), raw: int(k.raw, 0, MAXMS, 0), rate: int(k.rate, 0, 1e7, 0),
       ts: [0, 10, 15, 30, 60].includes(k.ts) ? k.ts : 0, ms: [1, 5, 10, 50, 100].includes(k.ms) ? k.ms : 1, up: k.up === true, at: Number.isFinite(k.at) ? k.at : 0 } : null;
-    return { ms: int(o.ms, 0, MAXMS, 0), run: int(o.run, 0, Date.now(), 0), rate: int(o.rate, 0, 1e7, 0), cost, used: Number.isFinite(o.used) ? o.used : 0 };
+    const c9 = v => int(v, 0, 1e10, 0);
+    const price = P && int(P.end, 0, 1e10, -1) >= 0 ? { end: P.end, net: c9(P.net), self: c9(P.self), lab: c9(P.lab), mat: c9(P.mat), ext: c9(P.ext), marge: fin(P.marge, 0, 1000, 0),
+      tax: [0, 7, 19].includes(P.tax) ? P.tax : 0, min: fin(P.min, 0, 6e6, 0), rate: int(P.rate, 0, 1e7, 0), ms: [1, 5, 10, 50, 100].includes(P.ms) ? P.ms : 1, up: P.up === true, at: Number.isFinite(P.at) ? P.at : 0 } : null;
+    const mat = Array.isArray(o.mat) ? o.mat.filter(obj).slice(0, 30).map(m => ({ n: str(m.n, 60), q: fin(m.q, 0, 99999, 0), u: m.u === 'g' ? 'g' : 'stk', p: int(m.p, 0, 1e8, 0) })) : [];
+    const ext = Array.isArray(o.ext) ? o.ext.filter(obj).slice(0, 20).map(e => ({ n: str(e.n, 60), c: int(e.c, 0, 1e8, 0) })) : [];
+    return { ms: int(o.ms, 0, MAXMS, 0), run: int(o.run, 0, Date.now(), 0), rate: int(o.rate, 0, 1e7, 0), mat, ext, marge: fin(o.marge, 0, 1000, null), cost, price, used: Number.isFinite(o.used) ? o.used : 0 };
   }
 
   // ---- Sichern ----

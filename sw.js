@@ -1,7 +1,7 @@
 // Offline-Cache der Häkel-Apps. Mit Netz kommt jede Datei frisch aus dem Netz und wird im Cache aktualisiert;
 // ohne Netz (oder nach 4 s ohne Antwort) aus dem Cache. Beim ersten Besuch werden alle Dateien vorab geladen.
 // Neue Dateien in FILES eintragen und VERSION erhöhen (Dateien, die nur besucht werden, landen auch so im Cache).
-const VERSION = 'isadody-3';
+const VERSION = 'isadody-4';
 const FILES = [
   './', 'manifest.webmanifest',
   'anleitung/', 'anleitung/hilfe/', 'grid/', 'grid/hilfe/', 'lexikon/', 'lexikon/hilfe/', 'lineal/', 'lineal/hilfe/', 'muster/', 'muster/hilfe/', 'stoppuhr/', 'stoppuhr/hilfe/', 'zaehler/', 'zaehler/hilfe/',
