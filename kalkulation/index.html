@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Isadody Kalkulation</title>
+<meta name="theme-color" content="#FBF6EC">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../shared/icon-180.png">
+<link rel="stylesheet" href="../shared/isadody.css">
+<script src="../shared/store.js"></script>
+<script src="../shared/dialog.js"></script>
+<script src="../shared/projekte.js"></script>
+<script src="../shared/erinnerung.js"></script>
+<script src="../shared/offline.js"></script>
+<style>
+  body { padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom); max-width:720px; margin:0 auto; }
+  header { display:flex; justify-content:space-between; align-items:center; padding:10px 0; gap:10px; }
+  #sub { font-size:.9rem; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  main, #app { display:flex; flex-direction:column; gap:14px; }
+  main { padding-bottom:16px; }
+  .card { background:var(--paper-alt); border-radius:16px; padding:14px; display:flex; flex-direction:column; gap:10px; }
+  .card h2 { font-family:var(--display); font-size:1.15rem; margin:0; }
+  .card p { margin:0; font-size:.9rem; color:var(--ink-soft); }
+  .opts { display:flex; flex-wrap:wrap; gap:8px; }
+  .opts button { background:var(--paper); border:1px solid var(--line); border-radius:999px; padding:8px 14px; font-weight:700; min-width:48px; min-height:44px; }
+  .opts button.on { border-color:var(--ink); background:var(--coral-soft); }
+  .ghost { padding:10px 16px; min-height:44px; border-radius:999px; background:var(--paper); border:1px solid var(--line); font-weight:700; }
+  .lbl { font-weight:700; font-size:.9rem; }
+  #empty a, .card p a { color:var(--ink); font-weight:700; }
+
+  /* Projekte: Name und gespeicherter Endpreis */
+  #plist { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; }
+  #plist button { display:flex; flex-direction:column; align-items:flex-start; gap:2px; padding:10px 12px; min-height:44px; text-align:left; background:var(--paper); border:1px solid var(--line); border-radius:14px; }
+  #plist button.on { border-color:var(--ink); background:var(--coral-soft); }
+  #plist b { overflow-wrap:anywhere; }
+  #plist small { color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+
+  /* Arbeitszeit und Stundensatz */
+  .rate { display:flex; align-items:center; gap:8px; font-weight:700; }
+  .rate input { font:inherit; width:8em; padding:10px 12px; min-height:44px; border-radius:12px; border:var(--field-border); background:#fff; color:var(--ink); text-align:right; }
+  #work { display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-variant-numeric:tabular-nums; }
+  #work b { font-family:var(--display); font-size:1.5rem; }
+
+  /* Posten für Material und Nebenkosten */
+  .items { display:flex; flex-direction:column; gap:8px; }
+  .item { background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:8px; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+  .item input { font:inherit; min-height:44px; padding:8px 10px; border-radius:10px; border:var(--field-border); background:#fff; color:var(--ink); min-width:0; }
+  .item .nm { flex:1 1 100%; }
+  .item.ext .nm { flex:1 1 5em; }
+  .item .q { width:4.5em; text-align:right; }
+  .item .pr { width:6em; text-align:right; }
+  .item .u { display:flex; }
+  .item .u button { background:var(--paper); border:1px solid var(--line); padding:6px 10px; min-height:44px; font-weight:700; }
+  .item .u button:first-child { border-radius:999px 0 0 999px; }
+  .item .u button:last-child { border-radius:0 999px 999px 0; border-left:0; }
+  .item .u button.on { border-color:var(--ink); background:var(--coral-soft); }
+  .item .per { font-size:.85rem; color:var(--ink-soft); }
+  .item .sum { margin-left:auto; font-weight:700; font-variant-numeric:tabular-nums; }
+  .item .del { width:44px; height:44px; border-radius:50%; background:var(--paper); border:1px solid var(--line); font-size:1.2rem; line-height:1; flex:none; }
+  .add { align-self:flex-start; }
+  .tot { display:flex; justify-content:space-between; font-weight:700; font-variant-numeric:tabular-nums; }
+
+  /* Preis */
+  #tax-note { background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:8px 12px; }
+  #pcalc { background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:10px 12px; font-variant-numeric:tabular-nums; }
+  #pcalc div { display:flex; justify-content:space-between; gap:10px; }
+  #pcalc .mid { font-weight:700; border-top:1px solid var(--line); margin-top:4px; padding-top:4px; }
+  #pcalc .sum { font-family:var(--display); font-size:1.6rem; font-weight:700; border-top:1px solid var(--line); margin-top:6px; padding-top:6px; }
+  #pcalc .soft { color:var(--ink-soft); font-size:.9rem; }
+  .card #perh { font-weight:700; color:var(--ink); }
+  .btns { display:flex; flex-wrap:wrap; gap:8px; }
+  #save:disabled, #share:disabled { opacity:.5; cursor:default; }
+  #saved { background:var(--coral-soft); border-radius:12px; padding:10px 12px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  #saved b { font-family:var(--display); font-size:1.25rem; }
+</style>
+</head>
+<body>
+<header>
+  <div class="title"><a class="home" href="../" aria-label="Alle Apps" title="Alle Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/></svg></a><img class="logo" src="../shared/logo.png" alt="Isadody"><div><h1 class="apptitle">Kalkulation</h1><div id="sub"></div></div></div>
+  <div class="tools"><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a></div>
+</header>
+<main>
+  <section class="card" id="empty" hidden>
+    <h2>Noch keine Projekte</h2>
+    <p>Die Kalkulation rechnet je Projekt aus dem <a href="../anleitung/">Häkelhelfer</a>. Lege dort ein Projekt an, dann kannst du hier den Preis berechnen.</p>
+  </section>
+  <div id="app" hidden>
+    <section class="card">
+      <h2>Projekt</h2>
+      <div id="plist"></div>
+    </section>
+    <section class="card">
+      <h2>Arbeit</h2>
+      <div id="work"><span id="wsrc"></span><b id="wtime"></b></div>
+      <p id="wnote"></p>
+      <div class="btns"><button class="ghost" id="wset">Zeit eingeben</button><button class="ghost" id="wwatch" hidden>Zeit aus der Stoppuhr</button></div>
+      <label class="rate"><input id="rate" inputmode="decimal" autocomplete="off" placeholder="0,00" aria-label="Stundensatz in Euro"> € pro Stunde</label>
+      <div class="tot"><span>Arbeitskosten</span><span id="labtot"></span></div>
+    </section>
+    <section class="card">
+      <h2>Material</h2>
+      <p>Garn nach Stück (Knäuel) oder nach Gramm mit Preis je 100 g, dazu Zubehör wie Füllwatte, Augen, Etikett.</p>
+      <div class="items" id="mat"></div>
+      <button class="ghost add" id="addmat">+ Material</button>
+      <div class="tot"><span>Material gesamt</span><span id="mattot"></span></div>
+    </section>
+    <section class="card">
+      <h2>Nebenkosten</h2>
+      <p>Zum Beispiel Verpackung, Versand, Standgebühr oder Verkaufsgebühren.</p>
+      <div class="items" id="ext"></div>
+      <button class="ghost add" id="addext">+ Nebenkosten</button>
+      <div class="tot"><span>Nebenkosten gesamt</span><span id="exttot"></span></div>
+    </section>
+    <section class="card">
+      <h2>Gewinn und Steuer</h2>
+      <label class="rate"><input id="marge" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Gewinn in Prozent"> % Gewinn auf die Selbstkosten</label>
+      <div class="lbl">Umsatzsteuer</div>
+      <div class="opts" id="tax"></div>
+      <p id="tax-note"></p>
+    </section>
+    <section class="card">
+      <h2>Preis</h2>
+      <div class="lbl">Endpreis runden auf</div>
+      <div class="opts" id="mstep"></div>
+      <div class="opts" id="mode"></div>
+      <div id="pcalc"></div>
+      <p id="perh" hidden></p>
+      <div class="btns"><button class="btn" id="save">Kalkulation speichern</button><button class="ghost" id="share">Teilen</button></div>
+      <div id="saved" hidden><div><div class="lbl">Gespeichert <span id="sdate"></span></div><b id="samount"></b><p id="sinfo"></p></div><button class="ghost" id="sdel" aria-label="Gespeicherte Kalkulation löschen">Löschen</button></div>
+    </section>
+  </div>
+</main>
+<script>
+// Preiskalkulation je Häkelhelfer-Projekt, gespeichert unter kalkulation.k: { <Projekt-id>: { min, rate, mat, ext, marge, price, used } }
+// min = Arbeitszeit in Minuten von Hand (null = aus der Stoppuhr), rate = Stundensatz in Cent (null = aus der Stoppuhr),
+// mat = Material [{ n: Name, q: Menge, u: 'stk' | 'g', p: Cent je Stück bzw. je 100 g }], ext = Nebenkosten [{ n, c (Cent) }],
+// marge = Gewinn in % (null = Voreinstellung), price = gespeicherte Kalkulation { end, net, self, lab, mat, ext, marge, tax, min, rate, at } (Cent).
+// kalkulation.prefs = { ms, up, tax, marge } (Endpreis-Rundung, Umsatzsteuer 0/7/19, Gewinn-Voreinstellung), kalkulation.current = Projekt-id.
+// Liest stoppuhr.t (Zeit, Stundensatz) und stoppuhr.prefs (Zeitrundung), schreibt dort nichts.
+const $ = id => document.getElementById(id), store = Store('kalkulation'), uhr = Store('stoppuhr');
+const MSTEPS = [[1, 'genau'], [10, '10 Cent'], [50, '50 Cent'], [100, '1 Euro']];
+const MODES = [[false, 'kaufmännisch'], [true, 'immer aufrunden']];
+const TAXES = [[0, 'keine (Kleinunternehmer)'], [7, '7 %'], [19, '19 %']];
+const TSTEP = { 0: 'genau', 10: 'auf 10 Min.', 15: 'auf ¼ Std.', 30: 'auf ½ Std.', 60: 'auf 1 Std.' };
+const MAXMAT = 30, MAXEXT = 20;
+const eur = c => (c / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+const num = n => n.toLocaleString('de-DE', { maximumFractionDigits: 2 });
+const money = c => c ? (c / 100).toLocaleString('de-DE', { minimumFractionDigits: 2 }) : '';
+const two = n => String(n).padStart(2, '0');
+const hm = min => { const m = Math.round(min); return `${Math.floor(m / 60)}:${two(m % 60)} Std.`; };
+const day = t => new Date(t).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const obj = v => v && typeof v === 'object' && !Array.isArray(v);
+
+// ---- Rechnen ----
+// Auf ein Vielfaches von step runden; up = immer aufrunden (kleine Toleranz gegen Rechenungenauigkeit)
+const roundTo = (v, step, up) => step ? (up ? Math.ceil(v / step - 1e-9) : Math.round(v / step)) * step : v;
+// Materialposten in Cent: Menge × Stückpreis oder Gramm × Preis je 100 g
+const matCost = m => Math.round(m.u === 'g' ? m.q / 100 * m.p : m.q * m.p);
+// Selbstkosten = Arbeit + Material + Nebenkosten; netto = Selbstkosten + Gewinn; Endpreis = netto + USt., gerundet.
+// perh = was pro Stunde bleibt (Endpreis ohne USt., Material und Nebenkosten), null ohne Zeit.
+function priceOf(w, x, p) {
+  const lab = Math.round(w.min / 60 * w.rate);
+  const mat = x.mat.reduce((s, m) => s + matCost(m), 0), ext = x.ext.reduce((s, e) => s + e.c, 0);
+  const self = lab + mat + ext, marge = x.marge ?? p.marge, net = Math.round(self * (1 + marge / 100));
+  const gross = Math.round(net * (1 + p.tax / 100)), end = Math.round(roundTo(gross, p.ms, p.up));
+  const perh = w.min > 0 ? (end / (1 + p.tax / 100) - mat - ext) / (w.min / 60) : null;
+  return { min: w.min, rate: w.rate, lab, mat, ext, self, marge, net, tax: p.tax, vat: gross - net, gross, end, perh };
+}
+// „15“, „15,5“, „15.50“, „15 €“ → Cent; leer → 0; sonst null
+function parseMoney(s) {
+  s = String(s).replace(/[€\s]/g, '').replace(',', '.');
+  if (!s) return 0;
+  return /^\d{1,6}(\.\d{0,2})?$/.test(s) ? Math.round(parseFloat(s) * 100) : null;
+}
+// Menge oder Prozent: „2“, „2,5“ → Zahl bis max (2 Nachkommastellen); leer → 0; sonst null
+function parseNum(s, max) {
+  s = String(s).replace(/[%\s]/g, '').replace(',', '.');
+  if (!s) return 0;
+  if (!/^\d{1,6}(\.\d{0,2})?$/.test(s)) return null;
+  const v = Math.round(parseFloat(s) * 100) / 100;
+  return v <= max ? v : null;
+}
+// „3:45“ (Std:Min) oder „90“ (Minuten) → Minuten; sonst null
+function parseTime(s) {
+  s = String(s).trim(); let m;
+  if ((m = s.match(/^(\d{1,4}):([0-5]?\d)$/))) return +m[1] * 60 + +m[2];
+  if ((m = s.match(/^\d{1,6}$/))) return +s;
+  return null;
+}
+
+// ---- Daten ----
+const all = () => { const t = store.get('k', {}); return obj(t) ? t : {}; };
+const blank = () => ({ min: null, rate: null, mat: [], ext: [], marge: null, price: null, used: 0 });
+let pid = null;
+const prefs = { ms: 50, up: true, tax: 0, marge: 0, ...store.get('prefs', {}) };
+function get(id = pid) { const x = { ...blank(), ...all()[id] }; if (!Array.isArray(x.mat)) x.mat = []; if (!Array.isArray(x.ext)) x.ext = []; return x; }
+function put(x, id = pid) { const t = all(); x.used = Date.now(); t[id] = x; store.set('k', t); }
+// Arbeitszeit und Stundensatz: von Hand oder aus der Stoppuhr (Zeit gerundet wie dort eingestellt)
+function work(x, id = pid) {
+  const t = uhr.get('t', {}), u = obj(t) && obj(t[id]) ? t[id] : {}, up = { ts: 15, up: false, ...uhr.get('prefs', {}) };
+  const ms = (Number.isFinite(u.ms) ? u.ms : 0) + (u.run ? Math.max(0, Date.now() - u.run) : 0);
+  const watch = x.min === null;
+  return { watch, run: !!u.run, ts: up.ts, min: watch ? roundTo(ms / 60000, up.ts, up.up) : x.min,
+    rate: x.rate ?? (Number.isInteger(u.rate) ? u.rate : 0) };
+}
+
+// ---- Anzeige ----
+function projects() { return Projekte.all().slice().sort((a, b) => Math.max(get(b.id).used, b.used || 0) - Math.max(get(a.id).used, a.used || 0)); }
+function renderList() {
+  $('plist').innerHTML = '';
+  for (const p of projects()) {
+    const x = get(p.id), b = document.createElement('button');
+    b.dataset.id = p.id; b.className = p.id === pid ? 'on' : '';
+    b.innerHTML = '<b></b><small></small>';
+    b.querySelector('b').textContent = p.name;
+    b.querySelector('small').textContent = x.price ? eur(x.price.end) : 'noch nicht gespeichert';
+    $('plist').append(b);
+  }
+}
+function opts(el, list, val, key) {
+  el.innerHTML = '';
+  for (const [v, t] of list) { const b = document.createElement('button'); b.textContent = t; b.className = v === val ? 'on' : ''; b.onclick = () => { prefs[key] = v; store.set('prefs', prefs); render(); }; el.append(b); }
+}
+const inp = (cls, val, ph, label, mode = 'decimal') => { const i = document.createElement('input'); i.className = cls; i.value = val; i.placeholder = ph; i.setAttribute('aria-label', label); i.autocomplete = 'off'; if (mode) i.inputMode = mode; return i; };
+const delBtn = () => { const b = document.createElement('button'); b.className = 'del'; b.textContent = '×'; b.setAttribute('aria-label', 'Posten löschen'); return b; };
+// Material- und Nebenkosten-Posten; nicht neu aufbauen, solange darin getippt wird
+function renderItems(force) {
+  const act = document.activeElement;
+  if (!force && act && act.closest && act.closest('.items')) return;
+  const x = get();
+  $('mat').innerHTML = '';
+  x.mat.forEach((m, i) => {
+    const d = document.createElement('div'); d.className = 'item'; d.dataset.i = i;
+    const u = document.createElement('div'); u.className = 'u';
+    for (const [v, t] of [['stk', 'Stück'], ['g', 'Gramm']]) { const b = document.createElement('button'); b.dataset.u = v; b.textContent = t; b.className = m.u === v ? 'on' : ''; u.append(b); }
+    const per = document.createElement('span'); per.className = 'per'; per.textContent = m.u === 'g' ? '€ je 100 g' : '€ je Stück';
+    const sum = document.createElement('span'); sum.className = 'sum'; sum.textContent = eur(matCost(m));
+    d.append(inp('nm', m.n, 'z. B. Garn Baumwolle', 'Bezeichnung', ''), inp('q', m.q ? num(m.q) : '', '0', m.u === 'g' ? 'Gramm' : 'Anzahl'), u, inp('pr', money(m.p), '0,00', m.u === 'g' ? 'Preis je 100 g' : 'Preis je Stück'), per, sum, delBtn());
+    $('mat').append(d);
+  });
+  $('ext').innerHTML = '';
+  x.ext.forEach((e, i) => {
+    const d = document.createElement('div'); d.className = 'item ext'; d.dataset.i = i;
+    const per = document.createElement('span'); per.className = 'per'; per.textContent = '€';
+    d.append(inp('nm', e.n, 'z. B. Verpackung', 'Bezeichnung', ''), inp('pr', money(e.c), '0,00', 'Betrag'), per, delBtn());
+    $('ext').append(d);
+  });
+  $('addmat').hidden = x.mat.length >= MAXMAT; $('addext').hidden = x.ext.length >= MAXEXT;
+}
+function render() {
+  const list = Projekte.all();
+  $('empty').hidden = list.length > 0; $('app').hidden = !list.length;
+  if (!list.length) { $('sub').textContent = ''; return; }
+  if (!list.some(p => p.id === pid)) pid = (list.find(p => p.id === store.get('current', '')) || list.find(p => p.id === uhr.get('current', '')) || Projekte.current() || projects()[0]).id;
+  store.set('current', pid);
+  const p = list.find(q => q.id === pid), x = get();
+  $('sub').textContent = p.name;
+  renderList();
+  opts($('mstep'), MSTEPS, prefs.ms, 'ms'); opts($('mode'), MODES, prefs.up, 'up'); opts($('tax'), TAXES, prefs.tax, 'tax');
+  $('tax-note').textContent = prefs.tax
+    ? `Der Endpreis enthält ${prefs.tax} % Umsatzsteuer. Für Häkelwaren gilt in der Regel 19 %.`
+    : 'Kleinunternehmer (§ 19 UStG): keine Umsatzsteuer auf dem Preis. Auf die Rechnung gehört der Satz „Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.“';
+  renderItems();
+  $('saved').hidden = !x.price;
+  if (x.price) {
+    const k = x.price;
+    $('sdate').textContent = `am ${day(k.at)}`; $('samount').textContent = eur(k.end);
+    $('sinfo').textContent = `Arbeit ${eur(k.lab)}${k.rate ? ` (${hm(k.min)} × ${eur(k.rate)})` : ''} · Material ${eur(k.mat)} · Nebenkosten ${eur(k.ext)} · Gewinn ${num(k.marge)} % · ${k.tax ? `inkl. ${k.tax} % USt.` : 'ohne USt.'}`;
+  }
+  tick();
+}
+// Rechnung neu; läuft die Stoppuhr, jede Sekunde
+function tick() {
+  if (!pid || $('app').hidden) return;
+  const x = get(), w = work(x), r = priceOf(w, x, prefs);
+  $('wsrc').textContent = w.watch ? 'Aus der Stoppuhr' : 'Von Hand eingegeben';
+  $('wtime').textContent = hm(w.min);
+  $('wnote').innerHTML = '';
+  if (w.watch) $('wnote').append(w.run ? 'Die Stoppuhr läuft noch. ' : '', `Gerundet ${TSTEP[w.ts] || ''} wie in der `, Object.assign(document.createElement('a'), { href: '../stoppuhr/', textContent: 'Stoppuhr' }), '.');
+  else $('wnote').textContent = 'Die Zeit der Stoppuhr wird für dieses Projekt nicht verwendet.';
+  $('wwatch').hidden = w.watch;
+  if (document.activeElement !== $('rate')) $('rate').value = money(w.rate);
+  if (document.activeElement !== $('marge')) $('marge').value = num(x.marge ?? prefs.marge);
+  $('labtot').textContent = eur(r.lab); $('mattot').textContent = eur(r.mat); $('exttot').textContent = eur(r.ext);
+  $('mat').querySelectorAll('.item').forEach(d => { const m = x.mat[d.dataset.i]; if (m) d.querySelector('.sum').textContent = eur(matCost(m)); });
+  $('pcalc').innerHTML = `<div><span>Arbeitskosten</span><span>${eur(r.lab)}</span></div><div><span>Material</span><span>${eur(r.mat)}</span></div>`
+    + `<div><span>Nebenkosten</span><span>${eur(r.ext)}</span></div><div class="mid"><span>Selbstkosten</span><span>${eur(r.self)}</span></div>`
+    + `<div><span>Gewinn ${num(r.marge)} %</span><span>${eur(r.net - r.self)}</span></div>`
+    + (r.tax ? `<div class="mid"><span>Netto</span><span>${eur(r.net)}</span></div><div><span>Umsatzsteuer ${r.tax} %</span><span>${eur(r.vat)}</span></div>` : '')
+    + (r.end !== r.gross ? `<div class="soft"><span>Gerundet von</span><span>${eur(r.gross)}</span></div>` : '')
+    + `<div class="sum"><span>Endpreis</span><span>${eur(r.end)}</span></div>`;
+  $('perh').hidden = r.perh === null || !r.end;
+  if (r.perh !== null) $('perh').textContent = `Bei ${eur(r.end)} bleiben dir ${eur(Math.round(r.perh))} pro Stunde (Arbeit und Gewinn, ohne Material, Nebenkosten${r.tax ? ' und Steuer' : ''}).`;
+  $('save').disabled = !r.self; $('share').disabled = !r.end;
+}
+setInterval(() => { if (pid && !$('app').hidden && work(get()).run) tick(); }, 1000);
+
+// ---- Bedienung ----
+$('plist').onclick = e => { const b = e.target.closest('[data-id]'); if (!b || b.dataset.id === pid) return; pid = b.dataset.id; renderItems(true); render(); };
+$('wset').onclick = async () => {
+  const w = work(get());
+  const v = await Dialog.prompt('Arbeitszeit als Std:Min (z. B. 3:45) oder in Minuten:', `${Math.floor(w.min / 60)}:${two(Math.round(w.min) % 60)}`, { title: 'Zeit eingeben', ok: 'Übernehmen' });
+  if (v === null) return;
+  const min = parseTime(v); if (min === null) return Dialog.alert('Bitte die Zeit als Std:Min (z. B. 3:45) oder in Minuten eingeben.');
+  const x = get(); x.min = min; put(x); render();
+};
+$('wwatch').onclick = () => { const x = get(); x.min = null; put(x); render(); };
+$('rate').onchange = () => {
+  const c = parseMoney($('rate').value);
+  if (c === null) { Dialog.alert('Bitte den Stundensatz als Betrag eingeben, z. B. 12,50.'); render(); return; }
+  const x = get(); x.rate = c; put(x); $('rate').blur(); render();
+};
+$('marge').onchange = () => {
+  const v = parseNum($('marge').value, 1000);
+  if (v === null) { Dialog.alert('Bitte den Gewinn in Prozent eingeben, z. B. 20 (höchstens 1000).'); render(); return; }
+  const x = get(); x.marge = v; put(x); prefs.marge = v; store.set('prefs', prefs); $('marge').blur(); render();
+};
+for (const id of ['rate', 'marge']) $(id).onkeydown = e => { if (e.key === 'Enter') $(id).onchange(); };
+
+// Posten: Eingaben, Einheit, Löschen, Hinzufügen
+function itemChange(e) {
+  const el = e.target, d = el.closest('.item'); if (!d) return;
+  const kind = d.parentNode.id, i = +d.dataset.i, x = get(), it = x[kind][i]; if (!it) return;
+  if (el.classList.contains('nm')) it.n = el.value.trim().slice(0, 60);
+  else if (el.classList.contains('q')) {
+    const v = parseNum(el.value, 99999);
+    if (v === null) { Dialog.alert(it.u === 'g' ? 'Bitte die Gramm als Zahl eingeben, z. B. 80.' : 'Bitte die Anzahl als Zahl eingeben, z. B. 2 oder 1,5.'); el.value = it.q ? num(it.q) : ''; return; }
+    it.q = v; el.value = v ? num(v) : '';
+  } else if (el.classList.contains('pr')) {
+    const c = parseMoney(el.value);
+    if (c === null) { Dialog.alert('Bitte den Preis als Betrag eingeben, z. B. 3,95.'); el.value = money(kind === 'mat' ? it.p : it.c); return; }
+    if (kind === 'mat') it.p = c; else it.c = c;
+    el.value = money(c);
+  }
+  put(x); tick();
+}
+for (const id of ['mat', 'ext']) {
+  $(id).addEventListener('change', itemChange);
+  $(id).addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT') e.target.blur(); });
+  $(id).addEventListener('click', async e => {
+    const d = e.target.closest('.item'); if (!d) return;
+    const i = +d.dataset.i, x = get(), it = x[id][i]; if (!it) return;
+    if (e.target.closest('.del')) {
+      if ((it.n || it.p || it.c) && !await Dialog.confirm(`Posten${it.n ? ` „${it.n}“` : ''} löschen?`, { ok: 'Löschen', danger: true })) return;
+      const y = get(); y[id].splice(i, 1); put(y); renderItems(true); render();
+    } else if (e.target.dataset.u && e.target.dataset.u !== it.u) {
+      it.u = e.target.dataset.u; put(x); renderItems(true); tick();
+    }
+  });
+}
+function addItem(kind) {
+  const x = get(); if (x[kind].length >= (kind === 'mat' ? MAXMAT : MAXEXT)) return;
+  x[kind].push(kind === 'mat' ? { n: '', q: 1, u: 'stk', p: 0 } : { n: '', c: 0 }); put(x);
+  renderItems(true); render();
+  const last = $(kind).lastElementChild; if (last) last.querySelector('.nm').focus();
+}
+$('addmat').onclick = () => addItem('mat');
+$('addext').onclick = () => addItem('ext');
+
+$('save').onclick = async () => {
+  const x = get();
+  if (x.price && !await Dialog.confirm(`Schon gespeichert: ${eur(x.price.end)}. Durch die neue Kalkulation ersetzen?`, { ok: 'Ersetzen' })) return;
+  const y = get(), r = priceOf(work(y), y, prefs);
+  if (!r.self) return;
+  y.price = { end: r.end, net: r.net, self: r.self, lab: r.lab, mat: r.mat, ext: r.ext, marge: r.marge, tax: r.tax, min: r.min, rate: r.rate, at: Date.now() };
+  put(y); render();
+};
+$('sdel').onclick = async () => {
+  if (!await Dialog.confirm('Gespeicherte Kalkulation löschen? Material, Nebenkosten und Einstellungen bleiben.', { ok: 'Löschen', danger: true })) return;
+  const x = get(); x.price = null; put(x); render();
+};
+// Aktuelle Kalkulation als Text teilen (Handy) oder kopieren
+$('share').onclick = async () => {
+  const x = get(), r = priceOf(work(x), x, prefs), p = Projekte.all().find(q => q.id === pid);
+  const lines = [`Kalkulation „${p ? p.name : 'Projekt'}“ vom ${day(Date.now())}`];
+  lines.push(`Arbeit: ${r.rate ? `${hm(r.min)} × ${eur(r.rate)} = ` : ''}${eur(r.lab)}`);
+  for (const m of x.mat) lines.push(`${m.n || 'Material'}: ${num(m.q)} ${m.u === 'g' ? 'g' : 'Stk.'} × ${eur(m.p)}${m.u === 'g' ? ' je 100 g' : ''} = ${eur(matCost(m))}`);
+  lines.push(`Material: ${eur(r.mat)}`);
+  for (const e of x.ext) lines.push(`${e.n || 'Nebenkosten'}: ${eur(e.c)}`);
+  lines.push(`Nebenkosten: ${eur(r.ext)}`, `Selbstkosten: ${eur(r.self)}`, `Gewinn ${num(r.marge)} %: ${eur(r.net - r.self)}`);
+  if (r.tax) lines.push(`Netto: ${eur(r.net)}`, `Umsatzsteuer ${r.tax} %: ${eur(r.vat)}`);
+  lines.push(`Endpreis: ${eur(r.end)}${r.tax ? '' : ' (Kleinunternehmer, ohne USt.)'}`);
+  const text = lines.join('\n');
+  if (navigator.share) { try { await navigator.share({ title: 'Kalkulation', text }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+  try { await navigator.clipboard.writeText(text); Dialog.alert('Kalkulation in die Zwischenablage kopiert.'); }
+  catch { Dialog.prompt('Kalkulation zum Kopieren:', text, { title: 'Teilen', ok: 'Fertig' }); }
+};
+// Änderungen aus anderen Tabs (Stoppuhr, neues Projekt im Häkelhelfer) übernehmen
+addEventListener('storage', e => { if (!e.key || e.key.startsWith('kalkulation.') || e.key.startsWith('stoppuhr.') || e.key === 'anleitung.projects') render(); });
+addEventListener('pageshow', render);
+render();
+Erinnerung.hint();
+</script>
+</body>
+</html>
