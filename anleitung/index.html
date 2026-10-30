@@ -8,6 +8,9 @@
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../shared/icon-180.png">
 <link rel="stylesheet" href="../shared/isadody.css">
+<script src="../shared/i18n.js"></script>
+<script src="../shared/en.js"></script>
+<script src="en.js"></script>
 <script src="../shared/store.js"></script>
 <script src="../shared/dialog.js"></script>
 <script src="../shared/erinnerung.js"></script>
@@ -123,21 +126,21 @@
   <div class="title"><a class="home" href="../" aria-label="Alle Apps" title="Alle Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/></svg></a><img class="logo" src="../shared/logo.png" alt="Isadody"><div><div id="row">Häkelhelfer</div><div id="pos"></div><div id="part" hidden></div></div></div>
   <div class="tools"><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a><button class="small" id="menu">Projekte</button></div>
 </header>
-<p id="note" hidden></p>
-<main id="chips"></main>
+<p id="note" translate="no" hidden></p>
+<main id="chips" translate="no"></main>
 <p id="tip" hidden>Tippe auf eine Kachel, sobald die Masche gehäkelt ist.</p>
-<div id="abbr"></div>
+<div id="abbr" translate="no"></div>
 <div id="nav"><button id="back">‹ Zurück</button><button id="next">Weiter ›</button></div>
 <section id="setup">
   <div id="projs">
     <div class="head"><span>Meine Projekte <small id="pcount"></small></span><button id="newp" type="button">+ Neues Projekt</button></div>
     <div id="plist"></div>
-    <p id="pempty" hidden>Noch keine Projekte. Füge unten eine Anleitung ein oder lade eine Datei, gib ihr einen Namen und tippe auf <b>Starten</b>.</p>
+    <p id="pempty" data-i18n hidden>Noch keine Projekte. Füge unten eine Anleitung ein oder lade eine Datei, gib ihr einen Namen und tippe auf <b>Starten</b>.</p>
   </div>
   <div id="lib" hidden>
     <div class="head">Aus der Sammlung<a href="../muster/">Sammlung öffnen ›</a></div>
     <input id="libq" type="search" placeholder="Suchen: Name, Tag, Text">
-    <div id="libtags"></div>
+    <div id="libtags" translate="no"></div>
     <div id="liblist"></div>
     <p class="note" id="libnote"></p>
   </div>
@@ -157,6 +160,8 @@
 </section>
 <script>
 const MAX_CHIPS = 8, SINGLE_MAX = 3; // Folgen bis 3 Maschen einzeln, ab 4 als ein Kürzel mit Anzahl
+// Übersetzung (shared/i18n.js); unter node bleibt es Deutsch
+const tr = typeof T === 'function' ? T : (s, v) => v ? s.replace(/\{(\w+)\}/g, (m, k) => v[k]) : s;
 
 function splitTop(s) {
   const out = []; let d = 0, cur = '';
@@ -387,7 +392,7 @@ function parse(text) {
     }
     let body = m ? m.body : line, target = m ? m.target : null, after = '', t, dir = '';
     // Richtung aus dem Grid-Ersteller: „Reihe 3 (von rechts): …“ → Hinweis zur Reihe
-    if ((t = body.match(/^\(?\s*(?:von|from)\s+(rechts|links|right|left)\s*\)?\s*:?\s*/i))) { dir = /^r/i.test(t[1]) ? '← von rechts' : 'von links →'; body = body.slice(t[0].length); }
+    if ((t = body.match(/^\(?\s*(?:von|from)\s+(rechts|links|right|left)\s*\)?\s*:?\s*/i))) { dir = /^r/i.test(t[1]) ? tr('← von rechts') : tr('von links →'); body = body.slice(t[0].length); }
     // Text-Export des Grid-Erstellers: „3 A, 2 B“ = 3 fM in Farbe A, 2 fM in Farbe B
     if (/^\s*\d+\s+[A-J](?:\s*,\s*\d+\s+[A-J])*\s*$/.test(body)) body = body.split(',').map(x => x.trim().replace(/^(\d+)\s+([A-J])$/, 'Farbe $2, $1 fM')).join(', ');
     if ((t = body.match(TARGET))) { if (target == null) target = +(t[1] || t[2]); body = body.slice(0, t.index); after = t[3] || ''; }
@@ -433,10 +438,10 @@ function withParts(rows, parts) {
   if (parts.length < 2 && !(parts[0] && parts[0].times > 1)) return rows;
   const out = [];
   parts.forEach((pt, i) => {
-    const own = rows.slice(pt.start, i + 1 < parts.length ? parts[i + 1].start : rows.length), name = pt.name || `Teil ${i + 1}`;
+    const own = rows.slice(pt.start, i + 1 < parts.length ? parts[i + 1].start : rows.length), name = pt.name || tr('Teil {n}', { n: i + 1 });
     for (let n = 1; n <= pt.times; n++) own.forEach((r, j) => {
       let notes = r.notes.filter(x => x !== pt.head);
-      if (!j && n > 1) notes = [`${name} ${n} von ${pt.times}: noch einmal von vorn`, ...notes];
+      if (!j && n > 1) notes = [tr('{name} {n} von {m}: noch einmal von vorn', { name, n, m: pt.times }), ...notes];
       out.push({ ...r, notes, part: { name, n, of: pt.times } });
     });
   });
@@ -498,7 +503,7 @@ function renderColorPickers() {
     b.onclick = () => { editing = editing === k ? null : k; renderColorPickers(); };
     box.append(b);
   }
-  const add = document.createElement('button'); add.textContent = '+ Farbe';
+  const add = document.createElement('button'); add.textContent = T('+ Farbe');
   add.onclick = () => { editing = '+'; renderColorPickers(); };
   box.append(add);
   if (!editing) return;
@@ -506,8 +511,8 @@ function renderColorPickers() {
   const ed = document.createElement('div'); ed.className = 'ed';
   let key = editing;
   if (editing === '+') {
-    const n = document.createElement('input'); n.placeholder = 'Name, z. B. C'; n.maxLength = 12;
-    const ok = document.createElement('button'); ok.textContent = 'Anlegen';
+    const n = document.createElement('input'); n.placeholder = T('Name, z. B. C'); n.maxLength = 12;
+    const ok = document.createElement('button'); ok.textContent = T('Anlegen');
     ok.onclick = () => { const v = n.value.trim().toUpperCase(); if (/^[\p{L}\d]{1,12}$/u.test(v)) { colors[v] = colors[v] || '#888888'; saveColors(); editing = v; renderColorPickers(); } };
     ed.append(n, ok); box.append(ed); return;
   }
@@ -520,7 +525,7 @@ function renderColorPickers() {
   }
   const [h, s, l] = hexToHsl(cur);
   const hex = document.createElement('input'); hex.value = cur.toUpperCase(); hex.maxLength = 7; hex.className = 'hex';
-  const sliders = [['Farbton', 360, h, v => hslToHex(v, S.value, L.value)], ['Sättigung', 100, s, v => hslToHex(H.value, v, L.value)], ['Helligkeit', 100, l, v => hslToHex(H.value, S.value, v)]]
+  const sliders = [[T('Farbton'), 360, h, v => hslToHex(v, S.value, L.value)], [T('Sättigung'), 100, s, v => hslToHex(H.value, v, L.value)], [T('Helligkeit'), 100, l, v => hslToHex(H.value, S.value, v)]]
     .map(([name, max, val, f], i) => {
       const w = document.createElement('label'), r = document.createElement('input');
       r.type = 'range'; r.min = 0; r.max = max; r.value = val;
@@ -541,6 +546,7 @@ function renderColorPickers() {
 }
 
 const $ = id => document.getElementById(id);
+const FULL = () => T('Es sind schon {n} Projekte gespeichert. Bitte erst eins löschen.', { n: Projekte.MAX });
 let rows = [], r = 0, p = 0;
 let done = {}; // Reihe -> Anzahl abgeschlossener Kacheln
 // Fortschritt gebündelt speichern: Jeder Tipp schreibt sonst alle Projekte neu (spürbar bei großen Tapestrys auf älteren Handys).
@@ -564,17 +570,17 @@ function openSetup(proj) {
   flush();
   E = proj || draft(); colors = E.colors; editing = null;
   $('text').value = E.pattern || ''; $('pname').value = E.id ? E.name : '';
-  $('edhead').textContent = E.id ? 'Anleitung bearbeiten' : 'Neues Projekt';
-  $('ok').textContent = E.id ? 'Weiterhäkeln' : 'Starten';
+  $('edhead').textContent = E.id ? T('Anleitung bearbeiten') : T('Neues Projekt');
+  $('ok').textContent = E.id ? T('Weiterhäkeln') : T('Starten');
   // Kopf zeigt, wo man ist; der Knopf führt zurück zum Häkeln (nur wenn es ein Projekt gibt)
-  $('row').textContent = 'Projekte'; $('pos').innerHTML = P ? `Aktiv: <b>${esc(P.name)}</b>` : 'Leg dein erstes Projekt an';
-  $('menu').textContent = '‹ Häkeln'; $('menu').hidden = !P;
+  $('row').textContent = T('Projekte'); $('pos').innerHTML = P ? T('Aktiv: {name}', { name: `<b translate="no">${esc(P.name)}</b>` }) : T('Leg dein erstes Projekt an');
+  $('menu').textContent = T('‹ Häkeln'); $('menu').hidden = !P;
   renderProjects(); renderColorPickers(); setTimeout(renderCheck); loadLib();
   document.body.classList.add('setup');
 }
 const ago = t => {
   const d = Math.floor((new Date().setHours(0, 0, 0, 0) - new Date(t || 0).setHours(0, 0, 0, 0)) / 864e5);
-  return d <= 0 ? 'heute' : d === 1 ? 'gestern' : d < 30 ? `vor ${d} Tagen` : new Date(t).toLocaleDateString('de-DE');
+  return d <= 0 ? T('heute') : d === 1 ? T('gestern') : d < 30 ? T('vor {n} Tagen', { n: d }) : new Date(t).toLocaleDateString(I18N.locale);
 };
 // Reihenzahl für die Projektliste: gemerkt im Projekt (rows) bzw. hier im Speicher, statt jede Anleitung neu zu lesen
 const counts = new Map();
@@ -587,16 +593,16 @@ function renderProjects() {
   const list = Projekte.all(), missing = list.some(x => !Number.isInteger(x.rows));
   list.forEach(rowCount); if (missing) Projekte.saveAll(list); // einmalig nachtragen
   list.sort((a, b) => b.used - a.used);
-  $('pcount').textContent = list.length ? `${list.length} von ${Projekte.MAX}` : '';
+  $('pcount').textContent = list.length ? T('{n} von {m}', { n: list.length, m: Projekte.MAX }) : '';
   $('pempty').hidden = !!list.length;
   $('plist').innerHTML = list.map(x => {
     const n = rowCount(x), at = Math.min(n, ((x.pos && x.pos.r) || 0) + 1), act = P && x.id === P.id, lab = (x.pos && x.pos.label) || at;
     const pct = n ? Math.round((at - 1) / n * 100) : 0, keys = colorKeysIn(x.pattern).filter((k, i, a) => a.indexOf(k) === i && x.colors[k]);
-    return `<div class="it"><button class="open${act ? ' cur' : ''}" data-id="${esc(x.id)}"><b>${esc(x.name)}</b>` +
-      `<small>${act ? '<span class="tag">Aktiv</span>' : ''}Reihe ${esc(lab)} · ${at} von ${n} · ${ago(x.used)}` +
-      (keys.length ? `<span class="dots">${keys.map(k => `<i style="background:${esc(x.colors[k])}" title="Farbe ${esc(k)}"></i>`).join('')}</span>` : '') + `</small>` +
-      `<span class="prog" aria-label="${pct} % geschafft"><i style="width:${pct}%"></i></span></button>` +
-      `<button class="del" data-del="${esc(x.id)}" aria-label="Projekt ${esc(x.name)} löschen" title="Löschen">×</button></div>`;
+    return `<div class="it"><button class="open${act ? ' cur' : ''}" data-id="${esc(x.id)}"><b translate="no">${esc(x.name)}</b>` +
+      `<small>${act ? `<span class="tag">${T('Aktiv')}</span>` : ''}${T('Reihe {n}', { n: esc(lab) })} · ${T('{n} von {m}', { n: at, m: n })} · ${ago(x.used)}` +
+      (keys.length ? `<span class="dots">${keys.map(k => `<i style="background:${esc(x.colors[k])}" title="${esc(T('Farbe {k}', { k }))}"></i>`).join('')}</span>` : '') + `</small>` +
+      `<span class="prog" aria-label="${T('{n} % geschafft', { n: pct })}"><i style="width:${pct}%"></i></span></button>` +
+      `<button class="del" data-del="${esc(x.id)}" aria-label="${esc(T('Projekt {name} löschen', { name: x.name }))}" title="${T('Löschen')}">×</button></div>`;
   }).join('');
 }
 $('plist').onclick = async e => {
@@ -605,13 +611,13 @@ $('plist').onclick = async e => {
   if (o) { const x = Projekte.all().find(q => q.id === o.dataset.id); if (x) { x.used = Date.now(); Projekte.put(x); load(x); render(); } return; }
   if (!d) return;
   const x = Projekte.all().find(q => q.id === d.dataset.del);
-  if (!x || !(await Dialog.confirm(`Projekt „${x.name}“ löschen? Anleitung und Fortschritt gehen verloren.`, { ok: 'Löschen', danger: true }))) return;
+  if (!x || !(await Dialog.confirm(T('Projekt „{name}“ löschen? Anleitung und Fortschritt gehen verloren.', { name: x.name }), { ok: T('Löschen'), danger: true }))) return;
   Projekte.remove(x.id);
   if (P && P.id === x.id) load(Projekte.all().sort((a, b) => b.used - a.used)[0] || null);
   if (E && E.id === x.id) openSetup(P); else renderProjects();
 };
 $('newp').onclick = () => {
-  if (Projekte.full()) return Dialog.alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`);
+  if (Projekte.full()) return Dialog.alert(FULL());
   openSetup(null); $('text').focus();
 };
 
@@ -621,6 +627,10 @@ for (const m of MASCHEN) if (m.kat !== 'begriff' || ['wlm', 'wenden', 'zus'].inc
   for (const [sys, list] of [['de', m.de], ['us', m.us.ab], ['uk', m.uk.ab], ['de', m.alias || []]])
     for (const a of list) { const k = a.toLowerCase(); if (!LEX.has(k)) LEX.set(k, []); LEX.get(k).push({ m, sys }); }
 const short = m => m.de[0] || m.name;
+// Englisch: Bedeutung in US-Begriffen, bei Abweichung mit UK-Namen
+const enName = m => m.us.name + (m.us.name !== m.uk.name ? ` (UK ${m.uk.name})` : '');
+// „3 dc in 1 M“ aus einer englischen Anleitung als „3 dc in 1 st“ zeigen
+const disp = s => s.replace(/^(\d+ )(\S+) in 1 M$/, (a, n, x) => { const h = LEX.get(x.toLowerCase()); return h && h.every(y => y.sys !== 'de') ? `${n}${x} in 1 st` : a; });
 function legend(page, pattern) {
   const sys = /\bsc\b/i.test(pattern) ? 'us' : /\b(htr|ss|tension)\b/i.test(pattern) ? 'uk' : '';
   const seen = new Set(), out = [];
@@ -631,10 +641,14 @@ function legend(page, pattern) {
       if (i + 1 < w.length && LEX.has(`${w[i]} ${w[i + 1]}`.toLowerCase())) ab = `${w[i]} ${w[++i]}`;
       if (seen.has(ab.toLowerCase())) continue; seen.add(ab.toLowerCase());
       const hits = LEX.get(ab.toLowerCase());
-      if (!hits) { out.push(`<span title="Nicht im Lexikon, siehe Anleitung"><b>${esc(ab)}</b> ?</span>`); continue; }
+      if (!hits) { out.push(`<span title="${T('Nicht im Lexikon, siehe Anleitung')}"><b>${esc(ab)}</b> ?</span>`); continue; }
       const de = hits.find(h => h.sys === 'de'), us = hits.find(h => h.sys === 'us'), uk = hits.find(h => h.sys === 'uk');
       let hit = de || us || uk, text;
-      if (de) text = de.m.name;
+      if (I18N.en) {
+        if (!de && us && uk && us.m !== uk.m) { hit = sys === 'uk' ? uk : us; text = sys ? enName(hit.m) : `US: ${us.m.us.name} · UK: ${uk.m.us.name} (US term)`; }
+        else text = enName(hit.m);
+      }
+      else if (de) text = de.m.name;
       else if (us && uk && us.m !== uk.m) { hit = sys === 'uk' ? uk : us; text = sys ? short(hit.m) : `${short(us.m)} (US) / ${short(uk.m)} (UK)`; }
       else text = short(hit.m);
       out.push(`<a href="../lexikon/#${hit.m.id}"><b>${esc(ab)}</b> ${esc(text)}</a>`);
@@ -646,21 +660,21 @@ function legend(page, pattern) {
 function render(noSave) {
   if (!rows.length) { openSetup(P); return; }
   document.body.classList.remove('setup'); colors = P.colors;
-  $('menu').textContent = 'Projekte'; $('menu').hidden = false;
+  $('menu').textContent = T('Projekte'); $('menu').hidden = false;
   const col = k => hexOk(colors[k] || '') ? colors[k] : ''; // nur #RRGGBB kommt in style
   const row = rows[r], page = row.pages[p];
   const used = [...new Set(page.map(c => c.c).filter(col))];
-  $('row').innerHTML = `Reihe ${esc(row.label)}` + used.map(k => `<span class="dot" style="background:${col(k)}" title="Farbe ${esc(k)}"></span>`).join('');
+  $('row').innerHTML = T('Reihe {n}', { n: esc(row.label) }) + used.map(k => `<span class="dot" style="background:${col(k)}" title="${esc(T('Farbe {k}', { k }))}"></span>`).join('');
   // Maschenzahl am Reihenende: aus der Anleitung („(18)“), sonst gezählt; Warnung, wenn beides nicht passt
   const end = row.target != null ? row.target : row.count;
-  $('part').hidden = !row.part; $('part').textContent = row.part ? `${row.part.name}${row.part.of > 1 ? ` ${row.part.n} von ${row.part.of}` : ''}` : '';
-  $('pos').innerHTML = `${r + 1} von ${rows.length}` + (row.pages.length > 1 ? ` · Seite ${p + 1}/${row.pages.length}` : '') + (end ? ` · <b>${end} M</b>` : '') +
-    (row.check ? ` <span class="warn" title="Die Maschen dieser Reihe ergeben ${row.count}, die Anleitung nennt ${row.target}.">⚠ gezählt ${row.count}</span>` : '') + ` · ${esc(P.name)}`;
+  $('part').hidden = !row.part; $('part').textContent = row.part ? `${row.part.name}${row.part.of > 1 ? ' ' + T('{n} von {m}', { n: row.part.n, m: row.part.of }) : ''}` : '';
+  $('pos').innerHTML = T('{n} von {m}', { n: r + 1, m: rows.length }) + (row.pages.length > 1 ? ' · ' + T('Seite {n}/{m}', { n: p + 1, m: row.pages.length }) : '') + (end ? ` · <b>${T('{n} M', { n: end })}</b>` : '') +
+    (row.check ? ` <span class="warn" title="${T('Die Maschen dieser Reihe ergeben {n}, die Anleitung nennt {m}.', { n: row.count, m: row.target })}">⚠ ${T('gezählt {n}', { n: row.count })}</span>` : '') + ` · <span translate="no">${esc(P.name)}</span>`;
   const d = done[r] || 0;
   $('chips').innerHTML = page.map((c, i) => {
     const cl = col(c.c), fade = p * MAX_CHIPS + i < d ? ' fade' : '', st = cl ? ` style="background:${cl};color:${textOn(cl)}"` : '';
     const long = c.s.length > 7 ? ' long' : '';
-    return c.n > 1 ? `<div class="chip count${fade}${long}" data-i="${i}"${st}><span${cl ? ' style="color:inherit"' : ''}>${c.n}×</span>${esc(c.s)}${SEAM}</div>` : `<div class="chip${fade}${long}" data-i="${i}"${st}>${esc(c.s)}${SEAM}</div>`;
+    return c.n > 1 ? `<div class="chip count${fade}${long}" data-i="${i}"${st}><span${cl ? ' style="color:inherit"' : ''}>${c.n}×</span>${esc(disp(c.s))}${SEAM}</div>` : `<div class="chip${fade}${long}" data-i="${i}"${st}>${esc(disp(c.s))}${SEAM}</div>`;
   }).join('');
   $('note').hidden = !row.notes.length; $('note').textContent = row.notes.join(' · ');
   $('abbr').innerHTML = legend(page, P.pattern);
@@ -669,7 +683,7 @@ function render(noSave) {
   $('tip').hidden = !!store.get('tipped', false); // nur bis zum ersten Tipp auf eine Kachel
   $('back').disabled = r === 0 && p === 0;
   const last = r === rows.length - 1 && p === row.pages.length - 1;
-  $('next').textContent = last ? 'Fertig ✓' : 'Weiter ›';
+  $('next').textContent = last ? T('Fertig ✓') : T('Weiter ›');
   $('next').disabled = last;
   if (!noSave) save();
 }
@@ -678,7 +692,7 @@ $('chips').onclick = async e => {
   const el = e.target.closest('.chip'); if (!el) return;
   store.set('tipped', true);
   const g = p * MAX_CHIPS + +el.dataset.i;
-  if (g < (done[r] || 0)) { if (!(await Dialog.confirm('Fortschritt hier zurücksetzen? Dieser und alle folgenden Schritte werden wieder aktiv.', { ok: 'Zurücksetzen' }))) return; done[r] = g; }
+  if (g < (done[r] || 0)) { if (!(await Dialog.confirm(T('Fortschritt hier zurücksetzen? Dieser und alle folgenden Schritte werden wieder aktiv.'), { ok: T('Zurücksetzen') }))) return; done[r] = g; }
   else done[r] = g + 1;
   render();
 };
@@ -690,10 +704,10 @@ function renderCheck() {
   const t = $('text').value, box = $('check');
   box.hidden = !t.trim(); if (box.hidden) return;
   const rs = parse(t), warn = rs.filter(x => x.check), sk = rs.skipped;
-  $('csum').innerHTML = rs.length ? `${rs.length} ${rs.length === 1 ? 'Reihe' : 'Reihen'} erkannt` + (warn.length ? ` · <span class="w">⚠ ${warn.length} ${warn.length === 1 ? 'passt' : 'passen'} nicht zur Maschenzahl</span>` : '') +
-    (sk.length ? ` · <span class="w">${sk.length} ${sk.length === 1 ? 'Zeile' : 'Zeilen'} ohne Maschen</span>` : '') : 'Noch keine Reihen erkannt';
-  const li = rs.slice(0, 300).map(x => `<li${x.check ? ' class="w"' : ''}><b>Reihe ${esc(x.label)}</b><span>${x.check ? `⚠ gezählt ${x.count}, Anleitung ${x.target}` : `${x.target != null ? x.target : x.count} M`} · ${esc(x.pages.flat().map(c => (c.n > 1 ? c.n + '× ' : '') + c.s).join(', '))}</span></li>`);
-  $('clist').innerHTML = li.join('') + sk.map(l => `<li class="w"><b>fehlt</b><span>${esc(l)}</span></li>`).join('') + (rs.length > 300 ? `<li><span>… und ${rs.length - 300} weitere</span></li>` : '');
+  $('csum').innerHTML = rs.length ? T(rs.length === 1 ? '1 Reihe erkannt' : '{n} Reihen erkannt', { n: rs.length }) + (warn.length ? ` · <span class="w">⚠ ${T(warn.length === 1 ? '1 passt nicht zur Maschenzahl' : '{n} passen nicht zur Maschenzahl', { n: warn.length })}</span>` : '') +
+    (sk.length ? ` · <span class="w">${T(sk.length === 1 ? '1 Zeile ohne Maschen' : '{n} Zeilen ohne Maschen', { n: sk.length })}</span>` : '') : T('Noch keine Reihen erkannt');
+  const li = rs.slice(0, 300).map(x => `<li${x.check ? ' class="w"' : ''}><b>${T('Reihe {n}', { n: esc(x.label) })}</b><span>${x.check ? '⚠ ' + T('gezählt {n}, Anleitung {m}', { n: x.count, m: x.target }) : T('{n} M', { n: x.target != null ? x.target : x.count })} · <span translate="no">${esc(x.pages.flat().map(c => (c.n > 1 ? c.n + '× ' : '') + disp(c.s)).join(', '))}</span></span></li>`);
+  $('clist').innerHTML = li.join('') + sk.map(l => `<li class="w"><b>${T('fehlt')}</b><span translate="no">${esc(l)}</span></li>`).join('') + (rs.length > 300 ? `<li><span>${T('… und {n} weitere', { n: rs.length - 300 })}</span></li>` : '');
 }
 let checkT;
 $('text').oninput = () => { renderColorPickers(); clearTimeout(checkT); checkT = setTimeout(renderCheck, 300); };
@@ -705,20 +719,20 @@ $('file').accept = FILE_ACCEPT;
 $('pick').onclick = () => $('file').click();
 $('file').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
-  $('pick').textContent = 'Datei wird gelesen …'; $('pick').disabled = true;
+  $('pick').textContent = T('Datei wird gelesen …'); $('pick').disabled = true;
   const t = await fileText(f);
-  $('pick').textContent = 'Externe Datei laden'; $('pick').disabled = false;
+  $('pick').textContent = T('Externe Datei laden'); $('pick').disabled = false;
   if (t.trim()) {
     // Datei wird ein neues Projekt, außer der Bereich ist gerade leer
-    if (E.id && $('text').value.trim()) { if (Projekte.full()) { Dialog.alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`); e.target.value = ''; return; } openSetup(null); }
+    if (E.id && $('text').value.trim()) { if (Projekte.full()) { Dialog.alert(FULL()); e.target.value = ''; return; } openSetup(null); }
     if (!$('pname').value.trim()) $('pname').value = f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
     $('text').value = t; renderColorPickers(); renderCheck();
   }
   else {
     const k = fileKind(f);
-    Dialog.alert(k === 'image' ? 'Aus einem Bild kann der Häkelhelfer keinen Text lesen. Markiere den Text im Foto und kopiere ihn (iPhone/iPad: Live Text, Android: Google Lens), dann hier einfügen. Oder öffne das Bild im Lineal.'
+    Dialog.alert(T(k === 'image' ? 'Aus einem Bild kann der Häkelhelfer keinen Text lesen. Markiere den Text im Foto und kopiere ihn (iPhone/iPad: Live Text, Android: Google Lens), dann hier einfügen. Oder öffne das Bild im Lineal.'
       : k === 'pdf' ? 'Diese PDF enthält keinen lesbaren Text (vermutlich eingescannt). Öffne sie im Lineal oder kopiere den Text per Live Text/Google Lens aus einem Screenshot.'
-      : k ? 'Aus dieser Datei (alte .doc) kann der Häkelhelfer keinen Text lesen. Bitte als .docx speichern oder den Text einfügen.' : 'Dieses Dateiformat wird nicht unterstützt.');
+      : k ? 'Aus dieser Datei (alte .doc) kann der Häkelhelfer keinen Text lesen. Bitte als .docx speichern oder den Text einfügen.' : 'Dieses Dateiformat wird nicht unterstützt.'));
   }
   e.target.value = '';
 };
@@ -730,7 +744,7 @@ async function loadLib() {
   lib = all.filter(it => it.text && it.text.trim()).sort((a, b) => b.fav - a.fav || b.added - a.added);
   $('lib').hidden = !all.length;
   const skip = all.length - lib.length;
-  $('libnote').textContent = skip ? `${skip} ${skip === 1 ? 'Muster ist ein Bild oder PDF' : 'Muster sind Bilder oder PDFs'} ohne Text und ${skip === 1 ? 'fehlt' : 'fehlen'} hier.` : '';
+  $('libnote').textContent = skip ? T(skip === 1 ? '1 Muster ist ein Bild oder PDF ohne Text und fehlt hier.' : '{n} Muster sind Bilder oder PDFs ohne Text und fehlen hier.', { n: skip }) : '';
   renderLib();
 }
 function renderLib() {
@@ -746,15 +760,15 @@ function renderLib() {
     const hay = [it.title, it.notes, ...(it.tags || []), it.text].join(' ').toLowerCase();
     return q.every(w => hay.includes(w));
   });
-  $('liblist').innerHTML = !lib.length ? '<small>Noch keine Textmuster in der Sammlung.</small>' : !vis.length ? '<small>Nichts gefunden.</small>' :
-    vis.map(it => `<button data-id="${esc(it.id)}"${it.text === now ? ' class="cur"' : ''}><b>${it.fav ? '★ ' : ''}${esc(it.title)}</b>` +
-      `<small>${it.text === now ? 'Aktiv · ' : pats.has(it.text) ? 'Projekt · ' : ''}${esc((it.tags || []).join(', ') || it.text.trim().split('\n')[0].slice(0, 60))}</small></button>`).join('');
+  $('liblist').innerHTML = !lib.length ? `<small>${T('Noch keine Textmuster in der Sammlung.')}</small>` : !vis.length ? `<small>${T('Nichts gefunden.')}</small>` :
+    vis.map(it => `<button data-id="${esc(it.id)}"${it.text === now ? ' class="cur"' : ''}><b translate="no">${it.fav ? '★ ' : ''}${esc(it.title)}</b>` +
+      `<small>${it.text === now ? T('Aktiv') + ' · ' : pats.has(it.text) ? T('Projekt') + ' · ' : ''}<span translate="no">${esc((it.tags || []).join(', ') || it.text.trim().split('\n')[0].slice(0, 60))}</span></small></button>`).join('');
 }
 $('libq').oninput = renderLib;
 $('libtags').onclick = e => { const b = e.target.closest('[data-tag]'); if (!b) return; const k = b.dataset.tag; libSel.has(k) ? libSel.delete(k) : libSel.add(k); renderLib(); };
 $('liblist').onclick = e => {
   const b = e.target.closest('[data-id]'), it = b && lib.find(x => x.id === b.dataset.id); if (!it) return;
-  if (!Projekte.open(it.text, it.title, it.colors)) return Dialog.alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`);
+  if (!Projekte.open(it.text, it.title, it.colors)) return Dialog.alert(FULL());
   load(Projekte.current()); render();
 };
 // Geänderte Anleitung (z. B. Tippfehler korrigiert): Häkchen gleich gebliebener Reihen und die Position bleiben
@@ -767,10 +781,10 @@ function keepProgress(x, t) {
 $('ok').onclick = () => {
   const t = $('text').value, name = $('pname').value.trim();
   const parsed = parse(t);
-  if (!parsed.length) return Dialog.alert('In diesem Text sind keine Maschen zu finden.');
+  if (!parsed.length) return Dialog.alert(T('In diesem Text sind keine Maschen zu finden.'));
   if (!E.id) {
     const x = Projekte.create(t, name, { ...E.colors, ...colorDefsIn(t) });
-    if (!x) return Dialog.alert(`Es sind schon ${Projekte.MAX} Projekte gespeichert. Bitte erst eins löschen.`);
+    if (!x) return Dialog.alert(FULL());
     load(x);
   } else {
     if (E.pattern !== t) { keepProgress(E, t); Object.assign(E.colors, colorDefsIn(t)); }
@@ -778,7 +792,7 @@ $('ok').onclick = () => {
   }
   render();
   const sk = parsed.skipped;
-  if (sk.length) Dialog.alert(`${sk.length === 1 ? 'Diese Zeile hat' : `Diese ${sk.length} Zeilen haben`} keine Maschen ergeben und ${sk.length === 1 ? 'fehlt' : 'fehlen'} beim Häkeln:\n\n${sk.slice(0, 6).join('\n')}${sk.length > 6 ? '\n…' : ''}\n\nBitte in der Anleitung prüfen.`);
+  if (sk.length) Dialog.alert(T(sk.length === 1 ? 'Diese Zeile hat keine Maschen ergeben und fehlt beim Häkeln:' : 'Diese {n} Zeilen haben keine Maschen ergeben und fehlen beim Häkeln:', { n: sk.length }) + `\n\n${sk.slice(0, 6).join('\n')}${sk.length > 6 ? '\n…' : ''}\n\n` + T('Bitte in der Anleitung prüfen.'));
 };
 
 // Andere Tabs oder Apps haben Projekte geändert: frisch laden, damit hier kein alter Stand zurückgeschrieben wird

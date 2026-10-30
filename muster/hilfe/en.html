@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Help – Isadody Pattern Collection</title>
+<meta name="theme-color" content="#FBF6EC">
+<link rel="stylesheet" href="../../shared/isadody.css">
+<link rel="stylesheet" href="../../shared/hilfe.css">
+<script src="../../shared/i18n.js"></script>
+</head>
+<body>
+<header>
+  <div class="title"><img class="logo" src="../../shared/logo.png" alt="Isadody"><div><h1>Help</h1><p>Pattern Collection</p></div></div>
+  <div class="tools"><a class="zurueck" href="../">‹ Back to app</a><span id="lang"></span></div>
+</header>
+<nav class="toc">
+  <a href="#ablegen">Adding patterns</a><a href="#ordnen">Organising</a><a href="#finden">Finding</a><a href="#nutzen">Viewing and using</a><a href="#sichern">Backup</a>
+</nav>
+
+<section>
+  <h2>What the Pattern Collection does</h2>
+  <p>Keep your crochet patterns in one place: photos, PDFs, Word files and texts. Tags, search and favourites help you find them again quickly.</p>
+</section>
+
+<section id="ablegen">
+  <h2>Adding patterns</h2>
+  <p>Tap <span class="k">+ Pattern</span> at the bottom right:</p>
+  <ul>
+    <li><b>Add file:</b> images, PDFs, Word (<code>.docx</code>, <code>.doc</code>), LibreOffice (<code>.odt</code>) and text files (<code>.txt</code>). You can pick several at once. On a computer you can also drag files onto the page.</li>
+    <li><b>Paste text:</b> enter a name and the pattern text, then <span class="k">Save</span>. Without a name, the first line becomes the name.</li>
+  </ul>
+  <p>The app takes the name from the file name. You can change it afterwards.</p>
+</section>
+
+<section id="ordnen">
+  <h2>Organising</h2>
+  <p>Tap a pattern to open it. There you can:</p>
+  <ul>
+    <li>change the <b>name</b>,</li>
+    <li>add <b>tags</b>, e.g. “Amigurumi” or “Gift”: type and confirm with Enter or a comma. Tags you already use are suggested. × removes a tag.</li>
+    <li>keep <b>notes</b>, e.g. yarn, hook size or source,</li>
+    <li>mark a pattern with <span class="k">☆ Favourite</span>.</li>
+  </ul>
+  <p>Patterns from the <a href="../../grid/">Grid Maker</a> also have <span class="k">Open in Grid Maker</span>: edit the chart there, and <span class="k">Update in collection</span> then changes exactly this pattern.</p>
+  <p>Changes are saved straight away. <span class="k">‹ Back</span> (or your phone’s back button) returns to the overview.</p>
+</section>
+
+<section id="finden">
+  <h2>Finding</h2>
+  <ul>
+    <li><b>Search:</b> finds names, tags, notes and also the text inside text, Word and ODT files. With several words, all must appear.</li>
+    <li><b>Tags:</b> tap tags in the bar to filter. With several tags, all must match. The number shows how many patterns have the tag.</li>
+    <li><span class="k">★ Favourites</span> shows only your favourites.</li>
+    <li><span class="k">Newest ⇅</span> switches the sort order between newest first and A–Z.</li>
+  </ul>
+</section>
+
+<section id="nutzen">
+  <h2>Viewing and using</h2>
+  <ul>
+    <li><b>Images</b> are shown large, <span class="k">Open image</span> shows them in a separate window.</li>
+    <li><b>PDFs</b> appear directly in the app on a computer, on a phone via <span class="k">Open PDF</span>.</li>
+    <li><b>Texts, Word and ODT</b> are shown as text. Old <code>.doc</code> files are only stored; please download them to view.</li>
+    <li><span class="k">Open in Ruler</span> (for images and PDFs) shows the pattern in the <a href="../../lineal/">Ruler</a>, which marks the current row and counts along.</li>
+    <li><span class="k">Open in Crochet Helper</span> (for patterns with text, including PDFs with text) starts the pattern as a project in the <a href="../../anleitung/">Crochet Helper</a>. If it is already a project there, you continue with your progress. In the Crochet Helper you can also pick text patterns directly under “Projects”.</li>
+    <li><span class="k">Download</span> saves the file back to your device, <span class="k">Delete</span> removes the pattern after asking.</li>
+  </ul>
+</section>
+
+<section id="sichern">
+  <h2>Backup</h2>
+  <p>Patterns are stored only in this browser on this device. So nothing gets lost when you clear the browser storage or change devices:</p>
+  <ul>
+    <li>The backup icon at the top right (arrow down) → <b>Back up everything (all apps)</b> saves all patterns plus projects, counters and grid in one file (<code>isadody-backup-date.json</code>). The same works on the <a href="../../">start page</a>.</li>
+    <li><b>Restore backup</b> brings everything back from such a file, e.g. on a new device. What is already there stays; for projects and counters the most recently used state wins, for patterns the most recently changed version. The Crochet Helper has room for 10 projects; anything that doesn’t fit is listed in the message. Older files (<code>muster-sicherung-…</code>) work too.</li>
+    <li>The app checks the file and only takes what it knows. Still, only restore your own backups.</li>
+  </ul>
+  <p class="note">Please do not share purchased patterns, not even as a backup file.</p>
+</section>
+
+<a class="btn back" href="../">Back to the Pattern Collection</a>
+<script>document.getElementById('lang').append(I18N.switcher());</script>
+</body>
+</html>

@@ -72,13 +72,13 @@ const Sicherung = (() => {
   async function keep(blob, name) {
     if (window.showSaveFilePicker && window.top === window) {
       let h;
-      try { h = await showSaveFilePicker({ suggestedName: name, types: [{ description: 'Sicherung', accept: { 'application/json': ['.json'] } }] }); }
+      try { h = await showSaveFilePicker({ suggestedName: name, types: [{ description: T('Sicherung'), accept: { 'application/json': ['.json'] } }] }); }
       catch (e) { if (e && e.name === 'AbortError') return false; h = null; }
       if (h) { const w = await h.createWritable(); await w.write(blob); await w.close(); return true; }
     }
     download(blob, name);
     await new Promise(ok => setTimeout(ok, 800)); // Download-Hinweis des Browsers zuerst zeigen
-    return Dialog.confirm(`Ist die Datei „${name}“ angekommen? Schau in „Downloads“ bzw. „Dateien“ nach.`, { title: 'Sicherung gespeichert?', ok: 'Ja, gespeichert', cancel: 'Nein' });
+    return Dialog.confirm(T('Ist die Datei „{name}“ angekommen? Schau in „Downloads“ bzw. „Dateien“ nach.', { name }), { title: T('Sicherung gespeichert?'), ok: T('Ja, gespeichert'), cancel: T('Nein') });
   }
   // Alles sichern; merkt sich den Zeitpunkt für die Erinnerung nur bei Erfolg. true/false
   async function save() {
@@ -91,7 +91,7 @@ const Sicherung = (() => {
     for (const it of items) { const o = { ...it }; delete o.thumb; if (it.blob) o.blob = await b64(it.blob); parts.push((parts.length > 1 ? ',' : '') + JSON.stringify(o)); }
     parts.push(']}');
     const d = new Date().toISOString().slice(0, 10);
-    const ok = await keep(new Blob(parts, { type: 'application/json' }), `isadody-sicherung-${d}.json`);
+    const ok = await keep(new Blob(parts, { type: 'application/json' }), T('isadody-sicherung-{d}.json', { d }));
     if (ok) st.set('last', Date.now());
     return ok;
   }
@@ -110,8 +110,8 @@ const Sicherung = (() => {
   // Muster: die zuletzt geänderte Fassung. Neue Projekte nur bis zur Grenze von Projekte.MAX (die zuletzt benutzten zuerst).
   // Ergebnis { ok, text } für eine kurze Meldung
   async function restore(file) {
-    let data; try { data = JSON.parse(await file.text()); } catch { return { ok: false, text: 'Datei ist keine Sicherung' }; }
-    if (!obj(data) || !['isadody', 'isadody-muster'].includes(data.app)) return { ok: false, text: 'Datei ist keine Isadody-Sicherung' };
+    let data; try { data = JSON.parse(await file.text()); } catch { return { ok: false, text: T('Datei ist keine Sicherung') }; }
+    if (!obj(data) || !['isadody', 'isadody-muster'].includes(data.app)) return { ok: false, text: T('Datei ist keine Isadody-Sicherung') };
     const parts = [], notes = [];
     if (data.app === 'isadody' && obj(data.local)) {
       const L = data.local, a = Store('anleitung'), z = Store('zaehler'), g = Store('grid');
@@ -124,11 +124,11 @@ const Sicherung = (() => {
           if (i >= 0) { if (p.used > (list[i].used || 0)) { list[i] = p; n++; } }
           else if (list.length < Projekte.MAX) { list.push(p); n++; } else over++;
         }
-        if (n && !a.set('projects', list)) return { ok: false, text: 'Speicher voll: Projekte nicht eingespielt. Bitte alte Projekte oder Muster löschen.' };
+        if (n && !a.set('projects', list)) return { ok: false, text: T('Speicher voll: Projekte nicht eingespielt. Bitte alte Projekte oder Muster löschen.') };
         const cur = json(L['anleitung.current']);
         if (!a.get('current', '') && typeof cur === 'string' && list.some(x => x.id === cur)) a.set('current', cur);
-        if (n) parts.push(`${n} ${n === 1 ? 'Projekt' : 'Projekte'}`);
-        if (over) notes.push(`${over} ${over === 1 ? 'Projekt' : 'Projekte'} nicht übernommen: Im Häkelhelfer ist Platz für ${Projekte.MAX}. Dort erst Projekte löschen, dann noch einmal einspielen.`);
+        if (n) parts.push(n === 1 ? T('1 Projekt') : T('{n} Projekte', { n }));
+        if (over) notes.push(T('{p} nicht übernommen: Im Häkelhelfer ist Platz für {max}. Dort erst Projekte löschen, dann noch einmal einspielen.', { p: over === 1 ? T('1 Projekt') : T('{n} Projekte', { n: over }), max: Projekte.MAX }));
       }
       // Zähler
       const inZ = json(L['zaehler.counters']);
@@ -139,15 +139,15 @@ const Sicherung = (() => {
           if (!cs[k] || c.used > (cs[k].used || 0)) { cs[k] = c; n++; }
         }
         z.set('counters', cs);
-        if (n) parts.push(`${n} Zähler`);
+        if (n) parts.push(n === 1 ? T('1 Zähler') : T('{n} Zähler', { n }));
       }
       // Grid-Ersteller: nur, wenn hier noch kein Raster liegt
       const gs = cleanGrid(json(L['grid.state']));
-      if (gs && g.get('state', null)) notes.push('Grid nicht übernommen: Hier liegt schon ein Raster.');
+      if (gs && g.get('state', null)) notes.push(T('Grid nicht übernommen: Hier liegt schon ein Raster.'));
       else if (gs) {
         g.set('state', gs); g.set('src', cleanSrc(json(L['grid.src'])));
         const mid = json(L['grid.mid']); if (typeof mid === 'string' && ID.test(mid)) g.set('mid', mid);
-        parts.push('Grid');
+        parts.push(T('Grid'));
       }
       // Lineal: Stand je Muster, der zuletzt benutzte gewinnt
       const inL = json(L['lineal.s']);
@@ -159,7 +159,7 @@ const Sicherung = (() => {
           const c = { y: num(v.y, 0, 1, 0), h: num(v.h, 0.01, 0.5, 0.06), row: int(v.row, 1, 1e5, 1), zoom: num(v.zoom, 1, 4, 1), used: Number.isFinite(v.used) ? v.used : 0 };
           if (!have[k] || c.used > (have[k].used || 0)) { have[k] = c; n++; }
         }
-        if (n) { ls.set('s', have); parts.push(`${n} Lineal-${n === 1 ? 'Stand' : 'Stände'}`); }
+        if (n) { ls.set('s', have); parts.push(n === 1 ? T('1 Lineal-Stand') : T('{n} Lineal-Stände', { n })); }
       }
       // Stoppuhr: Zeit je Projekt, der zuletzt benutzte Stand gewinnt (höchstens 50 Projekte)
       const inS = json(L['stoppuhr.t']);
@@ -169,7 +169,7 @@ const Sicherung = (() => {
           const c = cleanTimer(v); if (!ID.test(k) || !c || Object.keys(have).length >= 50 && !have[k]) continue;
           if (!have[k] || c.used > (have[k].used || 0)) { have[k] = c; n++; }
         }
-        if (n) { su.set('t', have); parts.push(`${n} Stoppuhr-${n === 1 ? 'Zeit' : 'Zeiten'}`); }
+        if (n) { su.set('t', have); parts.push(n === 1 ? T('1 Stoppuhr-Zeit') : T('{n} Stoppuhr-Zeiten', { n })); }
       }
       // Lexikon: Favoriten zusammenführen (nur Einträge wie „abn“, höchstens 200)
       const inF = json(L['lexikon.fav']);
@@ -177,7 +177,7 @@ const Sicherung = (() => {
         const lx = Store('lexikon'), favs = lx.get('fav', []), have = new Set(Array.isArray(favs) ? favs.filter(f => typeof f === 'string' && ID.test(f)) : []), n0 = have.size;
         for (const f of inF) if (typeof f === 'string' && /^[a-z0-9]{1,32}$/.test(f) && have.size < 200) have.add(f);
         lx.set('fav', [...have]);
-        if (have.size > n0) parts.push(`${have.size - n0} Lexikon-Favoriten`);
+        if (have.size > n0) parts.push(T('{n} Lexikon-Favoriten', { n: have.size - n0 }));
       }
     }
     // Mustersammlung
@@ -191,13 +191,13 @@ const Sicherung = (() => {
           if (old && when(it) <= when(old)) { same++; continue; }
           if (typeof it.blob === 'string') { it.blob = unb64(it.blob, it.mime); if (it.kind === 'image') it.thumb = await thumbOf(it.blob); }
           await MusterDB.put(old ? { ...old, ...it } : it); old ? upd++ : n++;
-        } catch { return { ok: false, text: `Speicher voll: ${n + upd} Muster eingespielt, der Rest fehlt` }; }
+        } catch { return { ok: false, text: T('Speicher voll: {n} Muster eingespielt, der Rest fehlt', { n: n + upd }) }; }
       }
-      if (n) parts.push(`${n} Muster`);
-      if (upd) parts.push(`${upd} Muster aktualisiert`);
-      if (same && !n && !upd) parts.push('Muster schon vorhanden');
+      if (n) parts.push(T('{n} Muster', { n }));
+      if (upd) parts.push(T('{n} Muster aktualisiert', { n: upd }));
+      if (same && !n && !upd) parts.push(T('Muster schon vorhanden'));
     }
-    const text = (parts.length ? `Eingespielt: ${parts.join(', ')}` : 'Nichts Neues in der Sicherung') + (notes.length ? '\n\n' + notes.join('\n') : '');
+    const text = (parts.length ? T('Eingespielt: {list}', { list: parts.join(', ') }) : T('Nichts Neues in der Sicherung')) + (notes.length ? '\n\n' + notes.join('\n') : '');
     return { ok: true, text };
   }
   return { save, restore, status: () => Erinnerung.status(), cleanItem, cleanGrid };

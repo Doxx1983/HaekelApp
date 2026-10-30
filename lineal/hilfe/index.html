@@ -7,11 +7,12 @@
 <meta name="theme-color" content="#FBF6EC">
 <link rel="stylesheet" href="../../shared/isadody.css">
 <link rel="stylesheet" href="../../shared/hilfe.css">
+<script src="../../shared/i18n.js"></script>
 </head>
 <body>
 <header>
   <div class="title"><img class="logo" src="../../shared/logo.png" alt="Isadody"><div><h1>Hilfe</h1><p>Lineal</p></div></div>
-  <a class="zurueck" href="../">‹ Zur App</a>
+  <div class="tools"><a class="zurueck" href="../">‹ Zur App</a><span id="lang"></span></div>
 </header>
 <nav class="toc">
   <a href="#oeffnen">Öffnen</a><a href="#lineal">Lineal</a><a href="#ansicht">Ansicht</a><a href="#speicher">Speichern</a>
@@ -53,5 +54,6 @@
 </section>
 
 <a class="btn back" href="../">Zurück zum Lineal</a>
+<script>document.getElementById('lang').append(I18N.switcher());</script>
 </body>
 </html>

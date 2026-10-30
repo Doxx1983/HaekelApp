@@ -8,6 +8,9 @@
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../shared/icon-180.png">
 <link rel="stylesheet" href="../shared/isadody.css">
+<script src="../shared/i18n.js"></script>
+<script src="../shared/en.js"></script>
+<script src="en.js"></script>
 <script src="../shared/store.js"></script>
 <script src="../shared/dialog.js"></script>
 <script src="../shared/erinnerung.js"></script>
@@ -57,7 +60,7 @@
 </head>
 <body class="choose">
 <header>
-  <div class="title"><a class="home" href="../" aria-label="Alle Apps" title="Alle Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/></svg></a><img class="logo" src="../shared/logo.png" alt="Isadody"><div><button id="row" type="button">Lineal</button><div id="sub">Anleitung als Bild oder PDF</div></div></div>
+  <div class="title"><a class="home" href="../" aria-label="Alle Apps" title="Alle Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/></svg></a><img class="logo" src="../shared/logo.png" alt="Isadody"><div><button id="row" type="button">Lineal</button><div id="sub" translate="no">Anleitung als Bild oder PDF</div></div></div>
   <div class="tools"><a class="help" href="hilfe/" aria-label="Hilfe" title="Hilfe">?</a><button class="small" id="menu" hidden>Muster</button></div>
 </header>
 <section id="choose">
@@ -92,7 +95,7 @@ function save() {
 const urls = [];
 async function showChoose() {
   document.body.classList.add('choose'); $('menu').hidden = true; it = null;
-  $('row').textContent = 'Lineal'; $('sub').textContent = 'Anleitung als Bild oder PDF';
+  $('row').textContent = T('Lineal'); $('sub').textContent = T('Anleitung als Bild oder PDF');
   urls.splice(0).forEach(u => URL.revokeObjectURL(u));
   let items = []; try { items = (await MusterDB.all()).filter(x => (x.kind === 'pdf' || x.kind === 'image') && x.blob); } catch {}
   const st = states();
@@ -100,7 +103,7 @@ async function showChoose() {
   $('list').innerHTML = items.length ? items.map(x => {
     let bg = ''; if (x.kind === 'image') { const u = URL.createObjectURL(x.thumb || x.blob); urls.push(u); bg = ` style="background-image:url('${u}')"`; }
     const s = st[x.id];
-    return `<button data-id="${esc(x.id)}"><span class="th"${bg}>${x.kind === 'pdf' ? 'PDF' : ''}</span>${esc(x.title)}<small>${s ? `Reihe ${s.row}` : 'neu'}</small></button>`;
+    return `<button data-id="${esc(x.id)}"><span class="th"${bg}>${x.kind === 'pdf' ? 'PDF' : ''}</span><span translate="no">${esc(x.title)}</span><small>${s ? T('Reihe {n}', { n: s.row }) : T('neu')}</small></button>`;
   }).join('') : '<p>Noch keine Bilder oder PDFs in der Sammlung.</p>';
 }
 $('list').onclick = e => { const b = e.target.closest('[data-id]'); if (b) location.hash = encodeURIComponent(b.dataset.id); };
@@ -166,7 +169,7 @@ function scrollToBand(smooth = true) {
   const v = $('view'), top = parseFloat($('band').style.top) || 0;
   v.scrollTo({ top: Math.max(0, top - v.clientHeight * 0.3), behavior: smooth ? 'smooth' : 'auto' });
 }
-function showRow() { $('row').textContent = `Reihe ${S.row}`; $('up').disabled = S.row <= 1 && S.y <= 0; }
+function showRow() { $('row').textContent = T('Reihe {n}', { n: S.row }); $('up').disabled = S.row <= 1 && S.y <= 0; }
 // Lineal um seine eigene Höhe verschieben, Reihe mitzählen
 function step(d) {
   const H = $('doc').offsetHeight, W = $('doc').offsetWidth; if (!H) return;
@@ -179,7 +182,7 @@ $('up').onclick = () => step(-1);
 // Reihe von Hand setzen
 $('row').onclick = async () => {
   if (!it) return;
-  const v = await Dialog.prompt('In welcher Reihe bist du?', String(S.row), { ok: 'Übernehmen' });
+  const v = await Dialog.prompt(T('In welcher Reihe bist du?'), String(S.row), { ok: T('Übernehmen') });
   if (v !== null && /^\d{1,5}$/.test(v.trim()) && +v > 0) { S.row = +v; showRow(); save(); }
 };
 // Lineal ziehen; Tipp auf die Anleitung setzt es an diese Stelle

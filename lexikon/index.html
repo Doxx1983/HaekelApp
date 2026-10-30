@@ -6,10 +6,14 @@
 <title>Isadody Häkellexikon</title>
 <meta name="theme-color" content="#FBF6EC">
 <link rel="stylesheet" href="../shared/isadody.css">
+<script src="../shared/i18n.js"></script>
+<script src="../shared/en.js"></script>
+<script src="en.js"></script>
 <script src="../shared/store.js"></script>
 <script src="../shared/dialog.js"></script>
 <script src="../shared/erinnerung.js"></script>
 <script src="../shared/maschen.js"></script>
+<script src="../shared/maschen-en.js"></script>
 <style>
   body { padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom); max-width:760px; margin:0 auto; }
   header { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 0 4px; }
@@ -77,25 +81,27 @@
 <section id="begriffe">
   <div id="bar"><input id="q" type="search" placeholder="Masche oder Kürzel suchen" aria-label="Suchen: Masche oder Kürzel, z. B. sc2tog, Zun, BLO" autocomplete="off"></div>
   <div id="filters"></div>
-  <div id="hint"></div>
-  <div id="list"></div>
+  <div id="hint" translate="no"></div>
+  <div id="list" translate="no"></div>
   <div id="empty">Nichts gefunden. Probier ein anderes Wort oder nimm Filter heraus.</div>
 </section>
 
 <section id="conv">
   <div class="box">
     <h2>US oder UK?</h2>
-    <p>Englische Anleitungen nutzen zwei Schreibweisen. Dieselben Kürzel bedeuten dort verschiedene Maschen: <b>„dc“ ist in US ein Stäbchen, in UK eine feste Masche.</b></p>
-    <p>So erkennst du sie: Kommt <b>sc</b> vor, ist es US (UK kennt kein sc). <b>htr</b>, <b>ss</b> oder „tension“ deuten auf UK. Im Zweifel steht es am Anfang der Anleitung.</p>
+    <p data-i18n>Englische Anleitungen nutzen zwei Schreibweisen. Dieselben Kürzel bedeuten dort verschiedene Maschen: <b>„dc“ ist in US ein Stäbchen, in UK eine feste Masche.</b></p>
+    <p data-i18n>So erkennst du sie: Kommt <b>sc</b> vor, ist es US (UK kennt kein sc). <b>htr</b>, <b>ss</b> oder „tension“ deuten auf UK. Im Zweifel steht es am Anfang der Anleitung.</p>
   </div>
-  <div class="scroll"><table id="ctab"></table></div>
+  <div class="scroll"><table id="ctab" translate="no"></table></div>
   <p class="meta"><span>Hervorgehoben: US und UK sagen hier Verschiedenes.</span></p>
 </section>
 
 <script>
 const $ = id => document.getElementById(id);
 const store = Store('lexikon');
-const STUFEN = ['', 'Einstieg', 'Fortgeschritten', 'Profi'];
+// Englisch: Namen, Erklärungen und Bereiche aus shared/maschen-en.js
+if (I18N.en) { maschenEn(MASCHEN); Object.assign(KATEGORIEN, KATEGORIEN_EN); }
+const STUFEN = ['', T('Einstieg'), T('Fortgeschritten'), T('Profi')];
 const STAR = '<svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.8-4.5 4.2 1.1 6-5.4-2.9-5.4 2.9 1.1-6-4.5-4.2 6.1-.8z"/></svg>';
 let favs = new Set(store.get('fav', [])), kat = store.get('kat', ''), stufe = store.get('stufe', 0), favOnly = store.get('favOnly', false);
 const open = new Set();
@@ -111,7 +117,7 @@ const abbrs = m => [...m.de, ...m.us.ab, ...m.uk.ab, ...(m.alias || [])];
 function rank(m, q) {
   const n = norm(q);
   if (abbrs(m).some(a => norm(a) === n)) return 0;
-  const names = [m.name, m.us.name, m.uk.name];
+  const names = [m.name, m.us.name, m.uk.name, ...(m.deName ? [m.deName] : [])];
   if (names.some(a => norm(a) === n)) return 1;
   if ([...abbrs(m), ...names].some(a => norm(a).startsWith(n))) return 2;
   if (names.some(a => norm(a).includes(n))) return 3;
@@ -124,7 +130,8 @@ function ambiguity(q) {
   const n = norm(q); if (!n) return '';
   const us = MASCHEN.find(m => m.us.ab.some(a => norm(a) === n)), uk = MASCHEN.find(m => m.uk.ab.some(a => norm(a) === n));
   if (!us || !uk || us === uk) return '';
-  return `<b>„${esc(q.trim())}“</b> heißt in US-Anleitungen <b>${esc(us.name)}</b>, in UK-Anleitungen <b>${esc(uk.name)}</b>. Die Umrechnung hilft beim Erkennen.`;
+  const u = I18N.en ? `${us.us.name} (= UK ${us.uk.name})` : us.name, k = I18N.en ? `${uk.uk.name} (= US ${uk.us.name})` : uk.name;
+  return T('<b>„{q}“</b> heißt in US-Anleitungen <b>{us}</b>, in UK-Anleitungen <b>{uk}</b>. Die Umrechnung hilft beim Erkennen.', { q: esc(q.trim()), us: esc(u), uk: esc(k) });
 }
 
 function badges(m) {
@@ -139,12 +146,12 @@ function entry(m) {
   const fav = favs.has(m.id);
   const steps = m.schritte ? `<ol>${m.schritte.map(s => `<li>${esc(s)}</li>`).join('')}</ol>` : '';
   return `<article class="e${open.has(m.id) ? ' open' : ''}" id="${m.id}">
-    <button class="star${fav ? ' on' : ''}" data-fav="${m.id}" aria-label="${fav ? 'Aus Favoriten nehmen' : 'Zu Favoriten'}" aria-pressed="${fav}">${STAR}</button>
+    <button class="star${fav ? ' on' : ''}" data-fav="${m.id}" aria-label="${fav ? T('Aus Favoriten nehmen') : T('Zu Favoriten')}" aria-pressed="${fav}">${STAR}</button>
     <button class="hd" data-open="${m.id}" aria-expanded="${open.has(m.id)}"><div><h2>${esc(m.name)}</h2><div class="ab">${badges(m)}</div></div></button>
     <div class="bd">
       <p>${esc(m.text)}</p>${steps}
       <table>
-        ${m.de.length ? `<tr><td>DE</td><td>${esc(m.name)} (${esc(m.de.join(', '))})</td></tr>` : ''}
+        ${m.de.length ? `<tr><td>DE</td><td>${esc(m.deName || m.name)} (${esc(m.de.join(', '))})</td></tr>` : ''}
         <tr><td>US</td><td>${esc(m.us.name)}${m.us.ab.length ? ` (${esc(m.us.ab.join(', '))})` : ''}</td></tr>
         <tr><td>UK</td><td>${esc(m.uk.name)}${m.uk.ab.length ? ` (${esc(m.uk.ab.join(', '))})` : ''}</td></tr>
       </table>
@@ -159,21 +166,21 @@ function render() {
   let rows = MASCHEN.map((m, i) => ({ m, i, r: q ? rank(m, q) : 0 })).filter(x => x.r >= 0);
   rows = rows.filter(({ m }) => (!kat || m.kat === kat) && (!stufe || m.stufe === stufe) && (!favOnly || favs.has(m.id)));
   rows.sort((a, b) => a.r - b.r || a.i - b.i);
-  $('filters').innerHTML = `<button class="pill${favOnly ? ' on' : ''}" data-favonly>★ Favoriten${favs.size ? ` (${favs.size})` : ''}</button>` +
+  $('filters').innerHTML = `<button class="pill${favOnly ? ' on' : ''}" data-favonly>${T('★ Favoriten')}${favs.size ? ` (${favs.size})` : ''}</button>` +
     Object.entries(KATEGORIEN).map(([k, t]) => `<button class="pill${kat === k ? ' on' : ''}" data-kat="${k}">${t}</button>`).join('') +
     [1, 2, 3].map(s => `<button class="pill${stufe === s ? ' on' : ''}" data-stufe="${s}">${STUFEN[s]}</button>`).join('');
   const amb = ambiguity(q);
   $('hint').innerHTML = amb; $('hint').classList.toggle('on', !!amb);
   $('list').innerHTML = rows.map(x => entry(x.m)).join('');
   $('empty').style.display = rows.length ? 'none' : 'block';
-  $('count').textContent = rows.length === MASCHEN.length ? `${MASCHEN.length} Begriffe` : `${rows.length} von ${MASCHEN.length}`;
+  $('count').textContent = rows.length === MASCHEN.length ? T('{n} Begriffe', { n: MASCHEN.length }) : T('{n} von {m}', { n: rows.length, m: MASCHEN.length });
 }
 
 function renderConv() {
   const cell = (name, ab) => `<b>${esc(ab.length ? ab.join(', ') : '–')}</b><small>${esc(name)}</small>`;
-  $('ctab').innerHTML = '<tr><th>US</th><th>UK</th><th>Deutsch</th></tr>' + MASCHEN.filter(m => m.umr).map(m =>
+  $('ctab').innerHTML = `<tr><th>US</th><th>UK</th><th>${T('Deutsch')}</th></tr>` + MASCHEN.filter(m => m.umr).map(m =>
     `<tr class="${differs(m) ? 'diff' : ''}"><td>${cell(m.us.name, m.us.ab)}</td><td>${cell(m.uk.name, m.uk.ab)}</td>` +
-    `<td><a href="#${m.id}" data-go="${m.id}">${cell(m.name, m.de)}</a></td></tr>`).join('');
+    `<td><a href="#${m.id}" data-go="${m.id}">${cell(m.deName || m.name, m.de)}</a></td></tr>`).join('');
 }
 
 function tab(t) {
