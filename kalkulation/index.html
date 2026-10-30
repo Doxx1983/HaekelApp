@@ -65,7 +65,6 @@
   .tot { display:flex; justify-content:space-between; font-weight:700; font-variant-numeric:tabular-nums; }
 
   /* Preis */
-  #tax-note { background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:8px 12px; }
   #pcalc { background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:10px 12px; font-variant-numeric:tabular-nums; }
   #pcalc div { display:flex; justify-content:space-between; gap:10px; }
   #pcalc .mid { font-weight:700; border-top:1px solid var(--line); margin-top:4px; padding-top:4px; }
@@ -120,7 +119,6 @@
       <label class="rate"><input id="marge" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Gewinn in Prozent"> % Gewinn auf die Selbstkosten</label>
       <div class="lbl">Umsatzsteuer</div>
       <div class="opts" id="tax"></div>
-      <p id="tax-note"></p>
     </section>
     <section class="card">
       <h2>Preis</h2>
@@ -261,9 +259,6 @@ function render() {
   $('sub').textContent = p.name;
   renderList();
   opts($('mstep'), MSTEPS, prefs.ms, 'ms'); opts($('mode'), MODES, prefs.up, 'up'); opts($('tax'), TAXES, prefs.tax, 'tax');
-  $('tax-note').textContent = prefs.tax
-    ? T('Der Endpreis enthält {p} % Umsatzsteuer.', { p: prefs.tax })
-    : T('Der Endpreis enthält keine Umsatzsteuer.');
   renderItems();
   $('saved').hidden = !x.price;
   if (x.price) {

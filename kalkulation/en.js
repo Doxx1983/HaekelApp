@@ -58,8 +58,6 @@ I18N.add({
   'Preis je Stück': 'Price per piece',
   'Betrag': 'Amount',
   'Posten löschen': 'Delete item',
-  'Der Endpreis enthält {p} % Umsatzsteuer.': 'The final price includes {p} % VAT.',
-  'Der Endpreis enthält keine Umsatzsteuer.': 'The final price includes no VAT.',
   'Arbeit {v}': 'Labour {v}',
   'Material {v}': 'Materials {v}',
   'Nebenkosten {v}': 'Extra costs {v}',
