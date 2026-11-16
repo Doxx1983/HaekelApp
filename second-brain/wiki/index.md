@@ -1,3 +1,3 @@
 # Index
 
-_Wird mit `python3 tools/brain.py index` erzeugt. Nicht von Hand ändern._
+_Wird mit `python tools/brain.py index` erzeugt. Nicht von Hand ändern._

@@ -12,15 +12,15 @@ Du sammelst Quellen in `raw/`, Claude pflegt das Wiki in `wiki/`. Regeln stehen 
    (`git clone` des neuen Repos, Dateien hineinkopieren, `git add . && git commit && git push`).
 4. **Obsidian installieren** (obsidian.md, kostenlos) → „Open folder as vault" → Repo-Ordner wählen.
    Optional: Plugin „Obsidian Git" für Sync, Web Clipper (Browser-Erweiterung) für Importe.
-5. **Platte verschlüsseln** (Windows: BitLocker, Mac: FileVault, Linux: LUKS) und Passwortmanager (Bitwarden) nutzen.
-6. **Python 3 prüfen:** `python3 --version` (nur Standardbibliothek nötig).
-7. **Claude Code im Ordner starten** (`claude` im Repo-Ordner). Es liest `CLAUDE.md` automatisch.
+5. **Platte verschlüsseln:** BitLocker (Windows Pro) bzw. Geräteverschlüsselung (Home) in den Windows-Einstellungen prüfen. Passwortmanager (z. B. Bitwarden) nutzen.
+6. **Python 3 installieren** (python.org oder Microsoft Store) und in PowerShell prüfen: `python --version` (nur Standardbibliothek nötig). **Git für Windows** (git-scm.com) installieren.
+7. **Claude Code im Ordner starten** (PowerShell im Repo-Ordner: `claude`). Es liest `CLAUDE.md` automatisch.
 
 ### B. Erste Befüllung (Woche 1)
-1. Ein **Themengebiet** wählen (z. B. Häkeltechniken).
-2. 10–20 Quellen als Markdown in `raw/` legen (Web Clipper, `pdftotext`, Transkripte).
-   Sensibles gehört **nicht** hierher, sondern nach `raw-sensibel/` (bleibt außerhalb von Git).
-3. Claude sagen: **„Ingest alle neuen Quellen in raw/"**. Es nutzt `python3 tools/brain.py status`.
+1. Mit **einem** Bereich starten (`haekeln`, `isadody`, `ki`, `privat`), die anderen folgen später.
+2. 10–20 Quellen in `raw/` legen: Webartikel (Web Clipper), PDFs/Bücher, YouTube-/Podcast-Transkripte, eigene Notizen und Fotos.
+   **Kundendaten** gehören nicht hierher (bei Bedarf `raw-sensibel/`, bleibt außerhalb von Git).
+3. Claude sagen: **„Ingest alle neuen Quellen in raw/"**. Es nutzt `python tools/brain.py status`.
 4. Ergebnis in Obsidian prüfen (Stichproben: stimmt die Zusammenfassung? Quellen verlinkt?).
 5. `CLAUDE.md` nachschärfen, wenn Stil oder Struktur nicht passen.
 
@@ -28,8 +28,8 @@ Du sammelst Quellen in `raw/`, Claude pflegt das Wiki in `wiki/`. Regeln stehen 
 - **Wöchentlich:** neue Quellen sammeln → „Ingest neue Quellen".
 - **Fragen stellen:** „Frage: …" → Claude liest Index, dann Seiten, antwortet mit Links.
   Gute Antworten ins Wiki legen lassen („als Ausgabe speichern").
-- **Monatlich:** „Lint" → `python3 tools/brain.py lint` plus inhaltliche Prüfung.
-- **Vor jedem Push:** `git status` ansehen, nichts Sensibles im Diff? Push nur nach deiner Freigabe.
+- **Monatlich:** „Lint" → `python tools/brain.py lint` plus inhaltliche Prüfung.
+- **Vor jedem Push:** `git status` ansehen, nichts Sensibles im Diff? Claude fragt vor Commit und Push immer nach.
 - **Backup (3-2-1):** lokal + GitHub privat + verschlüsselte Kopie extern (z. B. `restic`). Wiederherstellung einmal testen.
 
 ### D. Wachstum
@@ -41,10 +41,10 @@ Du sammelst Quellen in `raw/`, Claude pflegt das Wiki in `wiki/`. Regeln stehen 
 
 ## Befehle
 ```
-python3 tools/brain.py index         # Index erzeugen
-python3 tools/brain.py lint          # Links/Frontmatter/Waisen prüfen
-python3 tools/brain.py status        # neue Rohquellen
-python3 tools/brain.py mark raw/x.md # als ingestiert merken
+python tools/brain.py index         # Index erzeugen
+python tools/brain.py lint          # Links/Frontmatter/Waisen prüfen
+python tools/brain.py status        # neue Rohquellen
+python tools/brain.py mark raw/x.md # als ingestiert merken
 ```
 
 ## Sicherheit in Kürze

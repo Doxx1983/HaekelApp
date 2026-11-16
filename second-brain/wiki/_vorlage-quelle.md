@@ -1,6 +1,7 @@
 ---
 titel: Titel der Quelle
 typ: quelle
+bereich: haekeln | isadody | ki | privat
 tags: []
 zusammenfassung: Ein Satz, worum es geht.
 quelle_datei: raw/dateiname.md

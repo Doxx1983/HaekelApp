@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Index, Lint und Ingest-Status für das Second Brain. Nur Standardbibliothek.
 
-  python3 tools/brain.py index        # wiki/index.md neu erzeugen
-  python3 tools/brain.py lint         # Links, Frontmatter, Waisen prüfen
-  python3 tools/brain.py status       # neue/geänderte Rohquellen anzeigen
-  python3 tools/brain.py mark <datei> # Rohquelle als ingestiert merken
+  python tools/brain.py index        # wiki/index.md neu erzeugen
+  python tools/brain.py lint         # Links, Frontmatter, Waisen prüfen
+  python tools/brain.py status       # neue/geänderte Rohquellen anzeigen
+  python tools/brain.py mark <datei> # Rohquelle als ingestiert merken
 """
 import hashlib, json, re, sys
 from pathlib import Path
@@ -12,7 +12,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 WIKI, RAW = ROOT / "wiki", ROOT / "raw"
 MANIFEST = ROOT / "wiki" / ".ingested.json"
-PFLICHT = ["titel", "typ", "zusammenfassung", "aktualisiert"]
+PFLICHT = ["titel", "typ", "bereich", "zusammenfassung", "aktualisiert"]
+BEREICHE = {"haekeln", "isadody", "ki", "privat"}
 
 
 def seiten():
@@ -42,8 +43,8 @@ def cmd_index():
     for p in seiten():
         fm, _ = frontmatter(p.read_text(encoding="utf-8"))
         gruppen.setdefault(p.parent.relative_to(WIKI).as_posix(), []).append(
-            f"- [[{slug(p)}]]: {fm.get('titel', p.stem)}. {fm.get('zusammenfassung', '')}")
-    out = ["# Index", "", "_Automatisch erzeugt mit `python3 tools/brain.py index`._", ""]
+            f"- [[{slug(p)}]] ({fm.get('bereich', '?')}): {fm.get('titel', p.stem)}. {fm.get('zusammenfassung', '')}")
+    out = ["# Index", "", "_Automatisch erzeugt mit `python tools/brain.py index`._", ""]
     for g in sorted(gruppen):
         out += [f"## {g}", ""] + gruppen[g] + [""]
     (WIKI / "index.md").write_text("\n".join(out), encoding="utf-8")
@@ -61,6 +62,8 @@ def cmd_lint():
         for k in PFLICHT:
             if not fm.get(k):
                 print(f"[Frontmatter] {s}: '{k}' fehlt"); fehler += 1
+        if fm.get("bereich") and fm["bereich"] not in BEREICHE:
+            print(f"[Bereich] {s}: '{fm['bereich']}' unbekannt (erlaubt: {', '.join(sorted(BEREICHE))})"); fehler += 1
         if fm.get("typ") == "konzept" and fm.get("quellen") in (None, "", "[]"):
             print(f"[Quellen] {s}: keine Quellen angegeben"); fehler += 1
         for ziel in re.findall(r"\[\[([^\]|#]+)", text):
