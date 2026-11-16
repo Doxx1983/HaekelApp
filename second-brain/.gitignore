@@ -1,0 +1,10 @@
+# Sensibles und Grosses nie einchecken
+raw/*
+!raw/.gitkeep
+raw-sensibel/
+.env
+*.key
+*.pem
+.brain-cache.sqlite
+.obsidian/workspace*.json
+.DS_Store
