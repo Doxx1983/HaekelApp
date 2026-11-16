@@ -1,0 +1,2 @@
+# Erlaubte Tags, ein Tag pro Zeile (kleinbuchstaben-mit-bindestrichen).
+# Vorhandene Tags wiederverwenden. Neuer Tag nur, wenn kein passender existiert: hier eintragen.

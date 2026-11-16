@@ -1,3 +1,19 @@
 # Index
 
-_Wird mit `python tools/brain.py index` erzeugt. Nicht von Hand ändern._
+_Automatisch erzeugt mit `python tools/brain.py index`. Seiten mit mehreren Bereichen erscheinen mehrfach._
+
+## haekeln
+
+- [[bereich-haekeln]] (hub): Hub Häkeln. Einstiegsseite für Häkeln: Häkeltechniken, Muster, Maschen, Trends.
+
+## isadody
+
+- [[bereich-isadody]] (hub): Hub Isadody. Einstiegsseite für Isadody: Gewerbe: Produkte, Märkte, Preise, Kalkulation, Marketing.
+
+## ki
+
+- [[bereich-ki]] (hub): Hub KI und Programmieren. Einstiegsseite für KI und Programmieren: KI, LLMs, Tools und Programmierprojekte.
+
+## privat
+
+- [[bereich-privat]] (hub): Hub Privat. Einstiegsseite für Privat: Persönliche Interessen, Lernen, Ideen.

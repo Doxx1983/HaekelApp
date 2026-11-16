@@ -17,7 +17,7 @@ Du sammelst Quellen in `raw/`, Claude pflegt das Wiki in `wiki/`. Regeln stehen 
 7. **Claude Code im Ordner starten** (PowerShell im Repo-Ordner: `claude`). Es liest `CLAUDE.md` automatisch.
 
 ### B. Erste Befüllung (Woche 1)
-1. Mit **einem** Bereich starten (`haekeln`, `isadody`, `ki`, `privat`), die anderen folgen später.
+1. Mit **einem** Bereich starten (`haekeln`, `isadody`, `ki`, `privat`), die anderen folgen später. Überschneidungen sind möglich (`bereich: [haekeln, isadody]`, erster Eintrag = Hauptbereich).
 2. 10–20 Quellen in `raw/` legen: Webartikel (Web Clipper), PDFs/Bücher, YouTube-/Podcast-Transkripte, eigene Notizen und Fotos.
    **Kundendaten** gehören nicht hierher (bei Bedarf `raw-sensibel/`, bleibt außerhalb von Git).
 3. Claude sagen: **„Ingest alle neuen Quellen in raw/"**. Es nutzt `python tools/brain.py status`.
@@ -38,6 +38,10 @@ Du sammelst Quellen in `raw/`, Claude pflegt das Wiki in `wiki/`. Regeln stehen 
 | ab ~200 Seiten | Index in Bereichs-Indizes aufteilen (`wiki/<bereich>/_index.md`) |
 | ab ~500 Seiten / 1 GB Rohdaten | SQLite-FTS-Suche ergänzen, `raw/` auf externe Platte oder Git LFS |
 | sehr groß | Bereiche als eigene Repos mit eigener `CLAUDE.md` |
+
+## Bereiche, Hubs, Tags
+- Bereiche stehen in `bereiche.txt`, Tags in `tags.txt`. Jeder Bereich hat eine Hub-Seite `wiki/bereich-<name>.md` als Einstieg.
+- **Neuen Bereich anlegen:** Claude bitten („Lege den Bereich X an"). Es trägt ihn in `bereiche.txt` ein und erstellt den Hub; vorher fragt es dich.
 
 ## Befehle
 ```

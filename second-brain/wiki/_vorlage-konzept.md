@@ -1,7 +1,7 @@
 ---
 titel: Name des Konzepts
 typ: konzept
-bereich: haekeln | isadody | ki | privat
+bereich: [haekeln]
 tags: []
 zusammenfassung: Ein Satz, der im Index erscheint.
 quellen: [quellen/beispiel]

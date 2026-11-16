@@ -11,12 +11,22 @@ Der Mensch sammelt Rohquellen in `raw/`, das LLM pflegt `wiki/`.
 - `wiki/index.md`: wird per Skript erzeugt. Nicht von Hand bearbeiten.
 - `log.md`: jede Änderung als Zeile eintragen.
 
-## Bereiche
-Jede Seite hat genau ein Feld `bereich`: `haekeln`, `isadody` (Gewerbe), `ki` (KI/Programmieren) oder `privat`.
-Neue Bereiche nur nach Rückfrage und Eintrag in `BEREICHE` in `tools/brain.py`.
+## Bereiche, Hubs und Tags
+- Erlaubte Bereiche stehen in `bereiche.txt` (aktuell `haekeln`, `isadody`, `ki`, `privat`).
+- `bereich` ist eine Liste: `bereich: [haekeln, isadody]`. **Erster Eintrag = Hauptbereich.**
+  Weitere Bereiche nur bei echtem Bezug, höchstens drei.
+- Überschneidungen: eine Seite, in den Hubs aller betroffenen Bereiche verlinken. Nicht duplizieren.
+- Jeder Bereich hat eine Hub-Seite `wiki/bereich-<kurzname>.md` (Einstieg mit Überblick und den wichtigsten
+  Konzepten, kuratiert). Beim Ingest jede neue Konzeptseite in den Hubs ihrer Bereiche verlinken.
+  Der Lint meldet fehlende Hub-Links.
+- **Neuer Bereich:** nur nach Rückfrage bei der Nutzerin. Dann Zeile in `bereiche.txt` ergänzen und
+  `wiki/bereich-<kurzname>.md` nach `wiki/_vorlage-hub.md` anlegen. Bereiche nie selbst umbenennen,
+  zusammenlegen oder löschen.
+- Tags: nur aus `tags.txt`. Erst vorhandene Tags wiederverwenden, nur wenn keiner passt, einen neuen
+  Tag (kleinbuchstaben-mit-bindestrichen) dort eintragen und in `log.md` vermerken.
 
 ## Seitenformat
-Frontmatter wie in `wiki/_vorlage-*.md` (Pflicht: `titel`, `typ`, `bereich`, `zusammenfassung`,
+Frontmatter wie in `wiki/_vorlage-*.md` (Typen: `konzept`, `quelle`, `hub`; Pflicht: `titel`, `typ`, `bereich`, `zusammenfassung`,
 `aktualisiert`; bei Konzepten zusätzlich `quellen`). Dateinamen: kleinbuchstaben-mit-bindestrichen.md
 (nur a–z, 0–9, Bindestrich; Windows-tauglich).
 
@@ -33,7 +43,7 @@ Links: `[[ordner/dateiname]]` ohne `.md`. Seiten kurz halten (< ca. 800 Wörter)
 ## Workflow Ingest („ingest <datei>")
 1. `python tools/brain.py status` zeigt neue Rohquellen.
 2. Quelle lesen, Quellenseite in `wiki/quellen/` anlegen.
-3. Betroffene Konzeptseiten aktualisieren oder neu anlegen, mit Links und Quellenverweis.
+3. Betroffene Konzeptseiten aktualisieren oder neu anlegen, mit Links und Quellenverweis; neue Konzepte in den Hubs verlinken.
 4. Widersprüche nicht überschreiben: beide Sichtweisen mit Quelle festhalten.
 5. `python tools/brain.py mark <datei>`, dann `index`, dann `lint`. Fehler beheben.
 6. Zeile in `log.md`.
