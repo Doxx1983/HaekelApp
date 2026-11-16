@@ -4,3 +4,8 @@ haekeln: Häkeltechniken, Muster, Maschen, Trends
 isadody: Gewerbe Isadody: Produkte, Märkte, Preise, Kalkulation, Marketing
 ki: KI und Programmieren
 privat: Persönliche Interessen, Lernen, Ideen
+finanzen: Finanzen
+presales: Presales
+handwerk: Handwerk
+weiterentwicklung: Persönliche Weiterentwicklung
+reisen: Reisen
