@@ -58,6 +58,8 @@ const { Store } = require('../src/store');
   const f = path.join(dir, 'angebot.pdf'); fs.writeFileSync(f, 'x');
   await page.evaluate(([id, p]) => window.api.dateiHinzu(id, [p]), [gb.id, f]); await page.evaluate(() => window.api.__cb()); await page.waitForTimeout(200);
   assert.ok((await page.locator('#dDateien').textContent()).includes('angebot.pdf'));
+  await page.check('#dAblegen'); await page.waitForTimeout(150);
+  assert.strictEqual(store.load().aufgaben.find(t => t.id === gb.id).ablegen, true);
   await page.click('#dOk');
   assert.ok((await page.locator('.tag.late').count()) >= 1);                  // überfällig markiert
   // Eingang (Handy-Fotos)

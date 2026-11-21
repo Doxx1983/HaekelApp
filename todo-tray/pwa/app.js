@@ -59,6 +59,7 @@ function metaEl(t) {
   const f = faelligTag(t); if (f) m.append(f);
   const pn = projName(t.zuordnung); if (pn) m.append(el('span', { className: 'tag', textContent: pn }));
   if (t.zugewiesenAn) m.append(el('span', { className: 'tag wer', textContent: '→ ' + t.zugewiesenAn }));
+  if (t.ablegen) m.append(el('span', { className: 'tag', textContent: '🗂 vormerken' }));
   if (t.dateienAnzahl) m.append(el('span', { textContent: '📎 ' + t.dateienAnzahl }));
   if (t.erstelltVon && t.erstelltVon !== me) m.append(el('span', { textContent: 'von ' + t.erstelltVon }));
   return m;
@@ -119,6 +120,7 @@ function refreshDetail() {
   const t = finde(detailId); if (!t) { detailId = null; return schliesse(); }
   $('dStatus').value = t.status; $('dFaellig').value = t.faellig || ''; $('dHeute').checked = istHeute(t);
   optWer($('dWer'), false, t.zugewiesenAn || ''); $('dWer').value = t.zugewiesenAn || ''; optProj($('dZu'), 'Ohne Zuordnung', t.zuordnung || '');
+  $('dAblegen').checked = !!t.ablegen; $('dAblage').textContent = t.ablage ? 'Dateien abgelegt in: ' + t.ablage : '';
   $('dInfo').textContent = 'Angelegt von ' + t.erstelltVon + ', zuletzt geändert von ' + t.geaendertVon + '.';
   $('dArch').textContent = t.archiviert ? 'Zurückholen' : 'Archivieren';
   const box = $('dDateien'); box.replaceChildren();
@@ -129,7 +131,7 @@ function refreshDetail() {
 }
 const feld = (id, key, wert) => { $(id).onchange = () => aendern(detailId, { [key]: wert($(id)) }); };
 feld('dStatus', 'status', e => e.value); feld('dFaellig', 'faellig', e => e.value || null); feld('dWer', 'zugewiesenAn', e => e.value || null);
-feld('dZu', 'zuordnung', e => e.value || null); feld('dHeute', 'heute', e => e.checked ? heuteStr() : null);
+feld('dAblegen', 'ablegen', e => e.checked); feld('dZu', 'zuordnung', e => e.value || null); feld('dHeute', 'heute', e => e.checked ? heuteStr() : null);
 $('dTitel').onchange = () => { const v = $('dTitel').value.trim(); if (v) aendern(detailId, { titel: v }); else $('dTitel').value = finde(detailId).titel; };
 $('dNotiz').onchange = () => aendern(detailId, { notiz: $('dNotiz').value });
 $('dFoto').onclick = () => $('fFoto').click(); $('dAdd').onclick = () => $('fDatei').click();

@@ -57,6 +57,10 @@ assert.throws(() => b.filePath(k.id, '../../aufgaben/' + k.id + '.json'));
 const sg = a.signature(); fs.writeFileSync(src, 'neu'); a.addFiles(k.id, [src]); assert.notStrictEqual(a.signature(), sg);
 a.removeFile(k.id, 'bericht.txt'); assert.strictEqual(a.load().aufgaben.find(x => x.id === k.id).dateien.length, 2);
 a.remove(k.id); assert.ok(!fs.existsSync(path.join(dir, 'dateien', k.id)));
+// Ablegen-Markierung
+const ab = a.create({ titel: 'Ablage' }); assert.strictEqual(ab.ablegen, false);
+assert.strictEqual(b.update(ab.id, { ablegen: true }).ablegen, true);
+assert.strictEqual(a.update(ab.id, { ablegen: false, ablage: 'archiv/Häkelapp/Ablage' }).ablage, 'archiv/Häkelapp/Ablage');
 // Eingang
 fs.writeFileSync(path.join(dir, 'eingang', 'IMG_001.jpg'), 'x'); fs.writeFileSync(path.join(dir, 'eingang', 'IMG_002.jpg'), 'y');
 assert.deepStrictEqual(a.load().eingang, ['IMG_001.jpg', 'IMG_002.jpg']);

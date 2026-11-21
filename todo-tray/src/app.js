@@ -67,6 +67,7 @@ function metaEl(t) {
   const f = faelligTag(t); if (f) meta.append(f);
   const pn = projName(t.zuordnung); if (pn) meta.append(el('span', { className: 'tag', textContent: pn }));
   if (t.zugewiesenAn) meta.append(el('span', { className: 'tag wer', textContent: '→ ' + t.zugewiesenAn }));
+  if (t.ablegen) meta.append(el('span', { className: 'tag', textContent: '🗂 vormerken' }));
   if (t.dateien && t.dateien.length) meta.append(el('span', { textContent: '📎 ' + t.dateien.length }));
   if (t.erstelltVon && t.erstelltVon !== cfg.nutzer) meta.append(el('span', { textContent: 'von ' + t.erstelltVon }));
   return meta;
@@ -169,6 +170,7 @@ function refreshDetail(erst) {
   $('dStatus').value = t.status; $('dFaellig').value = t.faellig || ''; $('dHeute').checked = istHeute(t);
   optionenWer($('dWer'), false, t.zugewiesenAn || ''); $('dWer').value = t.zugewiesenAn || '';
   optionen($('dZu'), 'Ohne Zuordnung', t.zuordnung || '');
+  $('dAblegen').checked = !!t.ablegen; $('dAblage').textContent = t.ablage ? 'Dateien abgelegt in: ' + t.ablage : '';
   $('dInfo').textContent = 'Angelegt von ' + t.erstelltVon + ', zuletzt geändert von ' + t.geaendertVon + '.';
   $('dArch').textContent = t.archiviert ? 'Zurückholen' : 'Archivieren';
   const box = $('dDateien'); box.replaceChildren();
@@ -182,7 +184,7 @@ function refreshDetail(erst) {
 }
 const feld = (id, key, wert) => { $(id).onchange = () => aendern(detailId, { [key]: wert($(id)) }); };
 feld('dStatus', 'status', e => e.value); feld('dFaellig', 'faellig', e => e.value || null); feld('dWer', 'zugewiesenAn', e => e.value || null);
-feld('dZu', 'zuordnung', e => e.value || null); feld('dHeute', 'heute', e => e.checked ? heuteStr() : null);
+feld('dAblegen', 'ablegen', e => e.checked); feld('dZu', 'zuordnung', e => e.value || null); feld('dHeute', 'heute', e => e.checked ? heuteStr() : null);
 $('dTitel').onchange = () => { const v = $('dTitel').value.trim(); if (v) aendern(detailId, { titel: v }); else $('dTitel').value = finde(detailId).titel; };
 $('dNotiz').onchange = () => aendern(detailId, { notiz: $('dNotiz').value });
 $('dAdd').onclick = async () => { await window.api.dateiWaehlen(detailId); await laden(); };

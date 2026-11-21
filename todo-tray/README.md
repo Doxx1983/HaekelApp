@@ -20,6 +20,16 @@ Kleine To-do-App im Windows-Infobereich (Tray-Symbol unten rechts). Electron, Is
 3. Als einzelne Datei bauen: `npm run dist` → `dist/Isadody Aufgaben *.exe` (portabel), auf beide Rechner kopieren.
 4. Beim ersten Start Name und gemeinsamen Ordner wählen (⚙). Einstellungen liegen lokal pro Rechner.
 
+## Einsortieren (Claude legt Dateien ab)
+In den Aufgabendetails gibt es das Häkchen **„Zum Einsortieren vormerken“** (`ablegen: true`, am besten bei erledigten Aufgaben). Auf Zuruf („sortier die vorgemerkten Aufgaben ein“) geht Claude so vor:
+1. Alle Aufgaben mit `ablegen: true` aus `aufgaben/` lesen.
+2. Die Dateien aus `dateien/<id>/` verschieben nach `archiv/<Projekt oder Chat>/<Aufgabentitel>/` (ohne Zuordnung: `archiv/Sonstiges/...`). Nur verschieben, nie löschen. Bei Unklarheit nachfragen.
+3. In der Aufgabe `ablegen: false`, `ablage: "archiv/…/…"` setzen (die App zeigt „Dateien abgelegt in: …“) und die Aufgabe archivieren (`archiviert: true`).
+
+## Mehrere Geräte und Nutzer
+- Ein Nutzer = ein Name (exakt gleich geschrieben) auf allen eigenen Geräten. Die Daten liegen im Drive-Ordner, pro Gerät wird nur Name und Ordnerpfad gespeichert.
+- Weitere Nutzer: Ordner für das Google-Konto freigeben (Bearbeiter), als Testnutzer in der Google Auth Platform eintragen (bis 100), App installieren, Namen wählen. Der Name erscheint danach automatisch in `nutzer.json` und in allen Auswahllisten.
+
 ## Handy (PWA)
 Im Ordner `pwa/`: Web-App für Android/iPhone, spricht direkt mit der Google-Drive-API (gleiche Daten wie die Windows-App, Fotos direkt an Aufgaben). Einrichtung: `PWA-EINRICHTUNG.md`.
 
@@ -29,12 +39,13 @@ Im Ordner `pwa/`: Web-App für Android/iPhone, spricht direkt mit der Google-Dri
 <Ordner>/nutzer.json          { "nutzer": ["Anna", "Ben"] }   (trägt sich beim ersten Start selbst ein)
 <Ordner>/dateien/<id>/...     Anhänge der Aufgabe <id>
 <Ordner>/eingang/             Dateien vom Handy, noch ohne Aufgabe
+<Ordner>/archiv/<Projekt>/<Aufgabe>/   einsortierte Dateien erledigter Aufgaben
 <Ordner>/aufgaben/<id>.json   eine Datei pro Aufgabe
 ```
 Aufgabe:
 ```json
 { "id": "abc-123", "titel": "Garn bestellen", "notiz": "", "status": "todo|doing|done", "erledigt": false, "erledigtAm": null,
-  "archiviert": false, "heute": "2026-11-21", "faellig": "2026-12-01", "zugewiesenAn": "Ben", "zuordnung": "<projekt-id>|null",
+  "archiviert": false, "heute": "2026-11-21", "ablegen": false, "ablage": null, "faellig": "2026-12-01", "zugewiesenAn": "Ben", "zuordnung": "<projekt-id>|null",
   "erstelltVon": "Anna", "erstelltAm": "ISO", "geaendertVon": "Ben", "geaendertAm": "ISO" }
 ```
 Eine Datei pro Aufgabe + Teiländerungen (nur geänderte Felder werden neu geschrieben) vermeiden Konflikte. Dateien mit Namen wie `abc (1).json` (Drive-Konfliktkopien) oder unvollständige JSON werden ignoriert.

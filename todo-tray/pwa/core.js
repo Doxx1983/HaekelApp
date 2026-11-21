@@ -5,7 +5,7 @@
   else root.TodoCore = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
   const STATUS = ['todo', 'doing', 'done'];
-  const FIELDS = ['titel', 'notiz', 'status', 'erledigt', 'erledigtAm', 'archiviert', 'heute', 'zuordnung', 'zugewiesenAn', 'faellig'];
+  const FIELDS = ['titel', 'notiz', 'status', 'erledigt', 'erledigtAm', 'archiviert', 'heute', 'zuordnung', 'zugewiesenAn', 'faellig', 'ablegen', 'ablage'];
   const ID_RE = /^[a-z0-9-]+$/;
 
   const now = () => new Date().toISOString();
@@ -24,7 +24,7 @@
     const st = STATUS.includes(status) ? status : 'todo';
     return {
       id: newId(), titel: String(titel).trim(), notiz, status: st, erledigt: st === 'done', erledigtAm: st === 'done' ? now() : null,
-      archiviert: false, heute, zuordnung, zugewiesenAn, faellig,
+      archiviert: false, heute, zuordnung, zugewiesenAn, faellig, ablegen: false, ablage: null,
       erstelltVon: user, erstelltAm: now(), geaendertVon: user, geaendertAm: now(),
     };
   }

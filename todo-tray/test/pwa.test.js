@@ -107,6 +107,8 @@ const GIS = `window.google = { accounts: { oauth2: { initTokenClient: () => ({ r
   assert.strictEqual(t2.status, 'doing'); assert.strictEqual(t2.zugewiesenAn, 'Ben'); assert.strictEqual(t2.faellig, '2020-05-01');
   const dir = by(t.id, by('dateien', rootF.id).id); assert.ok(dir, 'dateien/<id> fehlt');
   assert.deepStrictEqual(kids(dir.id).map(f => f.name), ['IMG_1.jpg']); assert.strictEqual(kids(dir.id)[0].content, 'JPEGDATA');
+  await page.check('#dAblegen'); await page.waitForTimeout(300);
+  assert.strictEqual(JSON.parse(by(t.id + '.json', aufg).content).ablegen, true);
   await page.click('#dOk');
 
   // Board
