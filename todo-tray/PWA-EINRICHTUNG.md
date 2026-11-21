@@ -1,12 +1,12 @@
 # Handy-App (PWA) einrichten
 
-Die PWA liegt in `pwa/` und greift direkt über die Google-Drive-API auf denselben Ordner **Isadody Aufgaben** zu wie die Windows-App. Du brauchst dafür einmalig ein Google-Cloud-Projekt (kostenlos) und einen Ort, an dem die Seite per HTTPS erreichbar ist (z. B. GitHub Pages).
+Die PWA liegt in `pwa/` und greift direkt über die Google-Drive-API auf denselben Ordner **To-Dos** zu wie die Windows-App. Du brauchst dafür einmalig ein Google-Cloud-Projekt (kostenlos) und einen Ort, an dem die Seite per HTTPS erreichbar ist (z. B. GitHub Pages).
 
 Dauer: ca. 20 Minuten. Die Oberfläche von Google ändert sich gelegentlich, die Bezeichnungen unten sind der Stand von 2026 (früher: „OAuth-Zustimmungsbildschirm“ = jetzt „Google Auth Platform“).
 
 ## Teil 1: Google-Cloud-Projekt
 
-1. Öffne https://console.cloud.google.com und melde dich mit dem Google-Konto an, dem der Ordner „Isadody Aufgaben“ gehört.
+1. Öffne https://console.cloud.google.com und melde dich mit dem Google-Konto an, dem der Ordner „To-Dos“ gehört.
 2. Oben links auf die Projektauswahl → **Neues Projekt** → Name `Isadody Aufgaben` → **Erstellen**. Danach das Projekt oben auswählen.
 3. **Drive-API aktivieren:** Menü ☰ → **APIs und Dienste** → **Bibliothek** → „Google Drive API“ suchen → **Aktivieren**.
 4. **Zustimmungsbildschirm einrichten:** Menü ☰ → **APIs und Dienste** → **OAuth-Zustimmungsbildschirm** (bzw. „Google Auth Platform“ → **Erste Schritte**).
@@ -22,7 +22,7 @@ Dauer: ca. 20 Minuten. Die Oberfläche von Google ändert sich gelegentlich, die
    - **Erstellen** → die **Client-ID** kopieren (endet auf `.apps.googleusercontent.com`). Ein Client-Secret brauchst du nicht.
 8. Trage die Client-ID in `pwa/config.js` ein:
    ```js
-   window.TODO_CONFIG = { clientId: '1234-abcd.apps.googleusercontent.com', ordner: 'Isadody Aufgaben' };
+   window.TODO_CONFIG = { clientId: '1234-abcd.apps.googleusercontent.com', ordner: 'To-Dos' };
    ```
    Die Client-ID ist öffentlich und darf im Repo stehen.
 
@@ -34,7 +34,7 @@ Dauer: ca. 20 Minuten. Die Oberfläche von Google ändert sich gelegentlich, die
 
 ## Teil 3: Auf dem Handy
 
-1. Ordner freigeben: In Google Drive den Ordner **Isadody Aufgaben** für das Google-Konto des anderen Nutzers freigeben (Rolle **Bearbeiter**). Sein Konto muss auch in der Testnutzer-Liste stehen. Er legt sich zur Sicherheit eine Verknüpfung in „Meine Ablage“ an (Rechtsklick → **Verknüpfung hinzufügen**).
+1. Ordner freigeben: In Google Drive den Ordner **To-Dos** für das Google-Konto des anderen Nutzers freigeben (Rolle **Bearbeiter**). Sein Konto muss auch in der Testnutzer-Liste stehen. Er legt sich zur Sicherheit eine Verknüpfung in „Meine Ablage“ an (Rechtsklick → **Verknüpfung hinzufügen**).
 2. Seite im Handy-Browser öffnen:
    - **Android (Chrome):** ⋮ → **App installieren** bzw. **Zum Startbildschirm hinzufügen**.
    - **iPhone (Safari):** Teilen → **Zum Home-Bildschirm**.

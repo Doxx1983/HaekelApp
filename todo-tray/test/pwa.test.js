@@ -60,7 +60,7 @@ const GIS = `window.google = { accounts: { oauth2: { initTokenClient: () => ({ r
 
 (async () => {
   // Ausgangslage wie im echten Drive: Ordner mit projekte.json, ohne Unterordner (die legt die App an)
-  const rootF = add('Isadody Aufgaben', 'root', FOLDER);
+  const rootF = add('To-Dos', 'root', FOLDER);
   add('projekte.json', rootF.id, 'application/json', JSON.stringify({ projekte: [{ id: 'haekel', name: 'Häkelapp', typ: 'projekt' }] }));
   add('nutzer.json', rootF.id, 'application/json', JSON.stringify({ nutzer: ['Anna'] }));
 
@@ -70,7 +70,7 @@ const GIS = `window.google = { accounts: { oauth2: { initTokenClient: () => ({ r
   const page = await ctx.newPage(); const errs = []; page.on('pageerror', e => errs.push(e.message));
   await page.route('https://accounts.google.com/gsi/client', r => r.fulfill({ contentType: 'text/javascript', body: GIS }));
   await page.route('https://www.googleapis.com/**', drive);
-  await page.route(base + 'config.js', r => r.fulfill({ contentType: 'text/javascript', body: "window.TODO_CONFIG = { clientId: 'x.apps.googleusercontent.com', ordner: 'Isadody Aufgaben' };" }));
+  await page.route(base + 'config.js', r => r.fulfill({ contentType: 'text/javascript', body: "window.TODO_CONFIG = { clientId: 'x.apps.googleusercontent.com', ordner: 'To-Dos' };" }));
   await page.goto(base);
 
   await page.click('#bLogin');

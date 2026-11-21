@@ -2,5 +2,5 @@
 // Die Client-ID ist öffentlich, ein Secret wird nicht gebraucht.
 window.TODO_CONFIG = {
   clientId: 'DEINE-CLIENT-ID.apps.googleusercontent.com',
-  ordner: 'Isadody Aufgaben',   // Name des gemeinsamen Drive-Ordners
+  ordner: 'To-Dos',   // Name des gemeinsamen Drive-Ordners
 };
