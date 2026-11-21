@@ -92,6 +92,7 @@ ipcMain.handle('neu', (_e, d) => { const t = store.create(d); lastSig = store.si
 ipcMain.handle('aendern', (_e, id, patch) => { const t = store.update(id, patch); lastSig = store.signature(); return t; });
 ipcMain.handle('loeschen', (_e, id) => { store.remove(id); lastSig = store.signature(); });
 ipcMain.handle('projekt:neu', (_e, d) => { const p = store.addProject(d); lastSig = store.signature(); return p; });
+ipcMain.handle('projekt:aendern', (_e, id, patch) => { const p = store.updateProject(id, patch); lastSig = store.signature(); return p; });
 ipcMain.handle('projekt:loeschen', (_e, id) => { store.removeProject(id); lastSig = store.signature(); });
 ipcMain.handle('datei:waehlen', async (_e, id) => {
   const paths = await pick({ title: 'Dateien zur Aufgabe hinzufügen', properties: ['openFile', 'multiSelections'] });

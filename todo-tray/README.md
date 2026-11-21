@@ -26,6 +26,12 @@ In den Aufgabendetails gibt es das Häkchen **„Zum Einsortieren vormerken“**
 2. Die Dateien aus `dateien/<id>/` verschieben nach `archiv/<Projekt oder Chat>/<Aufgabentitel>/` (ohne Zuordnung: `archiv/Sonstiges/...`). Nur verschieben, nie löschen. Bei Unklarheit nachfragen.
 3. In der Aufgabe `ablegen: false`, `ablage: "archiv/…/…"` setzen (die App zeigt „Dateien abgelegt in: …“) und die Aufgabe archivieren (`archiviert: true`).
 
+## Projekte, Chats und Sichtbarkeit
+- Unter ☰ legst du beliebige Einträge an (Typ Projekt oder Chat), auch eigene wie „Garten“ oder „Haus“, unabhängig von Claude-Projekten.
+- Mit 👥 legst du fest, wer ein Projekt sehen darf (nichts angehakt = alle). Nur der Besitzer (wer es angelegt hat) kann das ändern oder das Projekt löschen und bleibt immer Mitglied. Nicht-Mitglieder sehen Projekt und zugehörige Aufgaben nicht, und „Zuständig“ bietet nur Mitglieder an. Aufgaben ohne Projekt sind für alle sichtbar.
+- **Achtung: das ist nur eine Sichtbarkeit in der App, kein Schutz.** Alle mit Zugriff auf den Drive-Ordner können Aufgaben-JSONs und Dateien in Drive lesen (ebenso Claude). Für echte Trennung bräuchte jedes Projekt einen eigenen Drive-Ordner mit eigener Freigabe (mögliche spätere Ausbaustufe).
+- Der Eingang (`eingang/`) ist nicht pro Projekt getrennt.
+
 ## Mehrere Geräte und Nutzer
 - Ein Nutzer = ein Name (exakt gleich geschrieben) auf allen eigenen Geräten. Die Daten liegen im Drive-Ordner, pro Gerät wird nur Name und Ordnerpfad gespeichert.
 - Weitere Nutzer: Ordner für das Google-Konto freigeben (Bearbeiter), als Testnutzer in der Google Auth Platform eintragen (bis 100), App installieren, Namen wählen. Der Name erscheint danach automatisch in `nutzer.json` und in allen Auswahllisten.
@@ -35,7 +41,7 @@ Im Ordner `pwa/`: Web-App für Android/iPhone, spricht direkt mit der Google-Dri
 
 ## Datenformat (im gemeinsamen Ordner)
 ```
-<Ordner>/projekte.json        { "projekte": [ { "id", "name", "typ": "projekt"|"chat" } ] }
+<Ordner>/projekte.json        { "projekte": [ { "id", "name", "typ": "projekt"|"chat", "besitzer": "Anna", "mitglieder": [] } ] }   (mitglieder leer = alle)
 <Ordner>/nutzer.json          { "nutzer": ["Anna", "Ben"] }   (trägt sich beim ersten Start selbst ein)
 <Ordner>/dateien/<id>/...     Anhänge der Aufgabe <id>
 <Ordner>/eingang/             Dateien vom Handy, noch ohne Aufgabe

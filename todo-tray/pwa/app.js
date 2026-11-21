@@ -1,5 +1,6 @@
 'use strict';
 const $ = id => document.getElementById(id);
+const Core = window.TodoCore;
 const CFG = window.TODO_CONFIG || {};
 const ls = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch { /* ok */ } } };
 const heuteStr = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
@@ -45,9 +46,9 @@ function optProj(sel, leer, aktuell) {
   sel.replaceChildren(el('option', { value: '', textContent: leer }), ...data.projekte.map(p => el('option', { value: p.id, textContent: projName(p.id) })));
   sel.value = [...sel.options].some(o => o.value === aktuell) ? aktuell : '';
 }
-function optWer(sel, mitAlle, aktuell) {
+function optWer(sel, mitAlle, aktuell, projektId) {
   sel.replaceChildren(el('option', { value: '', textContent: mitAlle ? 'Zuständig: alle' : 'Niemand' }),
-    ...nutzerListe().map(n => el('option', { value: n, textContent: n === me ? n + ' (ich)' : n })));
+    ...(projektId ? Core.werFuer(data.projekte, projektId, nutzerListe()) : nutzerListe()).map(n => el('option', { value: n, textContent: n === me ? n + ' (ich)' : n })));
   if (mitAlle) sel.append(el('option', { value: '-', textContent: 'Niemand' }));
   sel.value = [...sel.options].some(o => o.value === aktuell) ? aktuell : (mitAlle ? '' : me);
 }
@@ -85,7 +86,7 @@ function render() {
   optProj($('filter'), 'Alle Zuordnungen', filter); filter = $('filter').value;
   optWer($('filterWer'), true, filterWer); filterWer = $('filterWer').value;
   optProj($('neuZu'), 'Ohne Zuordnung', $('neuZu').value);
-  optWer($('neuWer'), false, $('neuWer').dataset.gewaehlt ?? me);
+  optWer($('neuWer'), false, $('neuWer').dataset.gewaehlt ?? me, $('neuZu').value);
   $('neuHeute').className = 'star' + (neuHeute ? ' on' : '');
   const board = ansicht === 'board'; $('liste').hidden = board; $('board').hidden = !board;
   if (board) {
@@ -106,7 +107,7 @@ function pruefeNeueZuweisungen() {
   if (bekannt) for (const id of meine) if (!bekannt.has(id)) { const t = finde(id); if (t && t.geaendertVon !== me) toast('Neue Aufgabe von ' + t.geaendertVon + ': ' + t.titel, 6000); }
   bekannt = meine;
 }
-async function laden() { if (!bereit || busy) return; busy = true; try { await run(async () => { data = await Drive.load(); pruefeNeueZuweisungen(); render(); }); } finally { busy = false; } }
+async function laden() { if (!bereit || busy) return; busy = true; try { await run(async () => { data = Core.filterSichtbar(await Drive.load(), me); pruefeNeueZuweisungen(); render(); }); } finally { busy = false; } }
 async function aendern(id, patch) { await run(async () => { await Drive.update(id, patch); }); await laden(); }
 
 // ---------- Details ----------
@@ -119,7 +120,7 @@ async function oeffneDetail(id) {
 function refreshDetail() {
   const t = finde(detailId); if (!t) { detailId = null; return schliesse(); }
   $('dStatus').value = t.status; $('dFaellig').value = t.faellig || ''; $('dHeute').checked = istHeute(t);
-  optWer($('dWer'), false, t.zugewiesenAn || ''); $('dWer').value = t.zugewiesenAn || ''; optProj($('dZu'), 'Ohne Zuordnung', t.zuordnung || '');
+  optWer($('dWer'), false, t.zugewiesenAn || '', t.zuordnung); $('dWer').value = t.zugewiesenAn || ''; optProj($('dZu'), 'Ohne Zuordnung', t.zuordnung || '');
   $('dAblegen').checked = !!t.ablegen; $('dAblage').textContent = t.ablage ? 'Dateien abgelegt in: ' + t.ablage : '';
   $('dInfo').textContent = 'Angelegt von ' + t.erstelltVon + ', zuletzt geändert von ' + t.geaendertVon + '.';
   $('dArch').textContent = t.archiviert ? 'Zurückholen' : 'Archivieren';
@@ -167,7 +168,24 @@ $('fIn').onchange = async e => { const files = [...e.target.files]; e.target.val
 function renderProj() {
   const box = $('projListe'); box.replaceChildren();
   if (!data.projekte.length) box.append(el('p', { className: 'hint', textContent: 'Noch keine Einträge.' }));
-  for (const p of data.projekte) box.append(el('div', { className: 'pl' }, el('span', { textContent: projName(p.id) }), el('button', { textContent: '🗑', onclick: async () => { await run(() => Drive.removeProject(p.id)); await laden(); renderProj(); } })));
+  for (const p of data.projekte) {
+    const darf = Core.kannProjektBearbeiten(p, me), alle = nutzerListe(), begrenzt = p.mitglieder && p.mitglieder.length;
+    const editor = el('div', { className: 'r', style: 'flex:1 0 100%;flex-wrap:wrap;gap:12px' }); editor.hidden = true;
+    for (const n of alle) {
+      const cb = el('input', { type: 'checkbox', checked: !begrenzt || p.mitglieder.includes(n), disabled: n === p.besitzer, style: 'width:auto' });
+      cb.onchange = async () => {
+        const gewaehlt = [...editor.querySelectorAll('input')].filter(x => x.checked).map(x => x.dataset.n);
+        await run(() => Drive.updateProject(p.id, { mitglieder: gewaehlt.length === alle.length ? [] : gewaehlt })); await laden(); renderProj();
+      };
+      cb.dataset.n = n; editor.append(el('label', { style: 'flex-direction:row;gap:6px;align-items:center;font-weight:700' }, cb, n));
+    }
+    const row = el('div', { className: 'pl' }, el('span', { textContent: projName(p.id) }), el('span', { className: 'hint', textContent: begrenzt ? '👥 ' + p.mitglieder.join(', ') : '👥 alle' }));
+    if (darf) {
+      row.append(el('button', { textContent: '👥', onclick: () => { editor.hidden = !editor.hidden; } }),
+        el('button', { textContent: '🗑', onclick: async () => { await run(() => Drive.removeProject(p.id)); await laden(); renderProj(); } }), editor);
+    } else row.append(el('span', { className: 'hint', textContent: 'von ' + p.besitzer }));
+    box.append(row);
+  }
 }
 $('bProj').onclick = () => { renderProj(); zeige('pProj'); }; $('pOk').onclick = () => { schliesse(); render(); };
 $('pAdd').onclick = async () => { const name = $('pNameIn').value.trim(); if (!name) return; await run(() => Drive.addProject({ name, typ: $('pTyp').value })); $('pNameIn').value = ''; await laden(); renderProj(); };
@@ -181,6 +199,7 @@ $('add').onsubmit = async e => {
   await run(() => Drive.create({ titel, zuordnung: $('neuZu').value || null, zugewiesenAn: $('neuWer').value || null, faellig: $('neuFaellig').value || null, heute: neuHeute || ansicht === 'heute' ? heuteStr() : null }));
   $('neuTitel').value = ''; $('neuFaellig').value = ''; delete $('neuWer').dataset.gewaehlt; neuHeute = false; await laden();
 };
+$('neuZu').onchange = render;
 $('neuWer').onchange = () => { $('neuWer').dataset.gewaehlt = $('neuWer').value; };
 $('neuHeute').onclick = () => { neuHeute = !neuHeute; render(); };
 $('filter').onchange = e => { filter = e.target.value; render(); }; $('filterWer').onchange = e => { filterWer = e.target.value; render(); };

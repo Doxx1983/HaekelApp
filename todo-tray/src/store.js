@@ -166,16 +166,27 @@ class Store {
     try { fs.unlinkSync(this.inboxPath(name)); } catch { /* weg */ }
   }
 
-  addProject({ name, typ = 'projekt' }) {
+  addProject(fields) {
     const p = readJson(this.projFile) || { projekte: [] };
-    const proj = { id: newId(), name: String(name).trim(), typ: typ === 'chat' ? 'chat' : 'projekt' };
+    const proj = Core.newProject(fields, this.user);
     p.projekte.push(proj);
     atomicWrite(this.projFile, p);
     return proj;
   }
 
+  updateProject(id, patch) {
+    const p = readJson(this.projFile) || { projekte: [] };
+    const i = p.projekte.findIndex(x => x.id === id);
+    if (i < 0) throw new Error('Projekt nicht gefunden');
+    p.projekte[i] = Core.applyProjectPatch(p.projekte[i], patch, this.user);
+    atomicWrite(this.projFile, p);
+    return p.projekte[i];
+  }
+
   removeProject(id) {
     const p = readJson(this.projFile) || { projekte: [] };
+    const cur = p.projekte.find(x => x.id === id);
+    if (cur && !Core.kannProjektBearbeiten(cur, this.user)) throw new Error('Nur ' + cur.besitzer + ' darf „' + cur.name + '“ löschen');
     p.projekte = p.projekte.filter(x => x.id !== id);
     atomicWrite(this.projFile, p);
     for (const t of this.load().aufgaben) if (t.zuordnung === id) this.update(t.id, { zuordnung: null });

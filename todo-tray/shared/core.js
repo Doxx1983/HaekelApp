@@ -42,5 +42,32 @@
     return t;
   }
 
-  return { STATUS, FIELDS, ID_RE, now, newId, normalize, createTask, applyPatch };
+  // ----- Projekte / Chats mit Mitgliederliste (leer = alle). Nur Sichtbarkeit in der App, kein technischer Schutz. -----
+  const normNamen = a => [...new Set((Array.isArray(a) ? a : []).map(x => String(x).trim()).filter(Boolean))];
+  function newProject({ name, typ = 'projekt', mitglieder = [] }, user) {
+    const m = normNamen(mitglieder); if (m.length && !m.includes(user)) m.push(user);
+    return { id: newId(), name: String(name).trim(), typ: typ === 'chat' ? 'chat' : 'projekt', besitzer: user, mitglieder: m };
+  }
+  const kannProjektBearbeiten = (p, user) => !p.besitzer || p.besitzer === user;
+  function applyProjectPatch(p, patch, user) {
+    if (!kannProjektBearbeiten(p, user)) throw new Error('Nur ' + p.besitzer + ' darf „' + p.name + '“ ändern');
+    const x = { ...p };
+    if ('name' in patch && String(patch.name).trim()) x.name = String(patch.name).trim();
+    if ('typ' in patch) x.typ = patch.typ === 'chat' ? 'chat' : 'projekt';
+    if ('mitglieder' in patch) { const m = normNamen(patch.mitglieder); if (m.length && x.besitzer && !m.includes(x.besitzer)) m.push(x.besitzer); x.mitglieder = m; }
+    return x;
+  }
+  const projektSichtbar = (p, name) => !Array.isArray(p.mitglieder) || !p.mitglieder.length || p.mitglieder.includes(name);
+  // Blendet Projekte und deren Aufgaben aus, bei denen `name` nicht Mitglied ist. Aufgaben ohne Projekt sind für alle sichtbar.
+  function filterSichtbar(d, name) {
+    const versteckt = new Set(d.projekte.filter(p => !projektSichtbar(p, name)).map(p => p.id));
+    return { ...d, projekte: d.projekte.filter(p => !versteckt.has(p.id)), aufgaben: d.aufgaben.filter(t => !t.zuordnung || !versteckt.has(t.zuordnung)) };
+  }
+  // Wer darf bei diesem Projekt zuständig sein?
+  function werFuer(projekte, projektId, nutzer) {
+    const p = projekte.find(x => x.id === projektId);
+    return p && Array.isArray(p.mitglieder) && p.mitglieder.length ? p.mitglieder : nutzer;
+  }
+
+  return { newProject, kannProjektBearbeiten, applyProjectPatch, projektSichtbar, filterSichtbar, werFuer, STATUS, FIELDS, ID_RE, now, newId, normalize, createTask, applyPatch };
 });

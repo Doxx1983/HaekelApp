@@ -14,14 +14,14 @@ const { Store } = require('../src/store');
   const store_remove_impl = (i, n) => store.removeFile(i, n);
   await page.exposeFunction('store_remove', store_remove_impl);
   const m = { laden: () => store.load(), neu: d => store.create(d), aendern: (i, p) => store.update(i, p), loeschen: i => store.remove(i),
-    projektNeu: d => store.addProject(d), projektLoeschen: i => store.removeProject(i), dateiHinzu: (i, p) => store.addFiles(i, p), eingangZuordnen: (n, i) => store.inboxAssign(n, i), eingangNeu: (n, e) => store.inboxNewTask(n, e) };
+    projektNeu: d => store.addProject(d), projektAendern: (i, p) => store.updateProject(i, p), projektLoeschen: i => store.removeProject(i), dateiHinzu: (i, p) => store.addFiles(i, p), eingangZuordnen: (n, i) => store.inboxAssign(n, i), eingangNeu: (n, e) => store.inboxNewTask(n, e) };
   for (const k of Object.keys(m)) await page.exposeFunction('__' + k, m[k]);
   await page.addInitScript(() => {
     let cb = () => {};
     window.api = { config: async () => ({ nutzer: 'Anna', ordner: 'x', bereit: true }), configSetzen: async c => ({ ...c, bereit: true }),
       ordnerWaehlen: async () => 'x', verstecken() {}, beiAenderung: f => { cb = f; }, __cb: () => cb(),
       laden: () => window.__laden(), neu: d => window.__neu(d), aendern: (i, p) => window.__aendern(i, p), loeschen: i => window.__loeschen(i),
-      projektNeu: d => window.__projektNeu(d), projektLoeschen: i => window.__projektLoeschen(i),
+      projektNeu: d => window.__projektNeu(d), projektAendern: (i, p) => window.__projektAendern(i, p), projektLoeschen: i => window.__projektLoeschen(i),
       breite: w => { window.__breite = w; }, dateiHinzu: (i, p) => window.__dateiHinzu(i, p), dateiOeffnen() {}, eingangZuordnen: (n, i) => window.__eingangZuordnen(n, i), eingangNeu: (n, e) => window.__eingangNeu(n, e), eingangOeffnen() {}, eingangLoeschen() {}, dateiZeigen() {}, dateiLoeschen: async (i, n) => store_remove(i, n) };
   });
   await page.goto('file://' + path.resolve(__dirname, '../src/index.html'));
@@ -62,6 +62,19 @@ const { Store } = require('../src/store');
   assert.strictEqual(store.load().aufgaben.find(t => t.id === gb.id).ablegen, true);
   await page.click('#dOk');
   assert.ok((await page.locator('.tag.late').count()) >= 1);                  // überfällig markiert
+  // Freigabe: Projekt von Ben nur für Ben -> Anna sieht weder Projekt noch Aufgabe; Mitglieder per Häkchen ändern
+  const bs = new Store(dir, 'Ben'); const gp = bs.addProject({ name: 'Geheim', mitglieder: ['Ben'] }); bs.create({ titel: 'Überraschung', zuordnung: gp.id });
+  await page.evaluate(() => window.api.__cb()); await page.waitForTimeout(250);
+  assert.ok(!(await page.locator('#filter option').allTextContents()).some(t => t.includes('Geheim')));
+  assert.ok(!(await page.locator('main').textContent()).includes('Überraschung'));
+  await page.click('#bProj');
+  await page.locator('#projListe .pl', { hasText: 'Häkelapp' }).locator('button[title^="Wer darf"]').click();
+  await page.locator('#projListe .pl', { hasText: 'Häkelapp' }).locator('input[data-n=Ben]').uncheck(); await page.waitForTimeout(250);
+  assert.deepStrictEqual(store.load().projekte.find(x => x.name === 'Häkelapp').mitglieder, ['Anna']);
+  assert.ok(await page.locator('#projListe .pl', { hasText: 'Geheim' }).count() === 0);
+  await page.click('#pOk');
+  await page.selectOption('#neuZu', { label: '📁 Häkelapp' });
+  assert.deepStrictEqual(await page.locator('#neuWer option').allTextContents(), ['Niemand', 'Anna (ich)']);   // nur Mitglieder wählbar
   // Eingang (Handy-Fotos)
   fs.writeFileSync(path.join(dir, 'eingang', 'foto1.jpg'), 'x'); fs.writeFileSync(path.join(dir, 'eingang', 'foto2.jpg'), 'x');
   await page.evaluate(() => window.api.__cb()); await page.waitForTimeout(200);

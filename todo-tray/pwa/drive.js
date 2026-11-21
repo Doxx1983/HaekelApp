@@ -195,11 +195,19 @@ const Drive = (() => {
     fn(p);
     if (ids.projekte) await writeJson(ids.projekte, p); else ids.projekte = (await createJson('projekte.json', ids.root, p)).id;
   });
-  const addProject = ({ name, typ }) => projekte(p => p.projekte.push({ id: Core.newId(), name: String(name).trim(), typ: typ === 'chat' ? 'chat' : 'projekt' }));
+  const addProject = fields => projekte(p => p.projekte.push(Core.newProject(fields, user)));
+  const updateProject = (id, patch) => projekte(p => {
+    const i = p.projekte.findIndex(x => x.id === id); if (i < 0) throw new Error('Projekt nicht gefunden');
+    p.projekte[i] = Core.applyProjectPatch(p.projekte[i], patch, user);
+  });
   async function removeProject(id) {
-    await projekte(p => { p.projekte = p.projekte.filter(x => x.id !== id); });
+    await projekte(p => {
+      const cur = p.projekte.find(x => x.id === id);
+      if (cur && !Core.kannProjektBearbeiten(cur, user)) throw new Error('Nur ' + cur.besitzer + ' darf „' + cur.name + '“ löschen');
+      p.projekte = p.projekte.filter(x => x.id !== id);
+    });
     for (const [tid, c] of cache) if (c.task.zuordnung === id) await update(tid, { zuordnung: null });
   }
 
-  return { init, signIn, eingeloggt, connect, registerUser, load, create, update, remove, taskFiles, addFiles, addToInbox, assignInbox, inboxNewTask, trash, addProject, removeProject };
+  return { init, signIn, eingeloggt, connect, registerUser, load, create, update, remove, taskFiles, addFiles, addToInbox, assignInbox, inboxNewTask, trash, addProject, updateProject, removeProject };
 })();

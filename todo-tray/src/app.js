@@ -1,5 +1,6 @@
 'use strict';
 const $ = id => document.getElementById(id);
+const Core = window.TodoCore;
 const heuteStr = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 
 let cfg = {}, data = { aufgaben: [], projekte: [], nutzer: [], eingang: [] }, ansicht = 'heute', filter = '', filterWer = '', neuHeute = false, detailId = null, bekannt = null;
@@ -47,11 +48,11 @@ function optionenFilterZu(sel, aktuell) {
   sel.value = [...sel.options].some(o => o.value === aktuell) ? aktuell : '';
 }
 function nutzerListe() { return [...new Set([...(data.nutzer || []), cfg.nutzer].filter(Boolean))]; }
-function optionenWer(sel, mitAlle, aktuell) {
+function optionenWer(sel, mitAlle, aktuell, projektId) {
   sel.replaceChildren();
   if (mitAlle) sel.append(el('option', { value: '', textContent: 'Alle' }));
   else sel.append(el('option', { value: '', textContent: 'Niemand' }));
-  for (const n of nutzerListe()) sel.append(el('option', { value: n, textContent: n === cfg.nutzer ? n + ' (ich)' : n }));
+  for (const n of projektId ? Core.werFuer(data.projekte, projektId, nutzerListe()) : nutzerListe()) sel.append(el('option', { value: n, textContent: n === cfg.nutzer ? n + ' (ich)' : n }));
   if (mitAlle) sel.append(el('option', { value: '-', textContent: 'Niemand' }));
   sel.value = [...sel.options].some(o => o.value === aktuell) ? aktuell : (mitAlle ? '' : cfg.nutzer || '');
 }
@@ -125,7 +126,7 @@ function render() {
   optionenFilterZu($('filter'), filter); filter = $('filter').value;
   optionenWer($('filterWer'), true, filterWer); filterWer = $('filterWer').value;
   optionen($('neuZu'), 'Ohne Zuordnung', $('neuZu').value);
-  optionenWer($('neuWer'), false, $('neuWer').dataset.gewaehlt ?? cfg.nutzer);
+  optionenWer($('neuWer'), false, $('neuWer').dataset.gewaehlt ?? cfg.nutzer, $('neuZu').value);
   $('neuHeute').className = 'star' + (neuHeute ? ' on' : '');
   const board = ansicht === 'board';
   $('liste').hidden = board; $('board').hidden = !board;
@@ -154,7 +155,7 @@ function pruefeNeueZuweisungen() {
   bekannt = meine;
 }
 
-async function laden() { if (!cfg.bereit) return; data = await window.api.laden(); pruefeNeueZuweisungen(); render(); }
+async function laden() { if (!cfg.bereit) return; data = Core.filterSichtbar(await window.api.laden(), cfg.nutzer); pruefeNeueZuweisungen(); render(); }
 async function aendern(id, patch) { await window.api.aendern(id, patch); await laden(); }
 
 // ---------- Detail ----------
@@ -168,7 +169,7 @@ function refreshDetail(erst) {
   const t = finde(detailId);
   if (!t) { detailId = null; $('pTask').hidden = true; return; }
   $('dStatus').value = t.status; $('dFaellig').value = t.faellig || ''; $('dHeute').checked = istHeute(t);
-  optionenWer($('dWer'), false, t.zugewiesenAn || ''); $('dWer').value = t.zugewiesenAn || '';
+  optionenWer($('dWer'), false, t.zugewiesenAn || '', t.zuordnung); $('dWer').value = t.zugewiesenAn || '';
   optionen($('dZu'), 'Ohne Zuordnung', t.zuordnung || '');
   $('dAblegen').checked = !!t.ablegen; $('dAblage').textContent = t.ablage ? 'Dateien abgelegt in: ' + t.ablage : '';
   $('dInfo').textContent = 'Angelegt von ' + t.erstelltVon + ', zuletzt geändert von ' + t.geaendertVon + '.';
@@ -221,8 +222,22 @@ function renderProj() {
   const box = $('projListe'); box.replaceChildren();
   if (!data.projekte.length) box.append(el('p', { className: 'hint', textContent: 'Noch keine Einträge.' }));
   for (const p of data.projekte) {
-    box.append(el('div', { className: 'pl' }, el('span', { textContent: projName(p.id) }), el('i', { textContent: p.typ }),
-      el('button', { textContent: '🗑', title: 'Entfernen', onclick: async () => { await window.api.projektLoeschen(p.id); await laden(); renderProj(); } })));
+    const darf = Core.kannProjektBearbeiten(p, cfg.nutzer), alle = nutzerListe(), begrenzt = p.mitglieder && p.mitglieder.length;
+    const editor = el('div', { className: 'row', style: 'flex:1 0 100%;flex-wrap:wrap;gap:10px' }); editor.hidden = true;
+    for (const n of alle) {
+      const cb = el('input', { type: 'checkbox', checked: !begrenzt || p.mitglieder.includes(n), disabled: n === p.besitzer });
+      cb.onchange = async () => {
+        const gewaehlt = [...editor.querySelectorAll('input')].filter(x => x.checked).map(x => x.dataset.n);
+        await window.api.projektAendern(p.id, { mitglieder: gewaehlt.length === alle.length ? [] : gewaehlt }); await laden(); renderProj();
+      };
+      cb.dataset.n = n; editor.append(el('label', { style: 'flex-direction:row;gap:4px;align-items:center' }, cb, n));
+    }
+    const row = el('div', { className: 'pl', style: 'flex-wrap:wrap' }, el('span', { textContent: projName(p.id) }), el('i', { textContent: begrenzt ? '👥 ' + p.mitglieder.join(', ') : '👥 alle' }));
+    if (darf) {
+      row.append(el('button', { textContent: '👥', title: 'Wer darf dieses Projekt sehen?', onclick: () => { editor.hidden = !editor.hidden; } }),
+        el('button', { textContent: '🗑', title: 'Entfernen', onclick: async () => { await window.api.projektLoeschen(p.id); await laden(); renderProj(); } }), editor);
+    } else row.append(el('i', { textContent: 'von ' + p.besitzer }));
+    box.append(row);
   }
 }
 
@@ -238,6 +253,7 @@ $('add').onsubmit = async e => {
     faellig: $('neuFaellig').value || null, heute: neuHeute || ansicht === 'heute' ? heuteStr() : null });
   $('neuTitel').value = ''; $('neuFaellig').value = ''; delete $('neuWer').dataset.gewaehlt; neuHeute = false; await laden();
 };
+$('neuZu').onchange = render;
 $('neuWer').onchange = () => { $('neuWer').dataset.gewaehlt = $('neuWer').value; };
 $('neuHeute').onclick = () => { neuHeute = !neuHeute; render(); };
 $('filter').onchange = e => { filter = e.target.value; render(); };

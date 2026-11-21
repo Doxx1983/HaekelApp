@@ -130,6 +130,20 @@ const GIS = `window.google = { accounts: { oauth2: { initTokenClient: () => ({ r
   assert.ok(neu && neu.zugewiesenAn === 'Ben'); assert.strictEqual(kids(by(neu.id, by('dateien', rootF.id).id).id).length, 1);
   await page.click('#inOk');
 
+  // Freigabe: Projekt nur für Anna -> Ben (ich) sieht es nicht; eigenes Projekt begrenzen
+  add('geheim.json', aufg, 'application/json', JSON.stringify({ id: 'geheim', titel: 'Nur Anna', status: 'todo', zuordnung: 'privat', erstelltVon: 'Anna', geaendertVon: 'Anna' }));
+  const pf = by('projekte.json', rootF.id), pj = JSON.parse(pf.content); pj.projekte.push({ id: 'privat', name: 'Privat', typ: 'projekt', besitzer: 'Anna', mitglieder: ['Anna'] }); pf.content = JSON.stringify(pj);
+  await page.click('#bRef'); await page.waitForTimeout(400);
+  assert.ok(!(await page.locator('#filter option').allTextContents()).some(x => x.includes('Privat')));
+  assert.ok(!(await page.locator('main').textContent()).includes('Nur Anna'));
+  await page.click('#bProj'); await page.fill('#pNameIn', 'Haus'); await page.click('#pAdd'); await page.waitForTimeout(300);
+  assert.ok(!(await page.locator('#projListe').textContent()).includes('Privat'));
+  await page.locator('#projListe .pl', { hasText: 'Haus' }).locator('button:has-text("👥")').click();
+  await page.locator('#projListe .pl', { hasText: 'Haus' }).locator('input[data-n=Anna]').uncheck(); await page.waitForTimeout(300);
+  const haus = JSON.parse(by('projekte.json', rootF.id).content).projekte.find(x => x.name === 'Haus');
+  assert.strictEqual(haus.besitzer, 'Ben'); assert.deepStrictEqual(haus.mitglieder, ['Ben']);
+  await page.click('#pOk');
+
   // Archivieren, Projekt anlegen
   await page.click('nav button:has-text("Offen")'); await page.locator('.task .t', { hasText: 'Direkt' }).click(); await page.click('#dArch');
   await page.waitForTimeout(300); assert.strictEqual(JSON.parse(by(neu.id + '.json', aufg).content).archiviert, true);

@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('api', {
   aendern: (id, patch) => call('aendern', id, patch),
   loeschen: id => call('loeschen', id),
   projektNeu: d => call('projekt:neu', d),
+  projektAendern: (id, patch) => call('projekt:aendern', id, patch),
   projektLoeschen: id => call('projekt:loeschen', id),
   dateiWaehlen: id => call('datei:waehlen', id),
   dateiHinzu: (id, files) => call('datei:hinzu', id, [...files].map(f => webUtils.getPathForFile(f)).filter(Boolean)),

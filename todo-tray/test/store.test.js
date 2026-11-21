@@ -29,7 +29,8 @@ assert.strictEqual(a.load().aufgaben.length, 1);
 
 const s1 = a.signature(); b.create({ titel: 'Neu' }); assert.notStrictEqual(a.signature(), s1);
 
-a.removeProject(c.id);
+assert.throws(() => a.removeProject(c.id), /Nur Ben/);   // fremdes Projekt
+b.removeProject(c.id);
 assert.strictEqual(a.load().aufgaben.find(x => x.id === t.id).zuordnung, null);
 assert.throws(() => a.update('../x', {}));
 a.remove(t.id); assert.strictEqual(a.load().aufgaben.length, 1);
@@ -57,6 +58,25 @@ assert.throws(() => b.filePath(k.id, '../../aufgaben/' + k.id + '.json'));
 const sg = a.signature(); fs.writeFileSync(src, 'neu'); a.addFiles(k.id, [src]); assert.notStrictEqual(a.signature(), sg);
 a.removeFile(k.id, 'bericht.txt'); assert.strictEqual(a.load().aufgaben.find(x => x.id === k.id).dateien.length, 2);
 a.remove(k.id); assert.ok(!fs.existsSync(path.join(dir, 'dateien', k.id)));
+// Projekte mit Mitgliedern (nur Sichtbarkeit in der App)
+const Core = require('../shared/core');
+const geheim = b.addProject({ name: 'Geheim', mitglieder: ['Ben'] });
+assert.strictEqual(geheim.besitzer, 'Ben');
+assert.throws(() => a.updateProject(geheim.id, { mitglieder: [] }), /Nur Ben/);
+const tg = b.create({ titel: 'Überraschung', zuordnung: geheim.id });
+const garten = a.addProject({ name: 'Garten' });
+assert.deepStrictEqual(garten.mitglieder, []);                        // leer = alle
+const alle = a.load();
+const fuerAnna = Core.filterSichtbar(alle, 'Anna'), fuerBen = Core.filterSichtbar(alle, 'Ben');
+assert.ok(!fuerAnna.projekte.some(x => x.id === geheim.id) && !fuerAnna.aufgaben.some(x => x.id === tg.id));
+assert.ok(fuerBen.projekte.some(x => x.id === geheim.id) && fuerBen.aufgaben.some(x => x.id === tg.id));
+assert.ok(fuerAnna.projekte.some(x => x.id === garten.id));
+const ps = b.updateProject(geheim.id, { mitglieder: ['Anna'] });         // Besitzer bleibt immer Mitglied
+assert.deepStrictEqual(ps.mitglieder.sort(), ['Anna', 'Ben']);
+assert.deepStrictEqual(Core.werFuer(a.load().projekte, geheim.id, ['Anna', 'Ben', 'Cleo']).sort(), ['Anna', 'Ben']);
+assert.deepStrictEqual(Core.werFuer(a.load().projekte, garten.id, ['Anna', 'Ben', 'Cleo']), ['Anna', 'Ben', 'Cleo']);
+b.remove(tg.id); b.removeProject(geheim.id); a.removeProject(garten.id);
+
 // Ablegen-Markierung
 const ab = a.create({ titel: 'Ablage' }); assert.strictEqual(ab.ablegen, false);
 assert.strictEqual(b.update(ab.id, { ablegen: true }).ablegen, true);
