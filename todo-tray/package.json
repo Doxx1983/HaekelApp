@@ -1,5 +1,5 @@
 {
-  "name": "isadody-aufgaben",
+  "name": "todo-tray",
   "version": "1.0.0",
   "description": "Gemeinsame To-do-Liste im Windows-Infobereich (Tray), Speicherung als JSON in einem geteilten Ordner",
   "main": "src/main.js",
@@ -14,8 +14,8 @@
     "electron-builder": "^25.0.0"
   },
   "build": {
-    "appId": "de.isadody.aufgaben",
-    "productName": "Isadody Aufgaben",
+    "appId": "local.todos.tray",
+    "productName": "To-Dos",
     "files": [
       "src/**",
       "shared/**",

@@ -1,4 +1,4 @@
-# Isadody Aufgaben (Windows-Tray)
+# To-Dos (Windows-Tray)
 
 Kleine To-do-App im Windows-Infobereich (Tray-Symbol unten rechts). Electron. Klassisches, aufgeräumtes Design mit Hell/Dunkel (Knopf oben rechts: Auto → Hell → Dunkel, wird pro Gerät gemerkt).
 
@@ -17,7 +17,7 @@ Kleine To-do-App im Windows-Infobereich (Tray-Symbol unten rechts). Electron. Kl
 ## Installieren (Windows)
 1. Node.js (LTS) installieren.
 2. In diesem Ordner: `npm install`, dann `npm start` zum Ausprobieren.
-3. Als einzelne Datei bauen: `npm run dist` → `dist/Isadody Aufgaben *.exe` (portabel), auf beide Rechner kopieren.
+3. Als einzelne Datei bauen: `npm run dist` → `dist/To-Dos *.exe` (portabel), auf beide Rechner kopieren.
 4. Beim ersten Start Name und gemeinsamen Ordner wählen (⚙). Einstellungen liegen lokal pro Rechner.
 
 ## Einsortieren (Claude legt Dateien ab)

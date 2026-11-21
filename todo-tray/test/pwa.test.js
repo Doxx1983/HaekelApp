@@ -147,7 +147,7 @@ const GIS = `window.google = { accounts: { oauth2: { initTokenClient: () => ({ r
   // Archivieren, Projekt anlegen
   await page.click('nav button:has-text("Offen")'); await page.locator('.task .t', { hasText: 'Direkt' }).click(); await page.click('#dArch');
   await page.waitForTimeout(300); assert.strictEqual(JSON.parse(by(neu.id + '.json', aufg).content).archiviert, true);
-  await page.click('#bProj'); await page.fill('#pNameIn', 'Chat Isadody'); await page.selectOption('#pTyp', 'chat'); await page.click('#pAdd'); await page.waitForTimeout(300);
+  await page.click('#bProj'); await page.fill('#pNameIn', 'Chat Planung'); await page.selectOption('#pTyp', 'chat'); await page.click('#pAdd'); await page.waitForTimeout(300);
   assert.ok(JSON.parse(by('projekte.json', rootF.id).content).projekte.some(p => p.typ === 'chat'));
   await page.click('#pOk');
   await page.click('nav button:has-text("Board")'); await page.screenshot({ path: path.join(process.argv[2] || '.', 'pwa.png') });

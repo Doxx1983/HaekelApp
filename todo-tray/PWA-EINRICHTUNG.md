@@ -7,10 +7,10 @@ Dauer: ca. 20 Minuten. Die Oberfläche von Google ändert sich gelegentlich, die
 ## Teil 1: Google-Cloud-Projekt
 
 1. Öffne https://console.cloud.google.com und melde dich mit dem Google-Konto an, dem der Ordner „To-Dos“ gehört.
-2. Oben links auf die Projektauswahl → **Neues Projekt** → Name `Isadody Aufgaben` → **Erstellen**. Danach das Projekt oben auswählen.
+2. Oben links auf die Projektauswahl → **Neues Projekt** → Name `To-Dos` → **Erstellen**. Danach das Projekt oben auswählen.
 3. **Drive-API aktivieren:** Menü ☰ → **APIs und Dienste** → **Bibliothek** → „Google Drive API“ suchen → **Aktivieren**.
 4. **Zustimmungsbildschirm einrichten:** Menü ☰ → **APIs und Dienste** → **OAuth-Zustimmungsbildschirm** (bzw. „Google Auth Platform“ → **Erste Schritte**).
-   - App-Name: `Isadody Aufgaben`, Support-E-Mail: deine Adresse.
+   - App-Name: `To-Dos`, Support-E-Mail: deine Adresse.
    - Zielgruppe: **Extern**.
    - Kontakt-E-Mail: deine Adresse. Bedingungen akzeptieren, **Erstellen**.
 5. **Testnutzer eintragen:** Unter **Zielgruppe** (bzw. „Testnutzer“) → **Add users** → beide Google-Adressen eintragen (deine und die des anderen Nutzers) → **Speichern**.
@@ -38,7 +38,7 @@ Dauer: ca. 20 Minuten. Die Oberfläche von Google ändert sich gelegentlich, die
 2. Seite im Handy-Browser öffnen:
    - **Android (Chrome):** ⋮ → **App installieren** bzw. **Zum Startbildschirm hinzufügen**.
    - **iPhone (Safari):** Teilen → **Zum Home-Bildschirm**.
-3. App öffnen → **Mit Google anmelden**. Beim ersten Mal erscheint „Google hat diese App nicht überprüft“. Das ist normal bei Testnutzern: **Erweitert** → **Weiter zu Isadody Aufgaben** und den Zugriff erlauben.
+3. App öffnen → **Mit Google anmelden**. Beim ersten Mal erscheint „Google hat diese App nicht überprüft“. Das ist normal bei Testnutzern: **Erweitert** → **Weiter zu To-Dos** und den Zugriff erlauben.
 4. Den eigenen Namen wählen (derselbe wie in der Windows-App) und loslegen.
 
 ## Bedienung

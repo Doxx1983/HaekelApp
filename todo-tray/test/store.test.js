@@ -9,8 +9,8 @@ const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'todo-'));
 const a = new Store(dir, 'Anna'), b = new Store(dir, 'Ben');
 
 const p = a.addProject({ name: 'Häkelapp' });
-const c = b.addProject({ name: 'Chat Isadody', typ: 'chat' });
-assert.deepStrictEqual(a.load().projekte.map(x => x.name), ['Häkelapp', 'Chat Isadody']);
+const c = b.addProject({ name: 'Chat Planung', typ: 'chat' });
+assert.deepStrictEqual(a.load().projekte.map(x => x.name), ['Häkelapp', 'Chat Planung']);
 
 const t = a.create({ titel: 'Garn bestellen', zuordnung: p.id, heute: '2026-11-21' });
 b.update(t.id, { erledigt: true });

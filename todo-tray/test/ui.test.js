@@ -27,7 +27,7 @@ const { Store } = require('../src/store');
   await page.goto('file://' + path.resolve(__dirname, '../src/index.html'));
 
   await page.click('#bProj'); await page.fill('#pName', 'Häkelapp'); await page.click('#pAdd');
-  await page.fill('#pName', 'Chat Isadody'); await page.selectOption('#pTyp', 'chat'); await page.click('#pAdd'); await page.click('#pOk');
+  await page.fill('#pName', 'Chat Planung'); await page.selectOption('#pTyp', 'chat'); await page.click('#pAdd'); await page.click('#pOk');
   assert.strictEqual(store.load().projekte.length, 2);
 
   await page.fill('#neuTitel', 'Garn bestellen'); await page.click('#neuHeute');
