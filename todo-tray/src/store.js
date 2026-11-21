@@ -37,10 +37,12 @@ class Store {
     this.user = user || 'unbekannt';
     this.tasksDir = path.join(dir, 'aufgaben');
     this.filesDir = path.join(dir, 'dateien');
+    this.inboxDir = path.join(dir, 'eingang');
     this.projFile = path.join(dir, 'projekte.json');
     this.userFile = path.join(dir, 'nutzer.json');
     fs.mkdirSync(this.tasksDir, { recursive: true });
     fs.mkdirSync(this.filesDir, { recursive: true });
+    fs.mkdirSync(this.inboxDir, { recursive: true });
     if (!fs.existsSync(this.projFile)) atomicWrite(this.projFile, { projekte: [] });
     this.registerUser(this.user);
   }
@@ -78,7 +80,7 @@ class Store {
       aufgaben.push(t);
     }
     const p = readJson(this.projFile);
-    return { aufgaben, projekte: (p && Array.isArray(p.projekte)) ? p.projekte : [], nutzer: this.users() };
+    return { aufgaben, projekte: (p && Array.isArray(p.projekte)) ? p.projekte : [], nutzer: this.users(), eingang: listFiles(this.inboxDir) };
   }
 
   signature() {
@@ -94,7 +96,7 @@ class Store {
         } catch { /* weg */ }
       }
     };
-    scan(this.tasksDir, 't'); scan(this.dir, 'r'); scan(this.filesDir, 'd');
+    scan(this.tasksDir, 't'); scan(this.dir, 'r'); scan(this.filesDir, 'd'); scan(this.inboxDir, 'd');
     return parts.sort().join('|');
   }
 
@@ -158,6 +160,30 @@ class Store {
 
   removeFile(id, name) {
     try { fs.unlinkSync(this.filePath(id, name)); } catch { /* weg */ }
+  }
+
+  // Eingang: Fotos/Dateien vom Handy (Drive-App -> Ordner "eingang"), werden Aufgaben zugeordnet.
+  inboxPath(name) {
+    const p = path.join(this.inboxDir, safeName(name));
+    if (!fs.existsSync(p)) throw new Error('Datei nicht gefunden');
+    return p;
+  }
+
+  inboxAssign(name, id) {
+    const p = this.inboxPath(name);
+    this.addFiles(id, [p]);
+    fs.unlinkSync(p);
+  }
+
+  inboxNewTask(name, extra = {}) {
+    this.inboxPath(name);
+    const t = this.create({ titel: path.basename(name, path.extname(name)), ...extra });
+    this.inboxAssign(name, t.id);
+    return t;
+  }
+
+  inboxRemove(name) {
+    try { fs.unlinkSync(this.inboxPath(name)); } catch { /* weg */ }
   }
 
   addProject({ name, typ = 'projekt' }) {

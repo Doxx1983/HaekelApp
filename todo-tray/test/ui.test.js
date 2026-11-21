@@ -14,7 +14,7 @@ const { Store } = require('../src/store');
   const store_remove_impl = (i, n) => store.removeFile(i, n);
   await page.exposeFunction('store_remove', store_remove_impl);
   const m = { laden: () => store.load(), neu: d => store.create(d), aendern: (i, p) => store.update(i, p), loeschen: i => store.remove(i),
-    projektNeu: d => store.addProject(d), projektLoeschen: i => store.removeProject(i), dateiHinzu: (i, p) => store.addFiles(i, p) };
+    projektNeu: d => store.addProject(d), projektLoeschen: i => store.removeProject(i), dateiHinzu: (i, p) => store.addFiles(i, p), eingangZuordnen: (n, i) => store.inboxAssign(n, i), eingangNeu: (n, e) => store.inboxNewTask(n, e) };
   for (const k of Object.keys(m)) await page.exposeFunction('__' + k, m[k]);
   await page.addInitScript(() => {
     let cb = () => {};
@@ -22,7 +22,7 @@ const { Store } = require('../src/store');
       ordnerWaehlen: async () => 'x', verstecken() {}, beiAenderung: f => { cb = f; }, __cb: () => cb(),
       laden: () => window.__laden(), neu: d => window.__neu(d), aendern: (i, p) => window.__aendern(i, p), loeschen: i => window.__loeschen(i),
       projektNeu: d => window.__projektNeu(d), projektLoeschen: i => window.__projektLoeschen(i),
-      breite: w => { window.__breite = w; }, dateiHinzu: (i, p) => window.__dateiHinzu(i, p), dateiOeffnen() {}, dateiZeigen() {}, dateiLoeschen: async (i, n) => store_remove(i, n) };
+      breite: w => { window.__breite = w; }, dateiHinzu: (i, p) => window.__dateiHinzu(i, p), dateiOeffnen() {}, eingangZuordnen: (n, i) => window.__eingangZuordnen(n, i), eingangNeu: (n, e) => window.__eingangNeu(n, e), eingangOeffnen() {}, eingangLoeschen() {}, dateiZeigen() {}, dateiLoeschen: async (i, n) => store_remove(i, n) };
   });
   await page.goto('file://' + path.resolve(__dirname, '../src/index.html'));
 
@@ -60,6 +60,16 @@ const { Store } = require('../src/store');
   assert.ok((await page.locator('#dDateien').textContent()).includes('angebot.pdf'));
   await page.click('#dOk');
   assert.ok((await page.locator('.tag.late').count()) >= 1);                  // überfällig markiert
+  // Eingang (Handy-Fotos)
+  fs.writeFileSync(path.join(dir, 'eingang', 'foto1.jpg'), 'x'); fs.writeFileSync(path.join(dir, 'eingang', 'foto2.jpg'), 'x');
+  await page.evaluate(() => window.api.__cb()); await page.waitForTimeout(200);
+  assert.strictEqual(await page.locator('#inN').textContent(), '2');
+  await page.click('#bIn'); await page.locator('#inListe .pl').first().locator('select').selectOption({ label: 'Garn bestellen' });
+  await page.locator('#inListe .pl').first().locator('button:has-text("Zuordnen")').click(); await page.waitForTimeout(200);
+  assert.ok(store.load().aufgaben.find(t => t.id === gb.id).dateien.includes('foto1.jpg'));
+  await page.locator('#inListe .pl').first().locator('button:has-text("Neue Aufgabe")').click(); await page.waitForTimeout(200);
+  assert.ok(store.load().aufgaben.some(t => t.titel === 'foto2')); assert.deepStrictEqual(store.load().eingang, []);
+  await page.click('#inOk');
   // Kanban
   await page.click('nav button:has-text("Board")');
   assert.strictEqual(await page.evaluate(() => window.__breite), 900);

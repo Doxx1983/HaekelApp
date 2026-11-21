@@ -11,6 +11,7 @@ Kleine To-do-App im Windows-Infobereich (Tray-Symbol unten rechts). Electron, Is
 - **Für heute** (★): gilt nur für den Tag der Markierung, am nächsten Tag fällt sie automatisch weg.
 - **Zuordnung** zu Projekten oder Chats (Liste unter ☰ pflegen), Filter nach Zuordnung.
 - **Zwei Nutzer:** beide wählen denselben Ordner (Google-Drive-Desktop oder Netzwerkfreigabe). Änderungen erscheinen automatisch (Ordner-Überwachung + Prüfung alle 5 s).
+- **Eingang (📥) für Handy-Fotos:** Fotos/Dateien mit der Google-Drive-App des Handys in `eingang/` hochladen (Drive-App: „+“ → Hochladen, oder Foto → Teilen → Drive). In der App ordnest du sie einer Aufgabe zu oder machst daraus eine neue Aufgabe; die Datei wandert dabei nach `dateien/<id>/`.
 - Tray: Linksklick öffnet/schließt, Rechtsklick: „Mit Windows starten“, „Beenden“.
 
 ## Installieren (Windows)
@@ -24,6 +25,7 @@ Kleine To-do-App im Windows-Infobereich (Tray-Symbol unten rechts). Electron, Is
 <Ordner>/projekte.json        { "projekte": [ { "id", "name", "typ": "projekt"|"chat" } ] }
 <Ordner>/nutzer.json          { "nutzer": ["Anna", "Ben"] }   (trägt sich beim ersten Start selbst ein)
 <Ordner>/dateien/<id>/...     Anhänge der Aufgabe <id>
+<Ordner>/eingang/             Dateien vom Handy, noch ohne Aufgabe
 <Ordner>/aufgaben/<id>.json   eine Datei pro Aufgabe
 ```
 Aufgabe:

@@ -57,4 +57,11 @@ assert.throws(() => b.filePath(k.id, '../../aufgaben/' + k.id + '.json'));
 const sg = a.signature(); fs.writeFileSync(src, 'neu'); a.addFiles(k.id, [src]); assert.notStrictEqual(a.signature(), sg);
 a.removeFile(k.id, 'bericht.txt'); assert.strictEqual(a.load().aufgaben.find(x => x.id === k.id).dateien.length, 2);
 a.remove(k.id); assert.ok(!fs.existsSync(path.join(dir, 'dateien', k.id)));
+// Eingang
+fs.writeFileSync(path.join(dir, 'eingang', 'IMG_001.jpg'), 'x'); fs.writeFileSync(path.join(dir, 'eingang', 'IMG_002.jpg'), 'y');
+assert.deepStrictEqual(a.load().eingang, ['IMG_001.jpg', 'IMG_002.jpg']);
+const e1 = a.create({ titel: 'Fotos' }); a.inboxAssign('IMG_001.jpg', e1.id);
+assert.deepStrictEqual(a.load().aufgaben.find(x => x.id === e1.id).dateien, ['IMG_001.jpg']);
+const e2 = a.inboxNewTask('IMG_002.jpg'); assert.strictEqual(e2.titel, 'IMG_002'); assert.deepStrictEqual(a.load().eingang, []);
+assert.throws(() => a.inboxPath('../projekte.json'));
 console.log('Store-Tests OK');

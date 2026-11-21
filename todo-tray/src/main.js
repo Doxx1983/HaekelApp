@@ -102,6 +102,10 @@ ipcMain.handle('datei:hinzu', (_e, id, paths) => { store.addFiles(id, paths); la
 ipcMain.handle('datei:oeffnen', (_e, id, name) => shell.openPath(store.filePath(id, name)));
 ipcMain.handle('datei:zeigen', (_e, id, name) => shell.showItemInFolder(store.filePath(id, name)));
 ipcMain.handle('datei:loeschen', (_e, id, name) => { store.removeFile(id, name); lastSig = store.signature(); });
+ipcMain.handle('eingang:zuordnen', (_e, name, id) => { store.inboxAssign(name, id); lastSig = store.signature(); });
+ipcMain.handle('eingang:neu', (_e, name, extra) => { const t = store.inboxNewTask(name, extra); lastSig = store.signature(); return t; });
+ipcMain.handle('eingang:oeffnen', (_e, name) => shell.openPath(store.inboxPath(name)));
+ipcMain.handle('eingang:loeschen', (_e, name) => { store.inboxRemove(name); lastSig = store.signature(); });
 ipcMain.on('breite', (_e, w) => { win.setSize(w, 580); placeWindow(); });
 ipcMain.on('verstecken', () => win.hide());
 

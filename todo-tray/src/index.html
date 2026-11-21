@@ -79,6 +79,7 @@
   <header>
     <img src="logo.png" alt="Isadody" onerror="this.remove()">
     <h1>Aufgaben</h1>
+    <button class="icon" id="bIn" title="Eingang (Fotos &amp; Dateien vom Handy)" style="position:relative">📥<b id="inN" style="position:absolute;top:-4px;right:-4px;background:var(--coral);border-radius:999px;font-size:.65rem;padding:0 5px" hidden></b></button>
     <button class="icon" id="bProj" title="Projekte &amp; Chats verwalten">☰</button>
     <button class="icon" id="bSet" title="Einstellungen">⚙</button>
     <button class="icon" id="bClose" title="Schließen">✕</button>
@@ -117,6 +118,13 @@
     <p class="hint">Dateien liegen im gemeinsamen Ordner unter <b>dateien/</b> und sind für beide sichtbar.</p>
     <p class="hint" id="dInfo"></p>
     <div class="row"><button class="go" type="button" id="dOk">Fertig</button><button type="button" class="icon" id="dArch" style="width:auto;padding:0 12px">Archivieren</button></div>
+  </section>
+
+  <section class="panel" id="pIn" hidden>
+    <h2>Eingang</h2>
+    <p class="hint">Fotos und Dateien vom Handy: in der Google-Drive-App in den Ordner <b>Isadody Aufgaben / eingang</b> hochladen. Hier einer Aufgabe zuordnen oder daraus eine neue Aufgabe machen.</p>
+    <div id="inListe" style="display:flex;flex-direction:column;gap:8px"></div>
+    <button class="go" type="button" id="inOk">Fertig</button>
   </section>
 
   <section class="panel" id="pSet" hidden>

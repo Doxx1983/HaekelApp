@@ -2,7 +2,7 @@
 const $ = id => document.getElementById(id);
 const heuteStr = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 
-let cfg = {}, data = { aufgaben: [], projekte: [], nutzer: [] }, ansicht = 'heute', filter = '', filterWer = '', neuHeute = false, detailId = null, bekannt = null;
+let cfg = {}, data = { aufgaben: [], projekte: [], nutzer: [], eingang: [] }, ansicht = 'heute', filter = '', filterWer = '', neuHeute = false, detailId = null, bekannt = null;
 
 const ANSICHTEN = [['heute', 'Heute'], ['offen', 'Offen'], ['board', 'Board'], ['erledigt', 'Erledigt'], ['archiv', 'Archiv']];
 const SPALTEN = [['todo', 'Zu tun'], ['doing', 'In Arbeit'], ['done', 'Fertig']];
@@ -136,6 +136,8 @@ function render() {
     if (!liste.length) main.append(el('p', { className: 'leer', textContent: { heute: 'Nichts für heute markiert.', offen: 'Alles erledigt 🎉', erledigt: 'Noch nichts erledigt.', archiv: 'Archiv ist leer.' }[ansicht] }));
     for (const t of liste) main.append(taskEl(t));
   }
+  const n = (data.eingang || []).length; $('inN').hidden = !n; $('inN').textContent = n;
+  if (!$('pIn').hidden) renderEingang();
   if (detailId) refreshDetail();
 }
 
@@ -192,6 +194,25 @@ drop.ondragleave = () => drop.classList.remove('over');
 drop.ondrop = async e => { e.preventDefault(); drop.classList.remove('over'); if (e.dataTransfer.files.length) { await window.api.dateiHinzu(detailId, e.dataTransfer.files); await laden(); } };
 // Datei, die daneben fallen gelassen wird, soll das Fenster nicht in eine Datei-Ansicht verwandeln
 for (const ev of ['dragover', 'drop']) window.addEventListener(ev, e => { if (!drop.contains(e.target)) e.preventDefault(); });
+
+// ---------- Eingang ----------
+function renderEingang() {
+  const box = $('inListe'); box.replaceChildren();
+  if (!data.eingang.length) box.append(el('p', { className: 'hint', textContent: 'Eingang ist leer.' }));
+  const offene = data.aufgaben.filter(t => !t.archiviert && t.status !== 'done');
+  for (const n of data.eingang) {
+    const sel = el('select', {}, el('option', { value: '', textContent: 'Aufgabe wählen …' }), ...offene.map(t => el('option', { value: t.id, textContent: t.titel })));
+    box.append(el('div', { className: 'pl', style: 'flex-wrap:wrap' },
+      el('span', { textContent: '📎 ' + n }),
+      el('button', { textContent: '↗', title: 'Öffnen', onclick: () => window.api.eingangOeffnen(n) }),
+      el('button', { textContent: '🗑', title: 'Löschen', onclick: async () => { if (confirm('„' + n + '“ löschen?')) { await window.api.eingangLoeschen(n); await laden(); } } }),
+      el('div', { className: 'row', style: 'flex:1 0 100%' }, sel,
+        el('button', { className: 'go', textContent: 'Zuordnen', onclick: async () => { if (sel.value) { await window.api.eingangZuordnen(n, sel.value); await laden(); } } }),
+        el('button', { className: 'go', textContent: 'Neue Aufgabe', onclick: async () => { await window.api.eingangNeu(n, { zugewiesenAn: cfg.nutzer }); await laden(); } }))));
+  }
+}
+$('bIn').onclick = () => { if (!cfg.bereit) return; renderEingang(); $('pIn').hidden = false; };
+$('inOk').onclick = () => { $('pIn').hidden = true; };
 
 // ---------- Projekte ----------
 function renderProj() {
