@@ -33,4 +33,28 @@ a.removeProject(c.id);
 assert.strictEqual(a.load().aufgaben.find(x => x.id === t.id).zuordnung, null);
 assert.throws(() => a.update('../x', {}));
 a.remove(t.id); assert.strictEqual(a.load().aufgaben.length, 1);
+// Status, Zuständigkeit, Fälligkeit
+const k = a.create({ titel: 'Flyer', zugewiesenAn: 'Ben', faellig: '2026-12-01' });
+assert.strictEqual(k.status, 'todo');
+let u = b.update(k.id, { status: 'doing' }); assert.strictEqual(u.erledigt, false);
+u = b.update(k.id, { status: 'done' }); assert.strictEqual(u.erledigt, true); assert.ok(u.erledigtAm);
+u = b.update(k.id, { erledigt: false }); assert.strictEqual(u.status, 'todo'); assert.strictEqual(u.erledigtAm, null);
+u = b.update(k.id, { status: 'quatsch' }); assert.strictEqual(u.status, 'todo');
+assert.strictEqual(u.zugewiesenAn, 'Ben'); assert.strictEqual(u.faellig, '2026-12-01');
+assert.deepStrictEqual(a.users().sort(), ['Anna', 'Ben']);
+
+// Altbestand ohne Status
+fs.writeFileSync(path.join(dir, 'aufgaben', 'alt-1.json'), JSON.stringify({ id: 'alt-1', titel: 'Alt', erledigt: true }));
+assert.strictEqual(a.load().aufgaben.find(x => x.id === 'alt-1').status, 'done');
+
+// Dateien
+const src = path.join(os.tmpdir(), 'bericht.txt'); fs.writeFileSync(src, 'hallo');
+assert.deepStrictEqual(a.addFiles(k.id, [src]), ['bericht.txt']);
+assert.deepStrictEqual(a.addFiles(k.id, [src]), ['bericht (2).txt']);
+assert.deepStrictEqual(b.load().aufgaben.find(x => x.id === k.id).dateien, ['bericht (2).txt', 'bericht.txt']);
+assert.strictEqual(fs.readFileSync(b.filePath(k.id, 'bericht.txt'), 'utf8'), 'hallo');
+assert.throws(() => b.filePath(k.id, '../../aufgaben/' + k.id + '.json'));
+const sg = a.signature(); fs.writeFileSync(src, 'neu'); a.addFiles(k.id, [src]); assert.notStrictEqual(a.signature(), sg);
+a.removeFile(k.id, 'bericht.txt'); assert.strictEqual(a.load().aufgaben.find(x => x.id === k.id).dateien.length, 2);
+a.remove(k.id); assert.ok(!fs.existsSync(path.join(dir, 'dateien', k.id)));
 console.log('Store-Tests OK');

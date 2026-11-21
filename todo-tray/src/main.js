@@ -1,5 +1,5 @@
 'use strict';
-const { app, BrowserWindow, Tray, Menu, ipcMain, dialog, screen, nativeImage } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, dialog, screen, nativeImage, shell } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const { Store } = require('./store');
@@ -58,13 +58,14 @@ function createWindow() {
 }
 
 let dialogOpen = false;
-async function pickFolder() {
+async function pick(opts) {
   dialogOpen = true;
   try {
-    const r = await dialog.showOpenDialog(win, { title: 'Gemeinsamen Ordner wählen (Google Drive oder Netzwerk)', properties: ['openDirectory', 'createDirectory'] });
-    return r.canceled ? null : r.filePaths[0];
+    const r = await dialog.showOpenDialog(win, opts);
+    return r.canceled ? [] : r.filePaths;
   } finally { dialogOpen = false; win.show(); }
 }
+const pickFolder = async () => (await pick({ title: 'Gemeinsamen Ordner wählen (Google Drive oder Netzwerk)', properties: ['openDirectory', 'createDirectory'] }))[0] || null;
 
 function createTray() {
   const icon = nativeImage.createFromPath(path.join(__dirname, '..', 'icon.png')).resize({ width: 16, height: 16 });
@@ -92,6 +93,16 @@ ipcMain.handle('aendern', (_e, id, patch) => { const t = store.update(id, patch)
 ipcMain.handle('loeschen', (_e, id) => { store.remove(id); lastSig = store.signature(); });
 ipcMain.handle('projekt:neu', (_e, d) => { const p = store.addProject(d); lastSig = store.signature(); return p; });
 ipcMain.handle('projekt:loeschen', (_e, id) => { store.removeProject(id); lastSig = store.signature(); });
+ipcMain.handle('datei:waehlen', async (_e, id) => {
+  const paths = await pick({ title: 'Dateien zur Aufgabe hinzufügen', properties: ['openFile', 'multiSelections'] });
+  if (paths.length) store.addFiles(id, paths);
+  lastSig = store.signature();
+});
+ipcMain.handle('datei:hinzu', (_e, id, paths) => { store.addFiles(id, paths); lastSig = store.signature(); });
+ipcMain.handle('datei:oeffnen', (_e, id, name) => shell.openPath(store.filePath(id, name)));
+ipcMain.handle('datei:zeigen', (_e, id, name) => shell.showItemInFolder(store.filePath(id, name)));
+ipcMain.handle('datei:loeschen', (_e, id, name) => { store.removeFile(id, name); lastSig = store.signature(); });
+ipcMain.on('breite', (_e, w) => { win.setSize(w, 580); placeWindow(); });
 ipcMain.on('verstecken', () => win.hide());
 
 app.whenReady().then(() => {

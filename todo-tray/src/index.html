@@ -7,54 +7,71 @@
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
   /* Isadody Corporate Design (Tokens wie in der Häkelhelfer-App) */
-  :root { --paper:#FBF6EC; --paper-alt:#F5EBD8; --ink:#22201B; --ink-soft:#5B5347; --coral:#F2896B; --coral-soft:#FBD9CB; --line:#D8CBB0;
+  :root { --paper:#FBF6EC; --paper-alt:#F5EBD8; --ink:#22201B; --ink-soft:#5B5347; --coral:#F2896B; --coral-soft:#FBD9CB; --line:#D8CBB0; --warn:#A03A1C;
     --display:'Baloo 2',system-ui,sans-serif; --body:'Nunito',system-ui,sans-serif;
     --shadow-card:0 2px 8px rgba(34,32,27,.08); }
   * { box-sizing:border-box; margin:0; font-family:var(--body); }
   html, body { height:100%; }
-  body { background:var(--paper); color:var(--ink); display:flex; flex-direction:column; padding:12px; gap:10px; overflow:hidden; font-size:14px; }
+  body { background:var(--paper); color:var(--ink); display:flex; flex-direction:column; padding:12px; gap:10px; overflow:hidden; font-size:14px; position:relative; }
   button { border:0; cursor:pointer; background:none; color:inherit; font:inherit; }
   header { display:flex; align-items:center; gap:8px; }
   header img { height:32px; }
   header h1 { font-family:var(--display); font-size:1.3rem; flex:1; }
   .icon { width:30px; height:30px; border-radius:50%; background:var(--paper-alt); border:1px solid var(--line); font-size:15px; }
   nav { display:flex; gap:6px; }
-  nav button { flex:1; padding:7px 0; border-radius:999px; background:var(--paper-alt); border:1px solid var(--line); font-weight:800; font-size:.82rem; }
+  nav button { flex:1; padding:7px 0; border-radius:999px; background:var(--paper-alt); border:1px solid var(--line); font-weight:800; font-size:.8rem; }
   nav button.on { background:var(--coral); border-color:var(--coral); }
   nav small { font-weight:700; color:var(--ink-soft); }
-  .add { display:flex; gap:6px; align-items:center; }
-  input[type=text], select { font:inherit; padding:8px 10px; border-radius:12px; border:1px solid var(--line); background:#fff; color:var(--ink); min-width:0; }
-  .add input { flex:1; } .add select { max-width:120px; }
+  .add { display:flex; flex-direction:column; gap:6px; }
+  .add .r { display:flex; gap:6px; align-items:center; }
+  input[type=text], input[type=date], select, textarea { font:inherit; padding:8px 10px; border-radius:12px; border:1px solid var(--line); background:#fff; color:var(--ink); min-width:0; }
+  .add input[type=text] { flex:1; } .add select { flex:1; } .add input[type=date] { flex:1; }
   .star { width:34px; height:34px; border-radius:50%; background:var(--paper-alt); border:1px solid var(--line); font-size:17px; color:var(--ink-soft); }
   .star.on { background:var(--coral-soft); color:var(--coral); border-color:var(--coral); }
   .go { background:var(--coral); border-radius:999px; font-weight:800; padding:8px 14px; font-family:var(--display); }
   .filter { display:flex; gap:6px; align-items:center; font-size:.8rem; color:var(--ink-soft); }
   .filter select { flex:1; padding:5px 8px; }
-  main { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding-right:2px; }
-  .task { display:flex; gap:8px; align-items:center; background:var(--paper-alt); border:1px solid var(--line); border-radius:14px; padding:8px 10px; box-shadow:var(--shadow-card); }
+  main { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding-right:2px; min-height:0; }
+  .task { display:flex; gap:8px; align-items:center; background:var(--paper-alt); border:1px solid var(--line); border-radius:14px; padding:8px 10px; box-shadow:var(--shadow-card); cursor:pointer; }
   .task .box { flex:0 0 22px; height:22px; border-radius:7px; border:2px solid var(--ink-soft); background:#fff; font-size:14px; line-height:18px; text-align:center; font-weight:800; }
   .task.done .box { background:var(--coral); border-color:var(--coral); }
-  .task .txt { flex:1; min-width:0; }
-  .task .t { word-break:break-word; cursor:text; }
-  .task.done .t { text-decoration:line-through; color:var(--ink-soft); }
-  .task .meta { font-size:.72rem; color:var(--ink-soft); display:flex; gap:6px; flex-wrap:wrap; margin-top:2px; }
+  .task.doing .box { border-color:var(--coral); }
+  .txt { flex:1; min-width:0; }
+  .t { word-break:break-word; }
+  .done .t { text-decoration:line-through; color:var(--ink-soft); }
+  .meta { font-size:.72rem; color:var(--ink-soft); display:flex; gap:5px; flex-wrap:wrap; margin-top:3px; align-items:center; }
   .tag { background:var(--coral-soft); border-radius:999px; padding:0 8px; font-weight:700; color:var(--ink); }
+  .tag.wer { background:#E8E0CC; }
+  .tag.due { background:#fff; border:1px solid var(--line); }
+  .tag.late { background:var(--warn); color:#fff; border-color:var(--warn); }
   .task .act { display:flex; gap:2px; }
-  .task .act button { width:26px; height:26px; border-radius:8px; font-size:14px; color:var(--ink-soft); }
-  .task .act button:hover { background:var(--coral-soft); }
-  .task .act .heute.on { color:var(--coral); }
-  .task input.edit { width:100%; }
+  .task .act button, .card .act button { width:26px; height:26px; border-radius:8px; font-size:14px; color:var(--ink-soft); }
+  .task .act button:hover, .card .act button:hover { background:var(--coral-soft); }
+  .heute.on { color:var(--coral) !important; }
   .leer { text-align:center; color:var(--ink-soft); margin-top:30px; }
+  /* Kanban */
+  .board { flex:1; display:grid; grid-template-columns:repeat(3,1fr); gap:10px; min-height:0; }
+  .col { background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; padding:8px; display:flex; flex-direction:column; gap:6px; min-height:0; }
+  .col.over { outline:2px dashed var(--coral); }
+  .col h3 { font-family:var(--display); font-size:1rem; display:flex; justify-content:space-between; }
+  .col .cards { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:8px 10px; box-shadow:var(--shadow-card); cursor:grab; }
+  .card .act { display:flex; justify-content:flex-end; gap:2px; margin-top:2px; }
+  /* Panels */
   .panel { position:absolute; inset:0; background:var(--paper); padding:14px; display:flex; flex-direction:column; gap:10px; overflow-y:auto; z-index:5; }
   .panel h2 { font-family:var(--display); font-size:1.2rem; }
   .panel label { font-weight:800; font-size:.82rem; display:flex; flex-direction:column; gap:4px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .row { display:flex; gap:6px; align-items:center; }
   .row input { flex:1; }
   .pl { display:flex; align-items:center; gap:6px; background:var(--paper-alt); border-radius:12px; padding:6px 10px; }
-  .pl span { flex:1; }
+  .pl span { flex:1; word-break:break-all; }
   .pl i { font-style:normal; font-size:.72rem; color:var(--ink-soft); }
   .hint { color:var(--ink-soft); font-size:.78rem; }
-  .err { color:#a03a1c; font-weight:700; }
+  .err { color:var(--warn); font-weight:700; }
+  .drop { border:2px dashed var(--line); border-radius:14px; padding:10px; text-align:center; color:var(--ink-soft); font-size:.8rem; }
+  .drop.over { border-color:var(--coral); background:var(--coral-soft); }
+  .sec { font-weight:800; font-size:.82rem; }
   [hidden] { display:none !important; }
 </style>
 </head>
@@ -68,21 +85,47 @@
   </header>
   <nav id="nav"></nav>
   <form class="add" id="add">
-    <input type="text" id="neuTitel" placeholder="Neue Aufgabe …" autocomplete="off">
-    <select id="neuZu" title="Zuordnung"></select>
-    <button type="button" class="star" id="neuHeute" title="Für heute">★</button>
-    <button class="go" type="submit">+</button>
+    <div class="r">
+      <input type="text" id="neuTitel" placeholder="Neue Aufgabe …" autocomplete="off">
+      <button type="button" class="star" id="neuHeute" title="Für heute">★</button>
+      <button class="go" type="submit">+</button>
+    </div>
+    <div class="r">
+      <select id="neuZu" title="Projekt / Chat"></select>
+      <select id="neuWer" title="Zuständig"></select>
+      <input type="date" id="neuFaellig" title="Fällig am">
+    </div>
   </form>
-  <div class="filter"><span>Zuordnung:</span><select id="filter"></select></div>
+  <div class="filter"><span>Zuordnung:</span><select id="filter"></select><span>Zuständig:</span><select id="filterWer"></select></div>
   <main id="liste"></main>
+  <div class="board" id="board" hidden></div>
+
+  <section class="panel" id="pTask" hidden>
+    <h2>Aufgabe</h2>
+    <label>Titel<input type="text" id="dTitel"></label>
+    <label>Notiz<textarea id="dNotiz" rows="3"></textarea></label>
+    <div class="grid2">
+      <label>Status<select id="dStatus"><option value="todo">Zu tun</option><option value="doing">In Arbeit</option><option value="done">Fertig</option></select></label>
+      <label>Fällig am<input type="date" id="dFaellig"></label>
+      <label>Zuständig<select id="dWer"></select></label>
+      <label>Projekt / Chat<select id="dZu"></select></label>
+    </div>
+    <label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="dHeute"> Für heute</label>
+    <div class="sec">Dateien</div>
+    <div id="dDateien" style="display:flex;flex-direction:column;gap:6px"></div>
+    <div class="drop" id="dDrop">Dateien hierher ziehen oder <button type="button" class="go" id="dAdd" style="padding:4px 12px">auswählen</button></div>
+    <p class="hint">Dateien liegen im gemeinsamen Ordner unter <b>dateien/</b> und sind für beide sichtbar.</p>
+    <p class="hint" id="dInfo"></p>
+    <div class="row"><button class="go" type="button" id="dOk">Fertig</button><button type="button" class="icon" id="dArch" style="width:auto;padding:0 12px">Archivieren</button></div>
+  </section>
 
   <section class="panel" id="pSet" hidden>
     <h2>Einstellungen</h2>
-    <label>Dein Name (für die Anzeige, wer was angelegt hat)<input type="text" id="sName" placeholder="z. B. Dominic"></label>
+    <label>Dein Name (wird für Zuständigkeit verwendet)<input type="text" id="sName" placeholder="z. B. Dominic"></label>
     <label>Gemeinsamer Ordner
       <div class="row"><input type="text" id="sOrdner" readonly placeholder="noch nicht gewählt"><button class="go" type="button" id="sWahl">Wählen</button></div>
     </label>
-    <p class="hint">Beide Nutzer wählen denselben Ordner (Google-Drive-Ordner oder Netzwerkfreigabe). Darin liegen <b>aufgaben/*.json</b> und <b>projekte.json</b>.</p>
+    <p class="hint">Beide Nutzer wählen denselben Ordner (Google-Drive-Ordner oder Netzwerkfreigabe) und tragen jeweils ihren eigenen Namen ein. Darin liegen <b>aufgaben/</b>, <b>dateien/</b>, <b>projekte.json</b> und <b>nutzer.json</b>.</p>
     <p class="err" id="sErr"></p>
     <div class="row"><button class="go" type="button" id="sOk">Speichern</button><button type="button" id="sAbbr" class="icon" style="width:auto;padding:0 12px">Abbrechen</button></div>
   </section>
