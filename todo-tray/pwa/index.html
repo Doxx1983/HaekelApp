@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Isadody Aufgaben</title>
+<meta name="theme-color" content="#FBF6EC">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Isadody Corporate Design (Tokens wie in der Häkelhelfer-App) */
+  :root { --paper:#FBF6EC; --paper-alt:#F5EBD8; --ink:#22201B; --ink-soft:#5B5347; --coral:#F2896B; --coral-soft:#FBD9CB; --line:#D8CBB0; --warn:#A03A1C;
+    --display:'Baloo 2',system-ui,sans-serif; --body:'Nunito',system-ui,sans-serif; --shadow-card:0 2px 8px rgba(34,32,27,.08); }
+  * { box-sizing:border-box; margin:0; font-family:var(--body); }
+  html, body { height:100%; }
+  body { background:var(--paper); color:var(--ink); display:flex; flex-direction:column; gap:10px; font-size:16px; overflow:hidden;
+    padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom)); position:relative; }
+  button { border:0; cursor:pointer; background:none; color:inherit; font:inherit; }
+  header { display:flex; align-items:center; gap:8px; }
+  header img { height:34px; } header h1 { font-family:var(--display); font-size:1.4rem; flex:1; }
+  .icon { width:40px; height:40px; border-radius:50%; background:var(--paper-alt); border:1px solid var(--line); font-size:18px; position:relative; }
+  nav { display:flex; gap:6px; overflow-x:auto; }
+  nav button { flex:1 0 auto; padding:9px 12px; border-radius:999px; background:var(--paper-alt); border:1px solid var(--line); font-weight:800; font-size:.9rem; white-space:nowrap; }
+  nav button.on { background:var(--coral); border-color:var(--coral); } nav small { color:var(--ink-soft); font-weight:700; }
+  input[type=text], input[type=date], select, textarea { font:inherit; font-size:16px; padding:10px 12px; border-radius:12px; border:1px solid var(--line); background:#fff; color:var(--ink); min-width:0; width:100%; }
+  .go { background:var(--coral); border-radius:999px; font-weight:800; padding:10px 16px; font-family:var(--display); }
+  .ghost { background:var(--paper-alt); border:1px solid var(--line); border-radius:999px; padding:10px 14px; font-weight:700; }
+  .add { display:flex; flex-direction:column; gap:6px; } .r { display:flex; gap:6px; align-items:center; }
+  .star { flex:0 0 44px; height:44px; border-radius:50%; background:var(--paper-alt); border:1px solid var(--line); font-size:20px; color:var(--ink-soft); }
+  .star.on { background:var(--coral-soft); color:var(--coral); border-color:var(--coral); }
+  .add .more { display:none; } .add:focus-within .more { display:flex; }   /* Zusatzfelder erst beim Tippen, spart Platz */
+  .filter { display:flex; gap:6px; } .filter select { padding:6px 8px; font-size:.85rem; }
+  main { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; min-height:0; }
+  .task, .card { background:var(--paper-alt); border:1px solid var(--line); border-radius:14px; padding:10px 12px; box-shadow:var(--shadow-card); display:flex; gap:10px; align-items:center; }
+  .box { flex:0 0 28px; height:28px; border-radius:8px; border:2px solid var(--ink-soft); background:#fff; font-weight:800; }
+  .done .box { background:var(--coral); border-color:var(--coral); } .doing .box { border-color:var(--coral); }
+  .txt { flex:1; min-width:0; } .t { word-break:break-word; } .done .t { text-decoration:line-through; color:var(--ink-soft); }
+  .meta { font-size:.78rem; color:var(--ink-soft); display:flex; gap:5px; flex-wrap:wrap; margin-top:3px; }
+  .tag { background:var(--coral-soft); border-radius:999px; padding:0 8px; font-weight:700; color:var(--ink); }
+  .tag.wer { background:#E8E0CC; } .tag.due { background:#fff; border:1px solid var(--line); } .tag.late { background:var(--warn); color:#fff; border-color:var(--warn); }
+  .heute { font-size:20px; width:36px; height:36px; color:var(--ink-soft); } .heute.on { color:var(--coral); }
+  .leer { text-align:center; color:var(--ink-soft); margin-top:30px; }
+  .board { flex:1; display:flex; gap:10px; overflow-x:auto; scroll-snap-type:x mandatory; min-height:0; }
+  .col { flex:0 0 86%; scroll-snap-align:center; background:var(--paper-alt); border:1px solid var(--line); border-radius:16px; padding:8px; display:flex; flex-direction:column; gap:8px; min-height:0; }
+  .col h3 { font-family:var(--display); display:flex; justify-content:space-between; } .col .cards { overflow-y:auto; display:flex; flex-direction:column; gap:8px; }
+  .card { background:#fff; flex-direction:column; align-items:stretch; } .card .act { display:flex; justify-content:space-between; }
+  .card .act button { padding:6px 14px; border-radius:10px; background:var(--paper-alt); }
+  .panel { position:absolute; inset:0; background:var(--paper); padding:max(14px,env(safe-area-inset-top)) 14px 14px; display:flex; flex-direction:column; gap:10px; overflow-y:auto; z-index:5; }
+  .panel h2 { font-family:var(--display); } .panel label { font-weight:800; font-size:.85rem; display:flex; flex-direction:column; gap:4px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .pl { display:flex; align-items:center; gap:8px; background:var(--paper-alt); border-radius:12px; padding:8px 12px; flex-wrap:wrap; } .pl span { flex:1; word-break:break-all; }
+  .pl button { padding:4px 10px; font-size:18px; }
+  .hint { color:var(--ink-soft); font-size:.85rem; } .err { color:var(--warn); font-weight:700; }
+  #toast { position:fixed; left:12px; right:12px; bottom:calc(12px + env(safe-area-inset-bottom)); background:var(--ink); color:#fff; padding:10px 14px; border-radius:12px; z-index:20; font-size:.9rem; }
+  #inN { position:absolute; top:-4px; right:-4px; background:var(--coral); border-radius:999px; font-size:.7rem; padding:0 6px; }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+  <header>
+    <img src="icon-192.png" alt="">
+    <h1>Aufgaben</h1>
+    <button class="icon" id="bRef" title="Aktualisieren">⟳</button>
+    <button class="icon" id="bIn" title="Eingang">📥<b id="inN" hidden></b></button>
+    <button class="icon" id="bProj" title="Projekte &amp; Chats">☰</button>
+    <button class="icon" id="bSet" title="Einstellungen">⚙</button>
+  </header>
+  <nav id="nav"></nav>
+  <form class="add" id="add">
+    <div class="r"><input type="text" id="neuTitel" placeholder="Neue Aufgabe …" autocomplete="off"><button type="button" class="star" id="neuHeute" title="Für heute">★</button><button class="go" type="submit">+</button></div>
+    <div class="r more"><select id="neuZu"></select><select id="neuWer"></select></div>
+    <div class="r more"><input type="date" id="neuFaellig"></div>
+  </form>
+  <div class="filter"><select id="filter"></select><select id="filterWer"></select></div>
+  <main id="liste"></main>
+  <div class="board" id="board" hidden></div>
+
+  <section class="panel" id="pLogin">
+    <h2>Isadody Aufgaben</h2>
+    <p class="hint" id="loginText">Melde dich mit deinem Google-Konto an, um die gemeinsame Aufgabenliste zu öffnen.</p>
+    <p class="err" id="loginErr"></p>
+    <button class="go" type="button" id="bLogin">Mit Google anmelden</button>
+  </section>
+
+  <section class="panel" id="pName" hidden>
+    <h2>Wer bist du?</h2>
+    <p class="hint">Der Name erscheint bei „Zuständig“ und „von …“. Gleich wie in der Windows-App schreiben.</p>
+    <div id="nameListe" style="display:flex;flex-direction:column;gap:8px"></div>
+    <label>Oder neuer Name<input type="text" id="nameNeu"></label>
+    <button class="go" type="button" id="nameOk">Weiter</button>
+  </section>
+
+  <section class="panel" id="pTask" hidden>
+    <h2>Aufgabe</h2>
+    <label>Titel<input type="text" id="dTitel"></label>
+    <label>Notiz<textarea id="dNotiz" rows="3"></textarea></label>
+    <div class="grid2">
+      <label>Status<select id="dStatus"><option value="todo">Zu tun</option><option value="doing">In Arbeit</option><option value="done">Fertig</option></select></label>
+      <label>Fällig am<input type="date" id="dFaellig"></label>
+      <label>Zuständig<select id="dWer"></select></label>
+      <label>Projekt / Chat<select id="dZu"></select></label>
+    </div>
+    <label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="dHeute" style="width:auto"> Für heute</label>
+    <b>Dateien</b>
+    <div id="dDateien" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="r"><button class="go" type="button" id="dFoto">📷 Foto</button><button class="ghost" type="button" id="dAdd">Datei wählen</button></div>
+    <input type="file" id="fFoto" accept="image/*" capture="environment" hidden>
+    <input type="file" id="fDatei" multiple hidden>
+    <p class="hint" id="dInfo"></p>
+    <div class="r"><button class="go" type="button" id="dOk">Fertig</button><button class="ghost" type="button" id="dArch">Archivieren</button></div>
+  </section>
+
+  <section class="panel" id="pIn" hidden>
+    <h2>Eingang</h2>
+    <p class="hint">Dateien aus dem Ordner „eingang“ (z. B. über die Drive-App hochgeladen). Einer Aufgabe zuordnen oder daraus eine neue Aufgabe machen.</p>
+    <div class="r"><button class="go" type="button" id="inFoto">📷 Foto in den Eingang</button></div>
+    <input type="file" id="fIn" accept="image/*,*/*" multiple hidden>
+    <div id="inListe" style="display:flex;flex-direction:column;gap:8px"></div>
+    <button class="go" type="button" id="inOk">Fertig</button>
+  </section>
+
+  <section class="panel" id="pSet" hidden>
+    <h2>Einstellungen</h2>
+    <p>Angemeldet als <b id="setName"></b></p>
+    <button class="ghost" type="button" id="setWechsel">Name ändern</button>
+    <button class="ghost" type="button" id="setLogin">Neu bei Google anmelden</button>
+    <p class="hint" id="setInfo"></p>
+    <button class="go" type="button" id="setOk">Fertig</button>
+  </section>
+
+  <section class="panel" id="pProj" hidden>
+    <h2>Projekte &amp; Chats</h2>
+    <div id="projListe" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="r"><input type="text" id="pNameIn" placeholder="Name …" autocomplete="off"><select id="pTyp" style="width:auto"><option value="projekt">Projekt</option><option value="chat">Chat</option></select><button class="go" type="button" id="pAdd">+</button></div>
+    <button class="go" type="button" id="pOk">Fertig</button>
+  </section>
+  <div id="toast" hidden></div>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="config.js"></script>
+<script src="core.js"></script>
+<script src="drive.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

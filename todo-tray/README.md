@@ -20,6 +20,9 @@ Kleine To-do-App im Windows-Infobereich (Tray-Symbol unten rechts). Electron, Is
 3. Als einzelne Datei bauen: `npm run dist` → `dist/Isadody Aufgaben *.exe` (portabel), auf beide Rechner kopieren.
 4. Beim ersten Start Name und gemeinsamen Ordner wählen (⚙). Einstellungen liegen lokal pro Rechner.
 
+## Handy (PWA)
+Im Ordner `pwa/`: Web-App für Android/iPhone, spricht direkt mit der Google-Drive-API (gleiche Daten wie die Windows-App, Fotos direkt an Aufgaben). Einrichtung: `PWA-EINRICHTUNG.md`.
+
 ## Datenformat (im gemeinsamen Ordner)
 ```
 <Ordner>/projekte.json        { "projekte": [ { "id", "name", "typ": "projekt"|"chat" } ] }
@@ -41,4 +44,5 @@ Beim Ändern per Hand/Claude: `status` und `erledigt` zusammen setzen (`done` = 
 Claude kann die Dateien über den Drive-Connector lesen und ändern: Felder bearbeiten oder neue `aufgaben/<id>.json` anlegen (ID: nur `a-z 0-9 -`, Dateiname = `id`).
 
 ## Tests
-`npm test` (Speicher-Logik, ohne Electron). Oberfläche: `test/ui.test.js` (Playwright).
+`npm test` (Speicher-Logik, ohne Electron). Mit Playwright: `test/ui.test.js` (Windows-Oberfläche), `test/pwa.test.js` (PWA gegen nachgebautes Drive).
+Gemeinsamer Kern: `shared/core.js` (Kopie in `pwa/core.js`, Abgleich mit `npm run sync`).

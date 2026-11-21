@@ -6,14 +6,9 @@
 //   nutzer.json          Namen der beiden Nutzer
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
+const Core = require('../shared/core');
 
-const ID_RE = /^[a-z0-9-]+$/;
-const STATUS = ['todo', 'doing', 'done'];
-const TASK_FIELDS = ['titel', 'notiz', 'status', 'erledigt', 'erledigtAm', 'archiviert', 'heute', 'zuordnung', 'zugewiesenAn', 'faellig'];
-
-const now = () => new Date().toISOString();
-const newId = () => Date.now().toString(36) + '-' + crypto.randomBytes(3).toString('hex');
+const { ID_RE, STATUS, now, newId } = Core;
 
 function atomicWrite(file, data) {
   const tmp = file + '.' + process.pid + '.tmp';
@@ -75,7 +70,7 @@ class Store {
       if (!f.endsWith('.json') || !ID_RE.test(f.slice(0, -5))) continue;
       const t = readJson(path.join(this.tasksDir, f));
       if (!t || t.id !== f.slice(0, -5) || typeof t.titel !== 'string') continue;
-      if (!STATUS.includes(t.status)) t.status = t.erledigt ? 'done' : 'todo'; // Altbestand ohne Status
+      Core.normalize(t);
       t.dateien = listFiles(path.join(this.filesDir, t.id)); // nicht in der Aufgabe gespeichert, nur zur Anzeige
       aufgaben.push(t);
     }
@@ -100,32 +95,17 @@ class Store {
     return parts.sort().join('|');
   }
 
-  create({ titel, zuordnung = null, heute = null, notiz = '', zugewiesenAn = null, faellig = null, status = 'todo' }) {
-    const id = newId();
-    const st = STATUS.includes(status) ? status : 'todo';
-    const t = {
-      id, titel: String(titel).trim(), notiz, status: st, erledigt: st === 'done', erledigtAm: st === 'done' ? now() : null,
-      archiviert: false, heute, zuordnung, zugewiesenAn, faellig,
-      erstelltVon: this.user, erstelltAm: now(), geaendertVon: this.user, geaendertAm: now(),
-    };
-    atomicWrite(this._taskFile(id), t);
+  create(fields) {
+    const t = Core.createTask(fields, this.user);
+    atomicWrite(this._taskFile(t.id), t);
     return t;
   }
 
-  // Patch statt Komplett-Überschreiben: aktuelle Datei lesen, nur geänderte Felder ersetzen.
   update(id, patch) {
     const file = this._taskFile(id);
-    const t = readJson(file);
-    if (!t) throw new Error('Aufgabe nicht gefunden');
-    const p = { ...patch };
-    if ('status' in p && !STATUS.includes(p.status)) delete p.status;
-    if ('status' in p) { p.erledigt = p.status === 'done'; }
-    else if ('erledigt' in p) { p.status = p.erledigt ? 'done' : 'todo'; }
-    if ('erledigt' in p && !('erledigtAm' in p)) p.erledigtAm = p.erledigt ? now() : null;
-    for (const k of TASK_FIELDS) if (k in p) t[k] = p[k];
-    if (typeof t.titel !== 'string' || !t.titel.trim()) throw new Error('Titel fehlt');
-    t.geaendertVon = this.user;
-    t.geaendertAm = now();
+    const cur = readJson(file);
+    if (!cur) throw new Error('Aufgabe nicht gefunden');
+    const t = Core.applyPatch(cur, patch, this.user);
     atomicWrite(file, t);
     return t;
   }

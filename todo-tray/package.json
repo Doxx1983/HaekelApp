@@ -5,8 +5,9 @@
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
-    "test": "node test/store.test.js",
-    "dist": "electron-builder --win portable"
+    "test": "node test/store.test.js && node test/sync.test.js",
+    "dist": "electron-builder --win portable",
+    "sync": "node -e \"require('fs').copyFileSync('shared/core.js','pwa/core.js')\""
   },
   "devDependencies": {
     "electron": "^33.0.0",
@@ -15,8 +16,19 @@
   "build": {
     "appId": "de.isadody.aufgaben",
     "productName": "Isadody Aufgaben",
-    "files": ["src/**", "icon.png", "icon.ico", "package.json"],
+    "files": [
+      "src/**",
+      "shared/**",
+      "icon.png",
+      "icon.ico",
+      "package.json"
+    ],
     "extraResources": [],
-    "win": { "icon": "icon.ico", "target": ["portable"] }
+    "win": {
+      "icon": "icon.ico",
+      "target": [
+        "portable"
+      ]
+    }
   }
 }
