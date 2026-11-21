@@ -1,6 +1,6 @@
 # Isadody Aufgaben (Windows-Tray)
 
-Kleine To-do-App im Windows-Infobereich (Tray-Symbol unten rechts). Electron, Isadody-CD.
+Kleine To-do-App im Windows-Infobereich (Tray-Symbol unten rechts). Electron. Klassisches, aufgeräumtes Design mit Hell/Dunkel (Knopf oben rechts: Auto → Hell → Dunkel, wird pro Gerät gemerkt).
 
 ## Funktionen
 - Aufgaben anlegen, abhaken, archivieren (Archiv: zurückholen oder endgültig löschen). Klick auf eine Aufgabe öffnet die Details (Titel, Notiz, Status, Fälligkeit, Zuständigkeit, Dateien).

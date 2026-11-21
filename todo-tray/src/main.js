@@ -1,5 +1,5 @@
 'use strict';
-const { app, BrowserWindow, Tray, Menu, ipcMain, dialog, screen, nativeImage, shell } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, dialog, screen, nativeImage, shell, nativeTheme } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const { Store } = require('./store');
@@ -50,7 +50,7 @@ function toggle() {
 function createWindow() {
   win = new BrowserWindow({
     width: 400, height: 580, show: false, frame: false, resizable: false, skipTaskbar: true,
-    alwaysOnTop: true, backgroundColor: '#FBF6EC', icon: path.join(__dirname, '..', 'icon.png'),
+    alwaysOnTop: true, backgroundColor: nativeTheme.shouldUseDarkColors ? '#0F1115' : '#F6F7F9', icon: path.join(__dirname, '..', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false },
   });
   win.loadFile(path.join(__dirname, 'index.html'));
@@ -70,7 +70,7 @@ const pickFolder = async () => (await pick({ title: 'Gemeinsamen Ordner wählen 
 function createTray() {
   const icon = nativeImage.createFromPath(path.join(__dirname, '..', 'icon.png')).resize({ width: 16, height: 16 });
   tray = new Tray(icon);
-  tray.setToolTip('Isadody Aufgaben');
+  tray.setToolTip('Aufgaben');
   tray.on('click', toggle);
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: 'Öffnen', click: toggle },

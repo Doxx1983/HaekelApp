@@ -86,7 +86,7 @@ const { Store } = require('../src/store');
   assert.ok(store.load().aufgaben.some(t => t.titel === 'foto2')); assert.deepStrictEqual(store.load().eingang, []);
   await page.click('#inOk');
   // Kanban
-  await page.click('nav button:has-text("Board")');
+  await page.click('nav button:has-text("Board")'); await page.setViewportSize({ width: 900, height: 580 });   // wie das auf 900 px verbreiterte Fenster
   assert.strictEqual(await page.evaluate(() => window.__breite), 900);
   assert.strictEqual(await page.locator('.col[data-status=doing] .card').count(), 1);
   await page.locator('.col[data-status=doing] .card').dragTo(page.locator('.col[data-status=done]'));
@@ -95,6 +95,14 @@ const { Store } = require('../src/store');
   assert.strictEqual(store.load().aufgaben.find(t => t.id === gb.id).status, 'doing');
   await page.setViewportSize({ width: 900, height: 580 });
   await page.screenshot({ path: path.join(process.argv[2] || '.', 'board.png') });
+  // Design: Auto -> Hell -> Dunkel
+  const th = () => page.evaluate(() => document.documentElement.dataset.theme || 'auto');
+  assert.strictEqual(await th(), 'auto'); await page.click('#bTheme'); assert.strictEqual(await th(), 'light'); await page.click('#bTheme'); assert.strictEqual(await th(), 'dark');
+  const bg = c => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  assert.strictEqual(await bg(), 'rgb(15, 17, 21)'); await page.screenshot({ path: path.join(process.argv[2] || '.', 'ui-dark.png') });
+  await page.click('#bTheme'); await page.click('#bTheme'); await page.click('#bTheme');   // zurück auf Hell (light)
+  await page.click('nav button:has-text("Offen")'); await page.click('#bTheme'); await page.click('#bTheme'); assert.strictEqual(await th(), 'light');
+  assert.strictEqual(await bg(), 'rgb(246, 247, 249)');
   await page.screenshot({ path: path.join(process.argv[2] || '.', 'ui.png') });
   assert.deepStrictEqual(errs, []);
   await browser.close(); console.log('UI-Tests OK');

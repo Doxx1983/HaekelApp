@@ -1,6 +1,18 @@
 'use strict';
 const $ = id => document.getElementById(id);
 const Core = window.TodoCore;
+const THEMES = ['auto', 'light', 'dark'], T_ICON = { auto: '🌓', light: '☀️', dark: '🌙' }, T_NAME = { auto: 'automatisch', light: 'hell', dark: 'dunkel' };
+let theme = 'auto'; try { theme = localStorage.getItem('theme') || 'auto'; } catch { /* ok */ }
+function applyTheme(t) {
+  theme = THEMES.includes(t) ? t : 'auto';
+  if (theme === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.dataset.theme = theme;
+  $('bTheme').textContent = T_ICON[theme]; $('bTheme').title = 'Design: ' + T_NAME[theme] + ' (Klick wechselt)';
+  const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = getComputedStyle(document.body).backgroundColor;
+  try { localStorage.setItem('theme', theme); } catch { /* ok */ }
+}
+$('bTheme').onclick = () => applyTheme(THEMES[(THEMES.indexOf(theme) + 1) % 3]);
+applyTheme(theme);
+$('datum').textContent = new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
 const heuteStr = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 
 let cfg = {}, data = { aufgaben: [], projekte: [], nutzer: [], eingang: [] }, ansicht = 'heute', filter = '', filterWer = '', neuHeute = false, detailId = null, bekannt = null;
