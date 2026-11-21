@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Isadody Aufgaben</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Isadody Corporate Design (Tokens wie in der Häkelhelfer-App) */
+  :root { --paper:#FBF6EC; --paper-alt:#F5EBD8; --ink:#22201B; --ink-soft:#5B5347; --coral:#F2896B; --coral-soft:#FBD9CB; --line:#D8CBB0;
+    --display:'Baloo 2',system-ui,sans-serif; --body:'Nunito',system-ui,sans-serif;
+    --shadow-card:0 2px 8px rgba(34,32,27,.08); }
+  * { box-sizing:border-box; margin:0; font-family:var(--body); }
+  html, body { height:100%; }
+  body { background:var(--paper); color:var(--ink); display:flex; flex-direction:column; padding:12px; gap:10px; overflow:hidden; font-size:14px; }
+  button { border:0; cursor:pointer; background:none; color:inherit; font:inherit; }
+  header { display:flex; align-items:center; gap:8px; }
+  header img { height:32px; }
+  header h1 { font-family:var(--display); font-size:1.3rem; flex:1; }
+  .icon { width:30px; height:30px; border-radius:50%; background:var(--paper-alt); border:1px solid var(--line); font-size:15px; }
+  nav { display:flex; gap:6px; }
+  nav button { flex:1; padding:7px 0; border-radius:999px; background:var(--paper-alt); border:1px solid var(--line); font-weight:800; font-size:.82rem; }
+  nav button.on { background:var(--coral); border-color:var(--coral); }
+  nav small { font-weight:700; color:var(--ink-soft); }
+  .add { display:flex; gap:6px; align-items:center; }
+  input[type=text], select { font:inherit; padding:8px 10px; border-radius:12px; border:1px solid var(--line); background:#fff; color:var(--ink); min-width:0; }
+  .add input { flex:1; } .add select { max-width:120px; }
+  .star { width:34px; height:34px; border-radius:50%; background:var(--paper-alt); border:1px solid var(--line); font-size:17px; color:var(--ink-soft); }
+  .star.on { background:var(--coral-soft); color:var(--coral); border-color:var(--coral); }
+  .go { background:var(--coral); border-radius:999px; font-weight:800; padding:8px 14px; font-family:var(--display); }
+  .filter { display:flex; gap:6px; align-items:center; font-size:.8rem; color:var(--ink-soft); }
+  .filter select { flex:1; padding:5px 8px; }
+  main { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding-right:2px; }
+  .task { display:flex; gap:8px; align-items:center; background:var(--paper-alt); border:1px solid var(--line); border-radius:14px; padding:8px 10px; box-shadow:var(--shadow-card); }
+  .task .box { flex:0 0 22px; height:22px; border-radius:7px; border:2px solid var(--ink-soft); background:#fff; font-size:14px; line-height:18px; text-align:center; font-weight:800; }
+  .task.done .box { background:var(--coral); border-color:var(--coral); }
+  .task .txt { flex:1; min-width:0; }
+  .task .t { word-break:break-word; cursor:text; }
+  .task.done .t { text-decoration:line-through; color:var(--ink-soft); }
+  .task .meta { font-size:.72rem; color:var(--ink-soft); display:flex; gap:6px; flex-wrap:wrap; margin-top:2px; }
+  .tag { background:var(--coral-soft); border-radius:999px; padding:0 8px; font-weight:700; color:var(--ink); }
+  .task .act { display:flex; gap:2px; }
+  .task .act button { width:26px; height:26px; border-radius:8px; font-size:14px; color:var(--ink-soft); }
+  .task .act button:hover { background:var(--coral-soft); }
+  .task .act .heute.on { color:var(--coral); }
+  .task input.edit { width:100%; }
+  .leer { text-align:center; color:var(--ink-soft); margin-top:30px; }
+  .panel { position:absolute; inset:0; background:var(--paper); padding:14px; display:flex; flex-direction:column; gap:10px; overflow-y:auto; z-index:5; }
+  .panel h2 { font-family:var(--display); font-size:1.2rem; }
+  .panel label { font-weight:800; font-size:.82rem; display:flex; flex-direction:column; gap:4px; }
+  .row { display:flex; gap:6px; align-items:center; }
+  .row input { flex:1; }
+  .pl { display:flex; align-items:center; gap:6px; background:var(--paper-alt); border-radius:12px; padding:6px 10px; }
+  .pl span { flex:1; }
+  .pl i { font-style:normal; font-size:.72rem; color:var(--ink-soft); }
+  .hint { color:var(--ink-soft); font-size:.78rem; }
+  .err { color:#a03a1c; font-weight:700; }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+  <header>
+    <img src="logo.png" alt="Isadody" onerror="this.remove()">
+    <h1>Aufgaben</h1>
+    <button class="icon" id="bProj" title="Projekte &amp; Chats verwalten">☰</button>
+    <button class="icon" id="bSet" title="Einstellungen">⚙</button>
+    <button class="icon" id="bClose" title="Schließen">✕</button>
+  </header>
+  <nav id="nav"></nav>
+  <form class="add" id="add">
+    <input type="text" id="neuTitel" placeholder="Neue Aufgabe …" autocomplete="off">
+    <select id="neuZu" title="Zuordnung"></select>
+    <button type="button" class="star" id="neuHeute" title="Für heute">★</button>
+    <button class="go" type="submit">+</button>
+  </form>
+  <div class="filter"><span>Zuordnung:</span><select id="filter"></select></div>
+  <main id="liste"></main>
+
+  <section class="panel" id="pSet" hidden>
+    <h2>Einstellungen</h2>
+    <label>Dein Name (für die Anzeige, wer was angelegt hat)<input type="text" id="sName" placeholder="z. B. Dominic"></label>
+    <label>Gemeinsamer Ordner
+      <div class="row"><input type="text" id="sOrdner" readonly placeholder="noch nicht gewählt"><button class="go" type="button" id="sWahl">Wählen</button></div>
+    </label>
+    <p class="hint">Beide Nutzer wählen denselben Ordner (Google-Drive-Ordner oder Netzwerkfreigabe). Darin liegen <b>aufgaben/*.json</b> und <b>projekte.json</b>.</p>
+    <p class="err" id="sErr"></p>
+    <div class="row"><button class="go" type="button" id="sOk">Speichern</button><button type="button" id="sAbbr" class="icon" style="width:auto;padding:0 12px">Abbrechen</button></div>
+  </section>
+
+  <section class="panel" id="pProj" hidden>
+    <h2>Projekte &amp; Chats</h2>
+    <div id="projListe" style="display:flex;flex-direction:column;gap:6px"></div>
+    <div class="row">
+      <input type="text" id="pName" placeholder="Name …" autocomplete="off">
+      <select id="pTyp"><option value="projekt">Projekt</option><option value="chat">Chat</option></select>
+      <button class="go" type="button" id="pAdd">+</button>
+    </div>
+    <p class="hint">Löschen entfernt nur die Zuordnung, die Aufgaben bleiben erhalten.</p>
+    <button class="go" type="button" id="pOk">Fertig</button>
+  </section>
+<script src="app.js"></script>
+</body>
+</html>

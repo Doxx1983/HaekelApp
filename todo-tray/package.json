@@ -1,0 +1,22 @@
+{
+  "name": "isadody-aufgaben",
+  "version": "1.0.0",
+  "description": "Gemeinsame To-do-Liste im Windows-Infobereich (Tray), Speicherung als JSON in einem geteilten Ordner",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node test/store.test.js",
+    "dist": "electron-builder --win portable"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "de.isadody.aufgaben",
+    "productName": "Isadody Aufgaben",
+    "files": ["src/**", "icon.png", "icon.ico", "package.json"],
+    "extraResources": [],
+    "win": { "icon": "icon.ico", "target": ["portable"] }
+  }
+}
