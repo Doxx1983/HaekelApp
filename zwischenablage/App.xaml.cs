@@ -55,7 +55,7 @@ public partial class App : Application
         ApplyTheme();
         _store = new Store();
         _store.Expire(RetentionDays);
-        _expireTimer = new Timer(_ => Dispatcher.BeginInvoke(() => _store.Expire(RetentionDays)),
+        _expireTimer = new Timer(_ => Dispatcher.BeginInvoke(new Action(() => _store?.Expire(RetentionDays))),
                                  null, TimeSpan.FromHours(6), TimeSpan.FromHours(6));
         _popup = new PopupWindow(_store, PasteItem);
 
@@ -181,7 +181,7 @@ public partial class App : Application
     {
         if (process == null) return false;
         var n = process.ToLowerInvariant();
-        return BlockedProcesses.Any(n.Contains);
+        return BlockedProcesses.Any(b => n.Contains(b));
     }
 
     static bool ExcludedByFlag(System.Windows.IDataObject d)
@@ -223,7 +223,7 @@ public partial class App : Application
             if (d.GetDataPresent(DataFormats.FileDrop) && d.GetData(DataFormats.FileDrop) is string[] files && files.Length > 0)
             {
                 string text = string.Join("\n", files);
-                var names = string.Join(" ", files.Select(Path.GetFileName));
+                var names = string.Join(" ", files.Select(f => Path.GetFileName(f)));
                 _store!.Add("files", text, "", Hash("files", text), source, names + " " + text);
                 return;
             }
