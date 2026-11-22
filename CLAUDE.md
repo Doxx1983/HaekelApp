@@ -6,4 +6,4 @@ Kleine Web-App ohne Build, alles in `index.html`. Details und Funktionen: `READM
 - Das Design folgt dem Isadody-CD (Tokens als CSS-Variablen am Anfang von `index.html`). Logo nicht einfärben oder verzerren.
 - Änderungen testen: Parser mit `node` an Beispielzeilen aus `beispiele/`, UI mit Playwright (Chromium liegt unter `/opt/pw-browsers/chromium`).
 - Entwicklungsbranch pushen; `main` nur auf ausdrückliche Anweisung aktualisieren (Fast-Forward, `main` speist GitHub Pages).
-- Dieses Repo ist nur für den Häkelhelfer, nicht das allgemeine Repo. Neue, nicht dazugehörige Apps (z. B. lokale Tools) kommen in ein eigenes Repo, im Zweifel ein neues „Apps“-Repo für alle lokal genutzten Apps. Vorher nachfragen, nichts hier ablegen.
+- Dieses Repo ist nur für den Häkelhelfer, nicht das allgemeine Repo. Neue, nicht dazugehörige Apps (z. B. lokale Tools) kommen in ein eigenes Repo, im Zweifel ein neues „Apps“-Repo für alle lokal genutzten Apps. Windows-Apps gehören nach `Doxx1983/windows-apps` (z. B. die To-Do-App `todo-tray/`). Vorher nachfragen, nichts hier ablegen.
